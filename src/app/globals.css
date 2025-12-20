@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Monochrome noir palette (stored as rgb triplets for alpha-friendly Tailwind colors). */
+    --void: 10 10 11; /* near-black */
+    --ink: 245 245 246; /* off-white */
+    --fog: 176 176 184; /* muted */
+    --line: 255 255 255; /* hairlines */
+  }
+
+  html {
+    color-scheme: dark;
+    background: rgb(var(--void));
+    text-rendering: geometricPrecision;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background:
+      radial-gradient(1200px 900px at 20% -10%, rgb(255 255 255 / 0.11), transparent 60%),
+      radial-gradient(1000px 800px at 80% 10%, rgb(255 255 255 / 0.06), transparent 58%),
+      radial-gradient(900px 700px at 50% 120%, rgb(255 255 255 / 0.05), transparent 55%),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.04), transparent 35%),
+      rgb(var(--void));
+  }
+
+  /* Selection should feel like a subtle “light leak.” */
+  ::selection {
+    background: rgb(255 255 255 / 0.16);
+    color: rgb(var(--ink));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--line) / 0.35);
+    outline-offset: 4px;
+  }
+}
+
+@layer utilities {
+  /* Film grain overlay (SVG turbulence in /public/noise.svg). */
+  .film-grain {
+    position: relative;
+  }
+
+  .film-grain::before {
+    content: "";
+    position: fixed;
+    inset: -20%;
+    pointer-events: none;
+    z-index: 50;
+    background-image: url("/noise.svg");
+    opacity: 0.065;
+    mix-blend-mode: overlay;
+    transform: translateZ(0);
+  }
+
+  /* Subtle vignette to keep the center “projected.” */
+  .vignette {
+    position: relative;
+  }
+
+  .vignette::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+    background: radial-gradient(120% 90% at 50% 15%, transparent 40%, rgb(0 0 0 / 0.75) 100%);
+    opacity: 0.75;
+    transform: translateZ(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-scanlines,
+  .animate-marquee,
+  .animate-ring {
+    animation: none !important;
+  }
+}
+
+

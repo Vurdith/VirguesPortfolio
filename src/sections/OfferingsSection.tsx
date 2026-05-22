@@ -7,6 +7,13 @@ import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
+const TASK_DISCOUNTS = [
+  { label: "5 tasks", off: "5% off" },
+  { label: "10 tasks", off: "10% off" },
+  { label: "20 tasks", off: "15% off" },
+  { label: "40 tasks", off: "25% off" },
+] as const;
+
 const OFFERINGS = [
   {
     code: "01",
@@ -15,6 +22,7 @@ const OFFERINGS = [
       "Custom interface screens shaped around your game's style, from rough layout to polished visual design.",
     why: "Best for menus, shops, HUDs, dashboards, and systems that need to feel finished instead of patched together.",
     badge: "From £50 / task",
+    discounts: TASK_DISCOUNTS,
   },
   {
     code: "02",
@@ -23,6 +31,7 @@ const OFFERINGS = [
       "Clean Roblox imports with sizing checks, greyscale support, and careful translation from source files into Studio.",
     why: "Good for getting assets in-game cleanly the first time, with fewer alignment and fidelity issues.",
     badge: "From £30 / task",
+    discounts: TASK_DISCOUNTS,
   },
   {
     code: "03",
@@ -66,13 +75,6 @@ const PERKS = [
   "Exports plus source on request",
   "Performance-minded animations",
   "Minor tweaks after delivery",
-] as const;
-
-const DISCOUNTS = [
-  { label: "5 assets", off: "5% off" },
-  { label: "10 assets", off: "10% off" },
-  { label: "20 assets", off: "15% off" },
-  { label: "40 assets", off: "25% off" },
 ] as const;
 
 export function OfferingsSection({ className }: { className?: string }) {
@@ -133,27 +135,13 @@ export function OfferingsSection({ className }: { className?: string }) {
           ))}
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_360px]">
+        <div className="mt-4">
           <SupportPanel title="Included" eyebrow="Every Quote">
             <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
               {PERKS.map((perk) => (
                 <div key={perk} className="flex items-center gap-3 text-xs leading-relaxed text-fog/72">
                   <span aria-hidden="true" className="h-px w-5 shrink-0 bg-line/25" />
                   <span>{perk}</span>
-                </div>
-              ))}
-            </div>
-          </SupportPanel>
-
-          <SupportPanel title="Bulk Discounts" eyebrow="Asset Sets">
-            <div className="grid gap-2">
-              {DISCOUNTS.map((discount) => (
-                <div
-                  key={discount.label}
-                  className="grid grid-cols-[1fr_auto] border-b border-line/8 pb-2 text-xs tracking-[0.14em] text-fog/72 last:border-b-0 last:pb-0"
-                >
-                  <span>{discount.label.toUpperCase()}</span>
-                  <span className="text-ink/80">{discount.off.toUpperCase()}</span>
                 </div>
               ))}
             </div>
@@ -201,11 +189,11 @@ function OfferingCard({
 
   return (
     <motion.article
+      layout
       onMouseEnter={playHover}
-      whileHover={{ y: -3 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      transition={{ layout: { duration: 0.24, ease: "easeOut" } }}
       className={cn(
-        "perf-card group relative min-h-[250px] overflow-hidden border border-line/12 bg-void/35 p-5 backdrop-blur-sm",
+        "perf-card group relative h-full min-h-[250px] overflow-hidden border border-line/12 bg-void/35 p-5 backdrop-blur-sm",
         "transition-colors duration-300 hover:border-line/30",
         "md:col-span-1",
         spanClass
@@ -242,6 +230,42 @@ function OfferingCard({
         <p className="mt-4 border-l border-line/16 pl-4 text-xs leading-relaxed text-fog/62">
           {offering.why}
         </p>
+
+        {"discounts" in offering && (
+          <details
+            className="group/task mt-5 border border-line/10 bg-white/[0.025] text-xs text-fog/68 [&>summary::-webkit-details-marker]:hidden"
+            onMouseEnter={playHover}
+          >
+            <summary className="grid cursor-pointer list-none grid-cols-[1fr_auto] items-center gap-4 px-3 py-3 text-[10px] tracking-[0.2em] text-fog/75 transition-colors duration-200 hover:bg-white/[0.025]">
+              <span>SAVE ON 5+ TASKS</span>
+              <span className="flex items-center gap-3 text-ink/75">
+                <span className="hidden h-px w-8 bg-line/16 sm:block" />
+                <span
+                  aria-hidden="true"
+                  className="relative block size-5 border border-line/12 transition-transform duration-200 group-open/task:rotate-45"
+                >
+                  <span className="absolute left-1/2 top-1/2 h-px w-2 -translate-x-1/2 -translate-y-1/2 bg-ink/75" />
+                  <span className="absolute left-1/2 top-1/2 h-2 w-px -translate-x-1/2 -translate-y-1/2 bg-ink/75" />
+                </span>
+              </span>
+            </summary>
+            <p className="min-h-[3rem] border-t border-line/8 px-3 pt-3 text-[11px] leading-relaxed tracking-normal text-fog/58">
+              More tasks in one quote lower the total, so bigger UI sets and import batches become
+              better value.
+            </p>
+            <div className="grid gap-2 px-3 pb-3 pt-3">
+              {offering.discounts.map((discount) => (
+                <div
+                  key={discount.label}
+                  className="grid grid-cols-[1fr_auto] border-t border-line/8 pt-2 text-[10px] tracking-[0.16em]"
+                >
+                  <span>{discount.label.toUpperCase()}</span>
+                  <span className="text-ink/78">{discount.off.toUpperCase()}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
 
         <div className="mt-auto pt-6">
           <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[10px] tracking-[0.2em] text-fog/75">

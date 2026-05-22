@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 const KindSchema = z.enum(["image", "video", "poster"]);
 
 const MAX_BYTES = 25 * 1024 * 1024; // 25MB
+const MAX_IMAGE_WIDTH = 2560;
 
 function extFromMime(mime: string) {
   if (mime === "image/jpeg") return "jpg";
@@ -55,12 +57,25 @@ export async function POST(req: NextRequest) {
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const filename = `${kindParsed.data}_${crypto.randomUUID()}.${ext}`;
+  const isVideo = kindParsed.data === "video";
+  const output = isVideo
+    ? bytes
+    : await sharp(bytes)
+        .rotate()
+        .resize({
+          width: MAX_IMAGE_WIDTH,
+          height: MAX_IMAGE_WIDTH,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 88, effort: 6, smartSubsample: true })
+        .toBuffer();
+  const filename = `${kindParsed.data}_${crypto.randomUUID()}.${isVideo ? ext : "webp"}`;
   const outDir = path.join(process.cwd(), "public", "uploads");
   const outPath = path.join(outDir, filename);
 
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(outPath, bytes);
+  await fs.writeFile(outPath, output);
 
   return NextResponse.json(
     { ok: true, path: `/uploads/${filename}` },

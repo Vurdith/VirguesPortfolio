@@ -94,7 +94,7 @@ export function PaymentSection({ className }: { className?: string }) {
             ))}
           </div>
 
-          <div className="relative overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm">
+          <div className="perf-card relative overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm">
             <CornerLines />
             <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] text-fog/60">
               <MonoIcon name="process" className="size-4" />
@@ -129,7 +129,7 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
   const { playHover, playClick } = useUiSounds();
 
   return (
-    <article className="group relative min-h-[320px] overflow-hidden border border-line/12 bg-void/35 p-6 backdrop-blur-sm transition-colors duration-300 hover:border-line/30">
+    <article className="perf-card group relative min-h-[320px] overflow-hidden border border-line/12 bg-void/35 p-6 backdrop-blur-sm transition-colors duration-300 hover:border-line/30">
       <CornerLines />
       <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
         <div className="absolute inset-x-0 top-0 h-px bg-line/35" />

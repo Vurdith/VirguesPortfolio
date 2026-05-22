@@ -8,12 +8,12 @@ import { ContactFooter } from "@/sections/ContactFooter";
 
 import { mockWorks } from "@/content/mockWorks";
 import { mockReviews } from "@/content/mockReviews";
-import { getApprovedReviews, getPublicWorks } from "@/lib/db";
+import { getPublicPortfolioData } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [works, reviews] = await Promise.all([getPublicWorks(), getApprovedReviews()]);
+  const { works, reviews } = await getPublicPortfolioData();
   const worksForUi = works.length ? works : mockWorks;
   const reviewsForUi = reviews.length ? reviews : mockReviews;
 

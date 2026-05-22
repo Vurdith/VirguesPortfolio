@@ -21,6 +21,12 @@ const NAV = [
 const LEFT_NAV = NAV.slice(0, 3);
 const RIGHT_NAV = NAV.slice(3);
 const VIZ_BARS = 20;
+const VIZ_SEQUENCE = [0, 7, 3, 11, 15, 5, 18, 2, 13, 9, 16, 4, 19, 1, 12, 6, 17, 8, 14, 10] as const;
+const PROFILE_BARS = Array.from({ length: VIZ_BARS }, (_, i) => ({
+  angle: `${(360 / VIZ_BARS) * i}deg`,
+  duration: `${1.85 + (VIZ_SEQUENCE[i] % 6) * 0.14}s`,
+  delay: `${VIZ_SEQUENCE[i] * -0.12}s`,
+}));
 
 type BarStyle = React.CSSProperties & {
   "--a": string;
@@ -48,15 +54,15 @@ export function FloatingHeader({ className }: { className?: string }) {
     mass: 0.7,
   });
 
-  const handleMouseEnter = (href: string) => {
+  const handleMouseEnter = React.useCallback((href: string) => {
     setHoveredHref(href);
     playHover();
-  };
+  }, [playHover]);
 
-  const handleProfileHover = () => {
+  const handleProfileHover = React.useCallback(() => {
     setHoveredHref(null);
     playHover();
-  };
+  }, [playHover]);
 
   return (
     <motion.header
@@ -256,7 +262,7 @@ export function FloatingHeader({ className }: { className?: string }) {
   );
 }
 
-function NavItem({
+const NavItem = React.memo(function NavItem({
   item,
   hovered,
   onHover,
@@ -297,9 +303,15 @@ function NavItem({
       </span>
     </Link>
   );
-}
+});
 
-function ProfileHome({ onClick, onHover }: { onClick: () => void; onHover: () => void }) {
+const ProfileHome = React.memo(function ProfileHome({
+  onClick,
+  onHover,
+}: {
+  onClick: () => void;
+  onHover: () => void;
+}) {
   return (
     <Link
       href="/"
@@ -310,14 +322,13 @@ function ProfileHome({ onClick, onHover }: { onClick: () => void; onHover: () =>
       className="profile-home group absolute left-1/2 top-1/2 z-20 grid h-[50px] w-[50px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line/20 bg-black/85 shadow-[0_14px_34px_rgba(0,0,0,.45)] md:h-14 md:w-14"
     >
       <span aria-hidden="true" className="profile-orbit">
-        {Array.from({ length: VIZ_BARS }).map((_, i) => {
-          const sequence = [0, 7, 3, 11, 15, 5, 18, 2, 13, 9, 16, 4, 19, 1, 12, 6, 17, 8, 14, 10];
+        {PROFILE_BARS.map((bar, i) => {
           const spokeStyle: BarStyle = {
-            "--a": `${(360 / VIZ_BARS) * i}deg`,
+            "--a": bar.angle,
           };
           const barStyle: React.CSSProperties = {
-            animationDuration: `${1.85 + (sequence[i] % 6) * 0.14}s`,
-            animationDelay: `${sequence[i] * -0.12}s`,
+            animationDuration: bar.duration,
+            animationDelay: bar.delay,
           };
 
           return (
@@ -352,18 +363,24 @@ function ProfileHome({ onClick, onHover }: { onClick: () => void; onHover: () =>
           width={160}
           height={160}
           quality={100}
-          unoptimized
           className="h-full w-full scale-[1.12] object-cover object-center"
           priority
         />
       </span>
     </Link>
   );
-}
+});
 
-function ScrambleText({ text, isHovered }: { text: string; isHovered: boolean }) {
+const SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+
+const ScrambleText = React.memo(function ScrambleText({
+  text,
+  isHovered,
+}: {
+  text: string;
+  isHovered: boolean;
+}) {
   const [display, setDisplay] = React.useState(text);
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
 
   React.useEffect(() => {
     if (!isHovered) {
@@ -379,7 +396,7 @@ function ScrambleText({ text, isHovered }: { text: string; isHovered: boolean })
           .map((char, index) => {
             if (index < iteration) return text[index];
             if (char === " ") return " ";
-            return chars[Math.floor(Math.random() * chars.length)];
+            return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
           })
           .join("")
       );
@@ -392,7 +409,7 @@ function ScrambleText({ text, isHovered }: { text: string; isHovered: boolean })
   }, [isHovered, text]);
 
   return <span>{display}</span>;
-}
+});
 
 function CornerFrame() {
   return (

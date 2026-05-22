@@ -19,39 +19,40 @@ type Particle = {
   style: ParticleStyle;
 };
 
-function randomBetween(min: number, max: number) {
-  return min + Math.random() * (max - min);
+function seededRandom(seed: number) {
+  const value = Math.sin(seed * 999) * 10000;
+  return value - Math.floor(value);
 }
 
-export function ParticleField() {
-  const [particles, setParticles] = React.useState<Particle[]>([]);
+function seededBetween(seed: number, min: number, max: number) {
+  return min + seededRandom(seed) * (max - min);
+}
 
-  React.useEffect(() => {
-    setParticles(
-      Array.from({ length: PARTICLE_COUNT }, (_, id) => ({
-        id,
-        style: {
-          "--x0": `${randomBetween(-6, 106)}vw`,
-          "--y0": `${randomBetween(-6, 106)}vh`,
-          "--x1": `${randomBetween(-6, 106)}vw`,
-          "--y1": `${randomBetween(-6, 106)}vh`,
-          "--drift": `${randomBetween(24, 42)}s`,
-          "--glow": `${randomBetween(4, 8)}s`,
-          "--delay": `${randomBetween(-18, 0)}s`,
-        },
-      }))
-    );
-  }, []);
+const PARTICLES: Particle[] = Array.from({ length: PARTICLE_COUNT }, (_, id) => ({
+  id,
+  style: {
+    "--x0": `${seededBetween(id * 7 + 1, -6, 106)}vw`,
+    "--y0": `${seededBetween(id * 7 + 2, -6, 106)}vh`,
+    "--x1": `${seededBetween(id * 7 + 3, -6, 106)}vw`,
+    "--y1": `${seededBetween(id * 7 + 4, -6, 106)}vh`,
+    "--drift": `${seededBetween(id * 7 + 5, 24, 42)}s`,
+    "--glow": `${seededBetween(id * 7 + 6, 4, 8)}s`,
+    "--delay": `${seededBetween(id * 7 + 7, -18, 0)}s`,
+  },
+}));
 
-  if (!particles.length) return null;
-
+export const ParticleField = React.memo(function ParticleField() {
   return (
     <div className="particle-field pointer-events-none fixed inset-0 z-[35] overflow-hidden">
-      {particles.map((particle) => (
+      {PARTICLES.map((particle) => (
         <span className="particle-dot" key={particle.id} style={particle.style} />
       ))}
 
       <style jsx>{`
+        .particle-field {
+          contain: layout paint style;
+        }
+
         .particle-dot {
           position: absolute;
           left: 0;
@@ -67,6 +68,7 @@ export function ParticleField() {
             particleDrift var(--drift) linear var(--delay) infinite alternate,
             particleGlow var(--glow) ease-in-out var(--delay) infinite;
           will-change: transform, opacity;
+          backface-visibility: hidden;
         }
 
         @keyframes particleDrift {
@@ -98,4 +100,4 @@ export function ParticleField() {
       `}</style>
     </div>
   );
-}
+});

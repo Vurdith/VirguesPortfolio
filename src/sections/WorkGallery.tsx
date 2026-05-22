@@ -116,6 +116,9 @@ export function WorkGallery({
 
 function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
   const { playHover, playClick } = useUiSounds();
+  const rectRef = React.useRef<DOMRect | null>(null);
+  const frameRef = React.useRef<number | null>(null);
+  const pointerRef = React.useRef<{ clientX: number; clientY: number } | null>(null);
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -130,14 +133,60 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
   const o = useSpring(hover, { stiffness: 520, damping: 44, mass: 0.6 });
 
   const mask = useMotionTemplate`radial-gradient(180px 180px at ${x}px ${y}px, #000 0%, #000 58%, transparent 76%)`;
+  const lensX = useMotionTemplate`${x}px`;
+  const lensY = useMotionTemplate`${y}px`;
   const tiltShadow = useTransform(o, [0, 1], ["0px", "4px"]);
   const shadow = useMotionTemplate`0 ${tiltShadow} 12px rgba(0,0,0,0.8)`;
 
-  const onEnter = React.useCallback(() => {
+  const updatePointer = React.useCallback(() => {
+    frameRef.current = null;
+    const rect = rectRef.current;
+    const pointer = pointerRef.current;
+    if (!rect || !pointer) return;
+
+    const px = pointer.clientX - rect.left;
+    const py = pointer.clientY - rect.top;
+
+    mx.set(px);
+    my.set(py);
+
+    const dx = (px - rect.width / 2) / (rect.width / 2);
+    const dy = (py - rect.height / 2) / (rect.height / 2);
+    rY.set(dx * 15);
+    rX.set(-dy * 15);
+  }, [mx, my, rX, rY]);
+
+  const queuePointerUpdate = React.useCallback(
+    (clientX: number, clientY: number) => {
+      pointerRef.current = { clientX, clientY };
+      if (frameRef.current === null) {
+        frameRef.current = window.requestAnimationFrame(updatePointer);
+      }
+    },
+    [updatePointer],
+  );
+
+  React.useEffect(() => {
+    return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, []);
+
+  const onEnter = React.useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    rectRef.current = e.currentTarget.getBoundingClientRect();
+    queuePointerUpdate(e.clientX, e.clientY);
     hover.set(1);
-  }, [hover]);
+  }, [hover, queuePointerUpdate]);
 
   const onLeave = React.useCallback(() => {
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    rectRef.current = null;
+    pointerRef.current = null;
     hover.set(0);
     rX.set(0);
     rY.set(0);
@@ -145,19 +194,12 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
 
   const onMove = React.useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-
-      mx.set(px);
-      my.set(py);
-
-      const dx = (px - rect.width / 2) / (rect.width / 2);
-      const dy = (py - rect.height / 2) / (rect.height / 2);
-      rY.set(dx * 15);
-      rX.set(-dy * 15);
+      if (!rectRef.current) {
+        rectRef.current = e.currentTarget.getBoundingClientRect();
+      }
+      queuePointerUpdate(e.clientX, e.clientY);
     },
-    [mx, my, rX, rY],
+    [queuePointerUpdate],
   );
 
   return (
@@ -180,7 +222,7 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         }}
         className={cn(
           "relative aspect-[4/5] overflow-hidden border border-white/5 bg-void/40",
-          "transform-gpu will-change-transform [transform-style:preserve-3d]",
+          "perf-card transform-gpu will-change-transform [transform-style:preserve-3d]",
         )}
       >
         <div
@@ -227,9 +269,9 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         <motion.div
           aria-hidden="true"
           className="pointer-events-none absolute left-0 top-0 size-64"
-          style={{ 
-            x: useMotionTemplate`${x}px`, 
-            y: useMotionTemplate`${y}px`, 
+          style={{
+            x: lensX,
+            y: lensY,
             translateX: "-50%", 
             translateY: "-50%",
             opacity: o 

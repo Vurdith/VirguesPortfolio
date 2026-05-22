@@ -106,6 +106,9 @@ export function ProcessBlueprint({ className }: { className?: string }) {
 function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: number }) {
   const { playHover, playClick } = useUiSounds();
   const cardRef = React.useRef<HTMLElement>(null);
+  const rectRef = React.useRef<DOMRect | null>(null);
+  const frameRef = React.useRef<number | null>(null);
+  const pointerRef = React.useRef<{ clientX: number; clientY: number } | null>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const dx = useSpring(useTransform(mouseX, [-260, 260], [-14, 14]), {
@@ -116,15 +119,63 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
     stiffness: 150,
     damping: 22,
   });
+  const iconX = useTransform(dx, (v) => v * -0.35);
+  const iconY = useTransform(dy, (v) => v * -0.35);
+  const titleX = useTransform(dx, (v) => v * 0.5);
+  const titleY = useTransform(dy, (v) => v * 0.5);
+  const summaryX = useTransform(dx, (v) => v * 0.22);
+  const summaryY = useTransform(dy, (v) => v * 0.22);
+  const detailX = useTransform(dx, (v) => v * -0.18);
+  const detailY = useTransform(dy, (v) => v * -0.18);
+
+  const updateMouse = React.useCallback(() => {
+    frameRef.current = null;
+    const rect = rectRef.current;
+    const pointer = pointerRef.current;
+    if (!rect || !pointer) return;
+
+    mouseX.set(pointer.clientX - (rect.left + rect.width / 2));
+    mouseY.set(pointer.clientY - (rect.top + rect.height / 2));
+  }, [mouseX, mouseY]);
+
+  const queueMouseUpdate = React.useCallback(
+    (clientX: number, clientY: number) => {
+      pointerRef.current = { clientX, clientY };
+      if (frameRef.current === null) {
+        frameRef.current = window.requestAnimationFrame(updateMouse);
+      }
+    },
+    [updateMouse],
+  );
+
+  React.useEffect(() => {
+    return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
+    rectRef.current = e.currentTarget.getBoundingClientRect();
+    queueMouseUpdate(e.clientX, e.clientY);
+    playHover();
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    mouseX.set(e.clientX - (rect.left + rect.width / 2));
-    mouseY.set(e.clientY - (rect.top + rect.height / 2));
+    if (!rectRef.current) {
+      rectRef.current = e.currentTarget.getBoundingClientRect();
+    }
+    queueMouseUpdate(e.clientX, e.clientY);
   };
 
   const handleMouseLeave = () => {
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    rectRef.current = null;
+    pointerRef.current = null;
     mouseX.set(0);
     mouseY.set(0);
   };
@@ -132,7 +183,7 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
   return (
     <motion.article
       ref={cardRef}
-      onMouseEnter={playHover}
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onDragStart={playClick}
@@ -144,7 +195,7 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: index * 0.06, ease: [0.2, 0.85, 0.2, 1] }}
-      className="group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
+      className="perf-card group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
     >
       <div className="pointer-events-none absolute inset-0 opacity-70">
         <div className="absolute left-0 top-0 h-4 w-4 border-l border-t border-line/30" />
@@ -158,7 +209,7 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
           {step.n}
         </motion.div>
         <motion.div
-          style={{ x: useTransform(dx, (v) => v * -0.35), y: useTransform(dy, (v) => v * -0.35) }}
+          style={{ x: iconX, y: iconY }}
           className="mt-0 grid size-12 place-items-center border border-line/15 bg-black/35 text-ink/85 md:mt-8"
         >
           <MonoIcon name="process" className="size-5" />
@@ -167,19 +218,19 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
 
       <div className="relative">
         <motion.h3
-          style={{ x: useTransform(dx, (v) => v * 0.5), y: useTransform(dy, (v) => v * 0.5) }}
+          style={{ x: titleX, y: titleY }}
           className="font-serif text-3xl leading-none tracking-[-0.05em]"
         >
           {step.title}
         </motion.h3>
         <motion.p
-          style={{ x: useTransform(dx, (v) => v * 0.22), y: useTransform(dy, (v) => v * 0.22) }}
+          style={{ x: summaryX, y: summaryY }}
           className="mt-5 max-w-3xl text-pretty text-sm leading-relaxed text-fog/86"
         >
           {step.summary}
         </motion.p>
         <motion.p
-          style={{ x: useTransform(dx, (v) => v * -0.18), y: useTransform(dy, (v) => v * -0.18) }}
+          style={{ x: detailX, y: detailY }}
           className="mt-4 max-w-3xl border-l border-line/18 pl-4 text-xs leading-relaxed text-fog/65"
         >
           {step.detail}

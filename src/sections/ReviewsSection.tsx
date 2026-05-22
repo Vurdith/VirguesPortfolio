@@ -95,7 +95,7 @@ function ReviewRail({
 }) {
   return (
     <div
-      className="review-rail mt-10 overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm"
+      className="review-rail perf-card mt-10 overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm"
       style={{ "--review-duration": `${duration}s` } as React.CSSProperties}
     >
       <div
@@ -150,7 +150,7 @@ function ReviewRail({
 
 function EmptyReviews() {
   return (
-    <div className="mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+    <div className="perf-card mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
       <div className="max-w-2xl">
         <p className="text-[10px] tracking-[0.28em] text-fog/60">NO APPROVED REVIEWS YET</p>
         <p className="mt-3 text-sm leading-relaxed text-fog/78">
@@ -164,7 +164,7 @@ function EmptyReviews() {
 
 function ReviewChip({ review }: { review: Review }) {
   return (
-    <article className="w-[min(420px,80vw)] border border-line/12 bg-void/35 px-6 py-5">
+    <article className="perf-card w-[min(420px,80vw)] border border-line/12 bg-void/35 px-6 py-5">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
           <div className="truncate text-[10px] font-bold uppercase tracking-[0.3em] text-ink/90">

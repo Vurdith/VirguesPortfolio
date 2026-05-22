@@ -63,7 +63,9 @@ export function UiSoundProvider({ children }: { children: React.ReactNode }) {
 
     // Initialize music track if not already
     if (!musicRef.current) {
-      const audio = new Audio("/music/ambient.mp3");
+      const audio = document.createElement("audio");
+      audio.preload = "none";
+      audio.src = "/music/ambient.mp3";
       audio.loop = true;
       audio.volume = 0.06; // 50% quieter (was 0.12)
       musicRef.current = audio;

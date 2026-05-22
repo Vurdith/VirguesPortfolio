@@ -16,6 +16,20 @@ export async function getApprovedReviews(): Promise<Review[]> {
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
+export async function getPublicPortfolioData(): Promise<{
+  works: Work[];
+  reviews: Review[];
+}> {
+  const db = await readDb();
+
+  return {
+    works: db.works.filter((w) => w.published),
+    reviews: db.reviews
+      .filter((r) => r.status === "approved")
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+  };
+}
+
 export async function submitReview(input: {
   name: string;
   rating: Rating;

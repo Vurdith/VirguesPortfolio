@@ -174,7 +174,7 @@ function SupportPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm">
+    <div className="perf-card relative overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm">
       <div className="pointer-events-none absolute inset-0 opacity-60">
         <div className="absolute left-0 top-0 h-4 w-4 border-l border-t border-line/25" />
         <div className="absolute right-0 top-0 h-4 w-4 border-r border-t border-line/25" />
@@ -205,7 +205,7 @@ function OfferingCard({
       whileHover={{ y: -3 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       className={cn(
-        "group relative min-h-[250px] overflow-hidden border border-line/12 bg-void/35 p-5 backdrop-blur-sm",
+        "perf-card group relative min-h-[250px] overflow-hidden border border-line/12 bg-void/35 p-5 backdrop-blur-sm",
         "transition-colors duration-300 hover:border-line/30",
         "md:col-span-1",
         spanClass

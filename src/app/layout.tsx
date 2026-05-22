@@ -5,8 +5,6 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 import { ClientChrome } from "@/components/ClientChrome";
-import { LoadingScene } from "@/components/LoadingScene";
-import { ParticleField } from "@/components/ParticleField";
 import { SITE } from "@/lib/site";
 
 const sans = Instrument_Sans({
@@ -39,8 +37,6 @@ export default function RootLayout({
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body className="min-h-dvh bg-void font-sans text-ink antialiased">
         <Providers>
-          <LoadingScene />
-          <ParticleField />
           <ClientChrome />
           {children}
         </Providers>

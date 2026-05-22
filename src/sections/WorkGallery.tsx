@@ -12,6 +12,7 @@ import {
 } from "framer-motion";
 
 import type { Work } from "@/types/portfolio";
+import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
@@ -55,12 +56,6 @@ export function WorkGallery({
 
   const bgOpacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 0.6, 0.6, 0]);
   
-  const bgBlur = useTransform(
-    scrollYProgress,
-    [0, 0.2, 0.8, 1],
-    ["blur(15px)", "blur(5px)", "blur(5px)", "blur(15px)"]
-  );
-
   return (
     <section
       id="work"
@@ -76,7 +71,6 @@ export function WorkGallery({
           y: bgY,
           scale: bgScale,
           opacity: bgOpacity,
-          filter: bgBlur,
           backgroundImage: `url(${SITE.workImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -87,13 +81,16 @@ export function WorkGallery({
 
       <div className="absolute inset-0 z-[1] pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-void via-transparent to-void" />
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay [background:repeating-linear-gradient(to_bottom,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_1px,transparent_2px,transparent_10px)] animate-scanlines" />
+        <div className="absolute inset-0 opacity-8 [background:repeating-linear-gradient(to_bottom,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_1px,transparent_2px,transparent_10px)]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-10">
         <header className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <p className="text-xs tracking-[0.22em] text-fog/70">SELECTED</p>
+            <div className="flex items-center gap-3 text-xs tracking-[0.22em] text-fog/70">
+              <MonoIcon name="work" className="size-4" />
+              <span>SELECTED</span>
+            </div>
             <motion.h2
               style={{ skewX, skewY }}
               className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl origin-left"
@@ -134,8 +131,6 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
   const o = useSpring(hover, { stiffness: 520, damping: 44, mass: 0.6 });
 
   const mask = useMotionTemplate`radial-gradient(180px 180px at ${x}px ${y}px, #000 0%, transparent 62%)`;
-  const lensBg = useMotionTemplate`radial-gradient(120px 120px at 50% 50%, rgba(255,255,255,0.18), rgba(255,255,255,0.06) 55%, transparent 72%)`;
-
   const tiltShadow = useTransform(o, [0, 1], ["0px", "4px"]);
   const shadow = useMotionTemplate`0 ${tiltShadow} 12px rgba(0,0,0,0.8)`;
 
@@ -190,7 +185,7 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         )}
       >
         <div
-          className="absolute inset-0 blur-[3px] scale-[1.02]"
+          className="absolute inset-0 scale-[1.02]"
           style={{ 
             backgroundImage: work.media.src 
               ? `url(${work.media.src}), ${backdrop}, linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.8) 100%)` 
@@ -201,17 +196,6 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         />
 
         {/* Subtle “screen” texture across the whole card. */}
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100",
-            "mix-blend-overlay",
-          )}
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 2px, transparent 6px)",
-          }}
-        />
-
         {/* Sharp-field revealed only under the moving lens (mask). */}
         <motion.div
           aria-hidden="true"
@@ -234,7 +218,7 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
           />
         </motion.div>
 
-        {/* Lens hardware: rotating rings + scanlines + soft glare. */}
+        {/* Lens hardware: rotating rings + soft glare. */}
         <motion.div
           aria-hidden="true"
           className="pointer-events-none absolute left-0 top-0 size-64"
@@ -248,14 +232,7 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         >
           <div className="absolute inset-0 rounded-full border border-line/30 animate-ring" />
           <div className="absolute inset-[18px] rounded-full border border-line/20 [border-style:dashed] animate-ring [animation-duration:3.6s]" />
-          <div
-            className="absolute inset-[30px] rounded-full opacity-55 mix-blend-overlay animate-scanlines"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1px, transparent 2px, transparent 7px)",
-            }}
-          />
-          <motion.div className="absolute inset-0 rounded-full" style={{ backgroundImage: lensBg }} />
+          <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
         </motion.div>
 
         {/* Bottom metadata (kept inside the strict card). */}
@@ -268,7 +245,7 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
             {work.tags.slice(0, 3).map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70 backdrop-blur-sm"
+                className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70"
               >
                 {t.toUpperCase()}
               </span>

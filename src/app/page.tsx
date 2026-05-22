@@ -1,7 +1,9 @@
 import { Hero } from "@/sections/Hero";
 import { WorkGallery } from "@/sections/WorkGallery";
+import { OfferingsSection } from "@/sections/OfferingsSection";
 import { ProcessBlueprint } from "@/sections/ProcessBlueprint";
 import { ReviewsSection } from "@/sections/ReviewsSection";
+import { PaymentSection } from "@/sections/PaymentSection";
 import { ContactFooter } from "@/sections/ContactFooter";
 
 import { mockWorks } from "@/content/mockWorks";
@@ -19,8 +21,10 @@ export default async function Home() {
     <main className="film-grain vignette">
       <Hero />
       <WorkGallery works={worksForUi} />
+      <OfferingsSection />
       <ProcessBlueprint />
       <ReviewsSection reviews={reviewsForUi} />
+      <PaymentSection />
       <ContactFooter />
     </main>
   );

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 
 import type { Rating, Review, ReviewStatus } from "@/types/portfolio";
 import { cn } from "@/lib/cn";
@@ -72,8 +71,8 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
   }, [reviews]);
 
   return (
-    <div className="overflow-hidden border border-line/12 bg-void/20 backdrop-blur-sm">
-      <div className="grid grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[10px] tracking-[0.22em] text-fog/70">
+    <div className="overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm">
+      <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[10px] tracking-[0.22em] text-fog/70 md:grid">
         <div className="col-span-5">REVIEW</div>
         <div className="col-span-2">RATING</div>
         <div className="col-span-2">STATUS</div>
@@ -85,9 +84,12 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
       {sorted.length ? (
         <div className="divide-y divide-line/10">
           {sorted.map((r) => (
-            <div key={r.id} className="grid grid-cols-12 items-start gap-3 px-5 py-4">
-              <div className="col-span-5">
-                <div className="flex items-baseline justify-between gap-4">
+            <div
+              key={r.id}
+              className="grid gap-5 px-5 py-5 transition-colors duration-300 hover:bg-white/[0.025] md:grid-cols-12 md:items-start md:gap-3 md:py-4"
+            >
+              <div className="md:col-span-5">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <div className="font-serif text-lg leading-none tracking-[-0.03em]">{r.name}</div>
                   <div className="text-[10px] tracking-[0.22em] text-fog/55">
                     {new Date(r.createdAt).toLocaleDateString()}
@@ -96,17 +98,17 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
                 <p className="mt-3 text-pretty text-sm leading-relaxed text-fog/80">“{r.text}”</p>
               </div>
 
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <Stars rating={r.rating} />
               </div>
 
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <StatusBadge status={r.status} />
               </div>
 
-              <div className="col-span-1 flex justify-center">
+              <div className="flex gap-2 md:col-span-3 md:justify-end">
                 <ActionButton
-                  label="APP"
+                  label="APPROVE"
                   disabled={busy?.id === r.id || r.status === "approved"}
                   onHover={playHover}
                   onClick={() => {
@@ -114,11 +116,8 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
                     void patch(r.id, "approved", "approve");
                   }}
                 />
-              </div>
-
-              <div className="col-span-1 flex justify-center">
                 <ActionButton
-                  label="REJ"
+                  label="REJECT"
                   disabled={busy?.id === r.id || r.status === "rejected"}
                   onHover={playHover}
                   onClick={() => {
@@ -126,9 +125,6 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
                     void patch(r.id, "rejected", "reject");
                   }}
                 />
-              </div>
-
-              <div className="col-span-1 flex justify-center">
                 <ActionButton
                   label="DEL"
                   disabled={busy?.id === r.id}
@@ -192,20 +188,19 @@ function ActionButton({
   onClick: () => void;
 }) {
   return (
-    <motion.button
+    <button
       type="button"
       disabled={disabled}
       onMouseEnter={onHover}
       onClick={onClick}
-      whileTap={{ scale: 0.98 }}
       className={cn(
-        "inline-flex h-9 w-12 items-center justify-center border border-line/12 bg-void/35 text-[10px] tracking-[0.22em] text-fog/70",
-        "hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
+        "hover:-translate-y-px hover:border-line/25 hover:text-ink active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         danger && "hover:border-line/35",
       )}
     >
       {label}
-    </motion.button>
+    </button>
   );
 }
 

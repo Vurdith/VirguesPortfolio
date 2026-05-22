@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
@@ -37,9 +36,15 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
   };
 
   return (
-    <main className="min-h-dvh px-6 py-12 md:px-10 md:py-16">
-      <div className="mx-auto max-w-xl">
-        <div className="border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+    <main className="relative grid min-h-dvh place-items-center overflow-hidden px-6 py-12 md:px-10">
+      <div aria-hidden="true" className="section-grid-bg fixed inset-0 opacity-[0.045]" />
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 bg-[radial-gradient(760px_460px_at_50%_30%,rgba(255,255,255,.12),transparent_68%)]"
+      />
+      <div className="relative w-full max-w-xl">
+        <div className="relative overflow-hidden border border-line/14 bg-void/45 p-7 backdrop-blur-xl md:p-8">
+          <CornerLines />
           <div className="flex items-center justify-between">
             <div className="text-xs tracking-[0.22em] text-fog/70">ADMIN</div>
             <div className="text-[10px] tracking-[0.22em] text-fog/50">
@@ -72,28 +77,38 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
             {error ? <div className="mt-3 text-xs text-fog/80">{error}</div> : null}
 
             <div className="mt-6 flex items-center justify-end gap-4">
-              <motion.button
+              <button
                 type="button"
                 onMouseEnter={playHover}
                 onClick={() => {
                   playClick();
                   void submit();
                 }}
-                whileTap={{ scale: 0.985 }}
                 disabled={status === "submitting" || password.length < (mode === "setup" ? 10 : 1)}
                 className={cn(
-                  "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink",
-                  "hover:border-line/35 disabled:cursor-not-allowed disabled:opacity-50",
+                  "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
+                  "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
                 <span>{mode === "setup" ? "SET PASSWORD" : "LOGIN"}</span>
                 <span className="h-px w-10 bg-line/20" />
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function CornerLines() {
+  return (
+    <span className="pointer-events-none absolute inset-0 opacity-70">
+      <span className="absolute left-0 top-0 h-4 w-4 border-l border-t border-line/30" />
+      <span className="absolute right-0 top-0 h-4 w-4 border-r border-t border-line/30" />
+      <span className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-line/30" />
+      <span className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-line/30" />
+    </span>
   );
 }
 

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 
 import type { Work } from "@/types/portfolio";
 import { cn } from "@/lib/cn";
@@ -156,7 +155,7 @@ export function WorkForm({
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 md:px-10 md:py-12">
+    <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
         <div>
           <p className="text-xs tracking-[0.22em] text-fog/70">
@@ -176,7 +175,7 @@ export function WorkForm({
             />
             PUBLISHED
           </label>
-          <motion.button
+          <button
             type="button"
             disabled={busy}
             onMouseEnter={playHover}
@@ -184,15 +183,14 @@ export function WorkForm({
               playClick();
               void submit();
             }}
-            whileTap={{ scale: 0.985 }}
             className={cn(
-              "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink",
-              "hover:border-line/35 disabled:cursor-not-allowed disabled:opacity-50",
+              "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
+              "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
             )}
           >
             <span>{busy ? "SAVING" : "SAVE"}</span>
             <span className="h-px w-10 bg-line/15" />
-          </motion.button>
+          </button>
         </div>
       </div>
 
@@ -248,7 +246,7 @@ export function WorkForm({
         </Field>
       </div>
 
-      <div className="mt-10 border border-line/12 bg-void/20 p-6 backdrop-blur-sm">
+      <div className="mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="text-xs tracking-[0.22em] text-fog/70">MEDIA</div>
           <div className="flex flex-wrap gap-2">
@@ -293,23 +291,22 @@ export function WorkForm({
                   className="block w-full text-xs text-fog/70 file:mr-3 file:border-0 file:bg-void/40 file:px-4 file:py-2 file:text-xs file:tracking-[0.22em] file:text-ink"
                 />
                 <div className="flex items-center gap-3">
-                  <motion.button
+                  <button
                     type="button"
                     disabled={busy || !pendingFile}
                     onMouseEnter={playHover}
                     onClick={() => {
-                      playClick();
-                      void uploadMain();
-                    }}
-                    whileTap={{ scale: 0.985 }}
+                        playClick();
+                        void uploadMain();
+                      }}
                     className={cn(
-                      "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink",
-                      "hover:border-line/35 disabled:cursor-not-allowed disabled:opacity-50",
+                      "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
+                      "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                   >
                     <span>{busy ? "UPLOADING" : "UPLOAD"}</span>
                     <span className="h-px w-8 bg-line/15" />
-                  </motion.button>
+                  </button>
                   <div className="text-xs text-fog/70">{state.src ? state.src : "—"}</div>
                 </div>
               </div>
@@ -338,7 +335,7 @@ export function WorkForm({
                     className="block w-full text-xs text-fog/70 file:mr-3 file:border-0 file:bg-void/40 file:px-4 file:py-2 file:text-xs file:tracking-[0.22em] file:text-ink"
                   />
                   <div className="flex items-center gap-3">
-                    <motion.button
+                    <button
                       type="button"
                       disabled={busy || !pendingPoster}
                       onMouseEnter={playHover}
@@ -346,15 +343,14 @@ export function WorkForm({
                         playClick();
                         void uploadPoster();
                       }}
-                      whileTap={{ scale: 0.985 }}
                       className={cn(
-                        "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink",
-                        "hover:border-line/35 disabled:cursor-not-allowed disabled:opacity-50",
+                        "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
+                        "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
                       )}
                     >
                       <span>{busy ? "UPLOADING" : "UPLOAD"}</span>
                       <span className="h-px w-8 bg-line/15" />
-                    </motion.button>
+                    </button>
                     <div className="text-xs text-fog/70">{state.poster ? state.poster : "—"}</div>
                   </div>
                 </div>

@@ -18,9 +18,9 @@ export function LoadingScene() {
           setCanEnter(true);
           return 100;
         }
-        return prev + 1;
+        return Math.min(prev + 4, 100);
       });
-    }, 10);
+    }, 20);
 
     return () => clearInterval(interval);
   }, []);
@@ -69,9 +69,9 @@ export function LoadingScene() {
             {/* High-End Progress Bar */}
             <div className="relative h-[1px] w-full bg-white/5">
               <motion.div
-                initial={{ width: "0%" }}
-                animate={{ width: canEnter ? "100%" : `${percent}%` }}
-                className="relative h-full bg-ink/40"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: canEnter ? 1 : percent / 100 }}
+                className="relative h-full origin-left bg-ink/40"
               >
                 <motion.div 
                   className="absolute right-0 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 blur-xl"

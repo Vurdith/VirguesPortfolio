@@ -40,6 +40,17 @@
 }
 
 @layer utilities {
+  .section-grid-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.45) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.45) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+
   /* Film grain overlay (SVG turbulence in /public/noise.svg). */
   .film-grain {
     position: relative;
@@ -47,14 +58,13 @@
 
   .film-grain::before {
     content: "";
-    position: fixed;
-    inset: -20%;
+    position: absolute;
+    inset: 0;
     pointer-events: none;
-    z-index: 50;
+    z-index: 1;
     background-image: url("/noise.svg");
-    opacity: 0.065;
-    mix-blend-mode: overlay;
-    transform: translateZ(0);
+    background-size: 220px 220px;
+    opacity: 0.028;
   }
 
   /* Subtle vignette to keep the center “projected.” */
@@ -64,13 +74,18 @@
 
   .vignette::after {
     content: "";
-    position: fixed;
+    position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 40;
+    z-index: 1;
     background: radial-gradient(120% 90% at 50% 15%, transparent 40%, rgb(0 0 0 / 0.75) 100%);
-    opacity: 0.75;
-    transform: translateZ(0);
+    opacity: 0.58;
+  }
+
+  .film-grain > *,
+  .vignette > * {
+    position: relative;
+    z-index: 2;
   }
 }
 
@@ -79,7 +94,6 @@
     scroll-behavior: auto;
   }
 
-  .animate-scanlines,
   .animate-marquee,
   .animate-ring {
     animation: none !important;

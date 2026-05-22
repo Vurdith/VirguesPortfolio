@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
 import { useUiSounds } from "@/hooks/useUiSounds";
@@ -10,27 +11,67 @@ import { useUiSounds } from "@/hooks/useUiSounds";
 export function ContactFooter({ className }: { className?: string }) {
   const { playHover, playClick } = useUiSounds();
   const [copied, setCopied] = React.useState(false);
+  const resetTimer = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (resetTimer.current) {
+        window.clearTimeout(resetTimer.current);
+      }
+    };
+  }, []);
+
+  const showCopied = () => {
+    setCopied(true);
+    if (resetTimer.current) {
+      window.clearTimeout(resetTimer.current);
+    }
+    resetTimer.current = window.setTimeout(() => setCopied(false), 1200);
+  };
+
+  const fallbackCopy = () => {
+    const textArea = document.createElement("textarea");
+    textArea.value = SITE.email;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "fixed";
+    textArea.style.top = "-999px";
+    textArea.style.left = "-999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    const copiedEmail = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return copiedEmail;
+  };
 
   const copyEmail = async () => {
     try {
-      await navigator.clipboard.writeText(SITE.email);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 900);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(SITE.email);
+      } else if (!fallbackCopy()) {
+        return;
+      }
+      showCopied();
     } catch {
-      // ignore
+      if (fallbackCopy()) {
+        showCopied();
+      }
     }
   };
 
   return (
     <footer
       id="contact"
-      className={cn("relative border-t border-line/10 py-16 md:py-20", className)}
+      className={cn("relative overflow-hidden border-t border-line/10 py-16 md:py-20", className)}
       aria-label="Contact"
     >
-      <div className="mx-auto max-w-6xl px-6 md:px-10">
+      <div aria-hidden="true" className="section-grid-bg" />
+      <div className="relative mx-auto max-w-6xl px-6 md:px-10">
         <div className="grid gap-10 md:grid-cols-12 md:gap-12">
           <div className="md:col-span-7">
-            <p className="text-xs tracking-[0.22em] text-fog/70">CONTACT</p>
+            <div className="flex items-center gap-3 text-xs tracking-[0.22em] text-fog/70">
+              <MonoIcon name="mail" className="size-4" />
+              <span>CONTACT</span>
+            </div>
             <h2 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
               High contrast.
             </h2>
@@ -51,10 +92,14 @@ export function ContactFooter({ className }: { className?: string }) {
                   "group relative inline-flex items-center gap-3 border border-line/18 bg-void/30 px-5 py-3 text-xs tracking-[0.22em] text-ink backdrop-blur-md",
                   "hover:border-line/35",
                 )}
+                aria-label={`Copy email address ${SITE.email}`}
               >
                 <span className="text-fog/70">EMAIL</span>
+                <MonoIcon name="mail" className="size-4" />
                 <span className="font-medium">{SITE.email}</span>
-                <span className="text-fog/70">{copied ? "COPIED" : "COPY"}</span>
+                <span className="min-w-14 text-left text-fog/70" aria-live="polite">
+                  {copied ? "COPIED" : "COPY"}
+                </span>
                 <span className="pointer-events-none absolute inset-0 opacity-80">
                   <span className="absolute left-0 top-0 h-3 w-3 border-l border-t border-line/30" />
                   <span className="absolute right-0 top-0 h-3 w-3 border-r border-t border-line/30" />

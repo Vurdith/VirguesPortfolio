@@ -1,95 +1,101 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
 
-const PARTICLE_COUNT = 15;
+const PARTICLE_COUNT = 10;
 
-type FairyConfig = {
-  id: number;
-  initial: { x: string; y: string };
-  target: { x: string; y: string };
-  duration: { left: number; top: number; glow: number };
+type ParticleStyle = React.CSSProperties & {
+  "--x0": string;
+  "--y0": string;
+  "--x1": string;
+  "--y1": string;
+  "--drift": string;
+  "--glow": string;
+  "--delay": string;
 };
 
+type Particle = {
+  id: number;
+  style: ParticleStyle;
+};
+
+function randomBetween(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
 export function ParticleField() {
-  const [particles, setParticles] = React.useState<FairyConfig[]>([]);
+  const [particles, setParticles] = React.useState<Particle[]>([]);
 
   React.useEffect(() => {
     setParticles(
-      Array.from({ length: PARTICLE_COUNT }).map((_, i) => ({
-        id: i,
-        initial: {
-          x: `${Math.random() * 100}%`,
-          y: `${Math.random() * 100}%`,
-        },
-        target: {
-          x: `${Math.random() * 100}%`,
-          y: `${Math.random() * 100}%`,
-        },
-        duration: {
-          left: 15 + Math.random() * 15,
-          top: 15 + Math.random() * 15,
-          glow: 4 + Math.random() * 4,
+      Array.from({ length: PARTICLE_COUNT }, (_, id) => ({
+        id,
+        style: {
+          "--x0": `${randomBetween(-6, 106)}vw`,
+          "--y0": `${randomBetween(-6, 106)}vh`,
+          "--x1": `${randomBetween(-6, 106)}vw`,
+          "--y1": `${randomBetween(-6, 106)}vh`,
+          "--drift": `${randomBetween(24, 42)}s`,
+          "--glow": `${randomBetween(4, 8)}s`,
+          "--delay": `${randomBetween(-18, 0)}s`,
         },
       }))
     );
   }, []);
 
+  if (!particles.length) return null;
+
   return (
-    <div className="pointer-events-none fixed inset-0 z-[60] overflow-hidden">
+    <div className="particle-field pointer-events-none fixed inset-0 z-[60] overflow-hidden">
       {particles.map((particle) => (
-        <Fairy config={particle} key={particle.id} />
+        <span className="particle-dot" key={particle.id} style={particle.style} />
       ))}
+
+      <style jsx>{`
+        .particle-dot {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 3px;
+          width: 3px;
+          border-radius: 999px;
+          background: rgb(255 255 255 / 0.9);
+          box-shadow: 0 0 12px 3px rgb(255 255 255 / 0.28);
+          filter: blur(0.4px);
+          transform: translate3d(var(--x0), var(--y0), 0);
+          animation:
+            particleDrift var(--drift) linear var(--delay) infinite alternate,
+            particleGlow var(--glow) ease-in-out var(--delay) infinite;
+          will-change: transform, opacity;
+        }
+
+        @keyframes particleDrift {
+          from {
+            transform: translate3d(var(--x0), var(--y0), 0);
+          }
+          to {
+            transform: translate3d(var(--x1), var(--y1), 0);
+          }
+        }
+
+        @keyframes particleGlow {
+          0%,
+          100% {
+            opacity: 0.18;
+            scale: 0.82;
+          }
+          50% {
+            opacity: 0.62;
+            scale: 1.25;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .particle-dot {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
-
-function Fairy({ config }: { config: FairyConfig }) {
-  const [target, setTarget] = React.useState(config.target);
-
-  React.useEffect(() => {
-    const wander = () => {
-      setTarget({
-        x: `${Math.random() * 120 - 10}%`,
-        y: `${Math.random() * 120 - 10}%`,
-      });
-    };
-
-    wander();
-    const interval = setInterval(wander, 10000 + Math.random() * 10000); 
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ left: config.initial.x, top: config.initial.y }}
-      animate={{ 
-        left: target.x, 
-        top: target.y,
-      }}
-      transition={{ 
-        left: { duration: config.duration.left, ease: "linear" },
-        top: { duration: config.duration.top, ease: "linear" },
-      }}
-      className="absolute h-[3px] w-[3px]"
-    >
-      <motion.div
-        animate={{ 
-          opacity: [0.2, 0.7, 0.2],
-          scale: [0.8, 1.3, 0.8]
-        }}
-        transition={{ 
-          duration: config.duration.glow,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="h-full w-full rounded-full bg-white blur-[0.5px]"
-        style={{
-          boxShadow: "0 0 12px 3px rgba(255, 255, 255, 0.3)",
-        }}
-      />
-    </motion.div>
-  );
-}
-

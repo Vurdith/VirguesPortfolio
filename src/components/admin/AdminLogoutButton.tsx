@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
@@ -20,23 +19,22 @@ export function AdminLogoutButton({ className }: { className?: string }) {
   };
 
   return (
-    <motion.button
+    <button
       type="button"
       onMouseEnter={playHover}
       onClick={() => {
         playClick();
         void logout();
       }}
-      whileTap={{ scale: 0.985 }}
       className={cn(
-        "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-fog/80",
-        "hover:border-line/35 hover:text-ink",
+        "inline-flex h-9 items-center gap-3 border border-line/18 bg-void/40 px-4 text-xs tracking-[0.22em] text-fog/80 transition-[border-color,color,transform] duration-300",
+        "hover:-translate-y-px hover:border-line/35 hover:text-ink active:translate-y-0 active:scale-[0.985]",
         className,
       )}
     >
       <span>LOGOUT</span>
       <span className="h-px w-8 bg-line/15" />
-    </motion.button>
+    </button>
   );
 }
 

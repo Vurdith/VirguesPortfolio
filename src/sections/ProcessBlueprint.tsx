@@ -1,55 +1,44 @@
 "use client";
 
 import * as React from "react";
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+
+import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 const STEPS = [
   {
     n: "01",
-    title: "Discovery → constraints → target feeling",
-    body: [
-      "We define what the interface should do to someone, not just what it should do.",
-      "Palette + type + motion rules become a contract before components exist.",
-    ],
-    tags: ["Identity", "Content", "Interaction"],
+    title: "Reach Out",
+    summary:
+      "Send the project idea, references, required screens, deadline, and the feeling the UI should carry.",
+    detail:
+      "We lock scope early: what needs designing, what needs importing, what style direction is right, and what counts as finished.",
   },
   {
     n: "02",
-    title: "System design (tokens, rhythm, surfaces)",
-    body: [
-      "CSS variables drive palette/surfaces; Tailwind only composes — it doesn’t own the design.",
-      "Typography scale is deliberate; spacing is architectural (not ‘padding-8 everywhere’).",
-    ],
-    tags: ["Tailwind", "CSS Vars", "Type Scale"],
+    title: "Design",
+    summary:
+      "The interface moves from rough structure into polished visuals, with decisions made around readability and game feel.",
+    detail:
+      "You get clear checkpoints instead of mystery progress: layout direction, visual pass, then final polish before delivery.",
   },
   {
     n: "03",
-    title: "Build the experience, not the pages",
-    body: [
-      "App Router layout is the shell; sections are modules; data flows are typed and boring (on purpose).",
-      "UI is performance-first: transform-gpu, will-change, minimal paint-heavy filters.",
-    ],
-    tags: ["Next.js", "TypeScript", "Perf"],
+    title: "Receive",
+    summary:
+      "Final files are prepared for handoff: clean exports, source where needed, and imports ready for the build pipeline.",
+    detail:
+      "The goal is a handoff that does not create extra work. Assets are named, grouped, and checked against the agreed scope.",
   },
   {
     n: "04",
-    title: "Motion pass (cinema rules)",
-    body: [
-      "Scroll transforms use springs to avoid jitter. Repetition is avoided; motion stays purposeful.",
-      "Keyframes (scanlines/marquee) are custom; micro-interactions are tactile + quiet.",
-    ],
-    tags: ["Framer Motion", "Keyframes", "Micro UX"],
-  },
-  {
-    n: "05",
-    title: "Ship + iterate like an engineer",
-    body: [
-      "Admin tooling is part of the product (CRUD + moderation), not an afterthought.",
-      "Dead code gets deleted; every component stays modular and readable.",
-    ],
-    tags: ["Admin", "DX", "Maintainability"],
+    title: "Rating",
+    summary:
+      "After delivery, a quick review or recommendation helps future clients judge the work from real project experience.",
+    detail:
+      "Optional, but useful. If something needs a small correction inside the agreed scope, it gets handled before the work is called done.",
   },
 ] as const;
 
@@ -60,38 +49,53 @@ export function ProcessBlueprint({ className }: { className?: string }) {
     offset: ["start end", "end start"],
   });
 
-  const skewX = useTransform(scrollYProgress, [0, 1], [5, -5]);
+  const skewX = useTransform(scrollYProgress, [0, 1], [4, -4]);
   const skewY = useTransform(scrollYProgress, [0, 1], [1, -1]);
+  const progress = useSpring(useTransform(scrollYProgress, [0.12, 0.82], [0, 1]), {
+    stiffness: 120,
+    damping: 30,
+  });
 
   return (
     <section
       id="process"
       ref={ref}
-      className={cn("relative border-y border-line/10 py-20 md:py-28", className)}
+      className={cn("relative overflow-hidden border-y border-line/10 py-20 md:py-28", className)}
       aria-label="Process"
     >
-      <div className="mx-auto max-w-6xl px-6 md:px-10">
-        <div className="grid gap-10 md:grid-cols-12 md:gap-12">
+      <div aria-hidden="true" className="section-grid-bg" />
+      <div className="relative mx-auto max-w-6xl px-6 md:px-10">
+        <header className="grid gap-6 md:grid-cols-12 md:items-end">
           <div className="md:col-span-5">
-            <p className="text-xs tracking-[0.22em] text-fog/70">PROCESS</p>
+            <div className="flex items-center gap-3 text-xs tracking-[0.22em] text-fog/70">
+              <MonoIcon name="process" className="size-4" />
+              <span>PROCESS</span>
+            </div>
             <motion.h2
               style={{ skewX, skewY }}
-              className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl origin-left"
+              className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl"
             >
-              Blueprint.
+              From brief to handoff.
             </motion.h2>
-            <p className="mt-6 max-w-prose text-pretty text-sm leading-relaxed text-fog/80">
-              Not a checklist — a repeatable method for building interfaces that feel like objects:
-              weighty, intentional, fast.
-            </p>
           </div>
+          <p className="max-w-xl text-pretty text-sm leading-relaxed text-fog/80 md:col-span-7 md:justify-self-end">
+            A cleaner version of the original flow: reach out, design, receive, then close the loop.
+            Each stage has a visible checkpoint so the project does not drift.
+          </p>
+        </header>
 
-          <div className="md:col-span-7">
-            <div className="grid gap-4">
-              {STEPS.map((s) => (
-                <BlueprintCard key={s.n} step={s} />
-              ))}
-            </div>
+        <div className="relative mt-12">
+          <div aria-hidden="true" className="absolute left-4 top-0 hidden h-full w-px bg-line/10 md:block" />
+          <motion.div
+            aria-hidden="true"
+            className="absolute left-4 top-0 hidden h-full w-px origin-top bg-line/40 md:block"
+            style={{ scaleY: progress }}
+          />
+
+          <div className="grid gap-4">
+            {STEPS.map((step, index) => (
+              <ProcessCard key={step.n} step={step} index={index} />
+            ))}
           </div>
         </div>
       </div>
@@ -99,19 +103,21 @@ export function ProcessBlueprint({ className }: { className?: string }) {
   );
 }
 
-function BlueprintCard({ step }: { step: (typeof STEPS)[number] }) {
+function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: number }) {
   const { playHover, playClick } = useUiSounds();
-  const cardRef = React.useRef<HTMLDivElement>(null);
-
-  // Motion values for the "exploded" effect
+  const cardRef = React.useRef<HTMLElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const dx = useSpring(useTransform(mouseX, [-260, 260], [-14, 14]), {
+    stiffness: 150,
+    damping: 22,
+  });
+  const dy = useSpring(useTransform(mouseY, [-180, 180], [-9, 9]), {
+    stiffness: 150,
+    damping: 22,
+  });
 
-  const springConfig = { stiffness: 150, damping: 20 };
-  const dx = useSpring(useTransform(mouseX, [-200, 200], [-15, 15]), springConfig);
-  const dy = useSpring(useTransform(mouseY, [-200, 200], [-10, 10]), springConfig);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     mouseX.set(e.clientX - (rect.left + rect.width / 2));
@@ -124,93 +130,61 @@ function BlueprintCard({ step }: { step: (typeof STEPS)[number] }) {
   };
 
   return (
-    <motion.div
+    <motion.article
       ref={cardRef}
+      onMouseEnter={playHover}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onDragStart={playClick}
       drag
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       dragElastic={0.1}
-      whileTap={{ scale: 0.98 }}
-      onDragStart={playClick}
-      onMouseEnter={playHover}
-      className={cn(
-        "group relative overflow-hidden border border-line/12 bg-void/25 p-5 backdrop-blur-sm transition-colors duration-300 hover:border-line/25 hover:bg-void/40 cursor-grab active:cursor-grabbing",
-      )}
+      whileTap={{ scale: 0.985 }}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.5, delay: index * 0.06, ease: [0.2, 0.85, 0.2, 1] }}
+      className="group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
     >
-      {/* Corner accents */}
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute left-0 top-0 h-3 w-3 border-l border-t border-line/25" />
-        <div className="absolute right-0 top-0 h-3 w-3 border-r border-t border-line/25" />
-        <div className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-line/25" />
-        <div className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-line/25" />
+      <div className="pointer-events-none absolute inset-0 opacity-70">
+        <div className="absolute left-0 top-0 h-4 w-4 border-l border-t border-line/30" />
+        <div className="absolute right-0 top-0 h-4 w-4 border-r border-t border-line/30" />
+        <div className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-line/30" />
+        <div className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-line/30" />
       </div>
 
-      {/* Leader lines (Blueprint style) */}
-      <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-        <motion.line
-          x1="0"
-          y1="0"
-          x2={dx}
-          y2={dy}
-          stroke="currentColor"
-          className="text-line/20"
-          strokeWidth="0.5"
-        />
-        <motion.line
-          x1="100%"
-          y1="100%"
-          x2={useTransform(dx, v => -v)}
-          y2={useTransform(dy, v => -v)}
-          stroke="currentColor"
-          className="text-line/20"
-          strokeWidth="0.5"
-          style={{ x: "100%", y: "100%" }}
-        />
-      </svg>
-
-      <div className="flex items-baseline justify-between gap-6">
-        <motion.div 
-          style={{ x: dx, y: dy }}
-          className="text-[10px] tracking-[0.28em] text-fog/65"
-        >
+      <div className="relative flex items-start justify-between gap-4 md:block">
+        <motion.div style={{ x: dx, y: dy }} className="text-[10px] tracking-[0.3em] text-fog/60">
           {step.n}
+        </motion.div>
+        <motion.div
+          style={{ x: useTransform(dx, (v) => v * -0.35), y: useTransform(dy, (v) => v * -0.35) }}
+          className="mt-0 grid size-12 place-items-center border border-line/15 bg-black/35 text-ink/85 md:mt-8"
+        >
+          <MonoIcon name="process" className="size-5" />
         </motion.div>
       </div>
 
-      <motion.h3 
-        style={{ x: useTransform(dx, v => v * 0.5), y: useTransform(dy, v => v * 0.5) }}
-        className="mt-4 font-serif text-2xl leading-[1.02] tracking-[-0.04em]"
-      >
-        {step.title}
-      </motion.h3>
-
-      <motion.div 
-        style={{ x: useTransform(dx, v => v * 0.2), y: useTransform(dy, v => v * 0.2) }}
-        className="mt-4 space-y-2 text-sm leading-relaxed text-fog/80"
-      >
-        {step.body.map((line) => (
-          <p key={line} className="text-pretty">
-            {line}
-          </p>
-        ))}
-      </motion.div>
-
-      <motion.div 
-        style={{ x: useTransform(dx, v => -v * 0.3), y: useTransform(dy, v => -v * 0.3) }}
-        className="mt-4 flex flex-wrap gap-2"
-      >
-        {step.tags.map((t) => (
-          <span
-            key={t}
-            className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70"
-          >
-            {t.toUpperCase()}
-          </span>
-        ))}
-      </motion.div>
-    </motion.div>
+      <div className="relative">
+        <motion.h3
+          style={{ x: useTransform(dx, (v) => v * 0.5), y: useTransform(dy, (v) => v * 0.5) }}
+          className="font-serif text-3xl leading-none tracking-[-0.05em]"
+        >
+          {step.title}
+        </motion.h3>
+        <motion.p
+          style={{ x: useTransform(dx, (v) => v * 0.22), y: useTransform(dy, (v) => v * 0.22) }}
+          className="mt-5 max-w-3xl text-pretty text-sm leading-relaxed text-fog/86"
+        >
+          {step.summary}
+        </motion.p>
+        <motion.p
+          style={{ x: useTransform(dx, (v) => v * -0.18), y: useTransform(dy, (v) => v * -0.18) }}
+          className="mt-4 max-w-3xl border-l border-line/18 pl-4 text-xs leading-relaxed text-fog/65"
+        >
+          {step.detail}
+        </motion.p>
+      </div>
+    </motion.article>
   );
 }
-
-

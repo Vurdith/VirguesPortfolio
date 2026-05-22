@@ -12,7 +12,7 @@ export default async function AdminReviewsPage() {
   const rejected = reviews.filter((r) => r.status === "rejected").length;
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 md:px-10 md:py-12">
+    <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
         <div>
           <p className="text-xs tracking-[0.22em] text-fog/70">REVIEWS</p>
@@ -37,7 +37,7 @@ export default async function AdminReviewsPage() {
 
 function Badge({ label, value }: { label: string; value: number }) {
   return (
-    <div className="inline-flex items-center gap-3 border border-line/12 bg-void/25 px-3 py-2 text-[10px] tracking-[0.22em] text-fog/70">
+    <div className="inline-flex items-center gap-3 border border-line/12 bg-void/35 px-3 py-2 text-[10px] tracking-[0.22em] text-fog/70 backdrop-blur-sm">
       <span>{label}</span>
       <span className="h-px w-6 bg-line/10" />
       <span className="text-ink/85">{value}</span>

@@ -7,6 +7,7 @@ import { useUiSounds } from "@/hooks/useUiSounds";
 
 const INTRO_VIDEO = "/intro-loader-v2.mp4";
 const EASE = [0.22, 1, 0.36, 1] as const;
+const VIDEO_VOLUME = 0.8;
 
 export function LoadingScene() {
   const [visible, setVisible] = React.useState(true);
@@ -18,14 +19,6 @@ export function LoadingScene() {
   const canEnter = percent >= 100;
   const { playHover, playClick, toggleMuted, muted } = useUiSounds();
 
-  React.useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.muted = false;
-    video.volume = 0.8;
-  }, []);
-
   const finishVideo = React.useCallback(() => {
     setVideoDone(true);
     if (!musicStartedRef.current && muted) {
@@ -33,6 +26,44 @@ export function LoadingScene() {
       toggleMuted();
     }
   }, [muted, toggleMuted]);
+
+  const playIntroVideo = React.useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = false;
+    video.volume = VIDEO_VOLUME;
+
+    try {
+      await video.play();
+    } catch {
+      video.muted = true;
+      await video.play().catch(finishVideo);
+    }
+  }, [finishVideo]);
+
+  React.useEffect(() => {
+    playIntroVideo();
+  }, [playIntroVideo]);
+
+  React.useEffect(() => {
+    const unmuteAfterGesture = () => {
+      const video = videoRef.current;
+      if (!video || videoDone) return;
+
+      video.muted = false;
+      video.volume = VIDEO_VOLUME;
+      video.play().catch(() => {});
+    };
+
+    window.addEventListener("pointerdown", unmuteAfterGesture, { once: true });
+    window.addEventListener("keydown", unmuteAfterGesture, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unmuteAfterGesture);
+      window.removeEventListener("keydown", unmuteAfterGesture);
+    };
+  }, [videoDone]);
 
   const enterSite = React.useCallback(() => {
     if (!canEnter) return;
@@ -94,11 +125,7 @@ export function LoadingScene() {
                 onEnded={finishVideo}
                 onError={finishVideo}
                 onCanPlay={() => {
-                  const video = videoRef.current;
-                  if (!video) return;
-                  video.muted = false;
-                  video.volume = 0.8;
-                  video.play().catch(() => {});
+                  playIntroVideo();
                 }}
                 exit={{
                   opacity: 0,

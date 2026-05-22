@@ -12,17 +12,17 @@ const OFFERINGS = [
     code: "01",
     title: "UI/UX Design",
     description:
-      "Clean, modern UI tailored to your game's style. Wireframes into polished visuals, with the style direction chosen around the project.",
-    why: "Useful when you need consistent interfaces that guide players quickly and make the game feel more complete.",
-    badge: "£10-£150 per task",
+      "Custom interface screens shaped around your game's style, from rough layout to polished visual design.",
+    why: "Best for menus, shops, HUDs, dashboards, and systems that need to feel finished instead of patched together.",
+    badge: "From £50 / task",
   },
   {
     code: "02",
     title: "Roblox Importing",
     description:
-      "High-quality imports with greyscaling, sizing checks, and 1:1 design translation from source files into Roblox.",
-    why: "Good for getting art in-game cleanly the first time, with fewer alignment and fidelity issues.",
-    badge: "£6-£50 per task",
+      "Clean Roblox imports with sizing checks, greyscale support, and careful translation from source files into Studio.",
+    why: "Good for getting assets in-game cleanly the first time, with fewer alignment and fidelity issues.",
+    badge: "From £30 / task",
   },
   {
     code: "03",
@@ -30,23 +30,23 @@ const OFFERINGS = [
     description:
       "Expedited delivery for launch windows, reveal dates, or projects that need to move without waiting behind the normal queue.",
     why: "Best when timing matters and the work needs front-of-line attention without dropping quality.",
-    badge: "Add-on · £100",
+    badge: "Rush slot · £150",
   },
   {
     code: "04",
     title: "Yearly Subscription",
     description:
-      "A long-term partnership for ongoing projects, with free imports, yearly frames, and queue priority built into the relationship.",
-    why: "Strong value for studios that need regular updates, predictable cost, and consistent visual quality.",
-    badge: "From £950/yr",
+      "Ongoing support for active projects, with priority queue access, recurring imports, seasonal UI updates, and cleaner long-term direction.",
+    why: "Strong value for studios that need regular updates, predictable cost, and one visual standard across the year.",
+    badge: "From £1650 / yr",
   },
   {
     code: "05",
     title: "Branding & Art Direction",
     description:
-      "Color systems, typography, component direction, and visual rules that keep the product consistent across UI and promo assets.",
+      "Typography, spacing rules, component direction, and visual standards that keep UI and promo assets consistent.",
     why: "Keeps the project recognisable everywhere instead of looking like separate assets stitched together.",
-    badge: "Add-on · £50",
+    badge: "From £50",
   },
   {
     code: "06",
@@ -54,16 +54,16 @@ const OFFERINGS = [
     description:
       "A final pass for spacing, alignment, hierarchy, and screenshot-readiness before the work goes public.",
     why: "Great for trailers, launches, or reveals where small visual mistakes become very visible.",
-    badge: "Add-on · £75",
+    badge: "From £75",
   },
 ] as const;
 
 const PERKS = [
   "Free discovery chat",
-  "Transparent quotes and scope",
+  "Quote before work starts",
   "Any style direction",
   "Consistent design tokens",
-  "Exported assets plus source on request",
+  "Exports plus source on request",
   "Performance-minded animations",
   "Minor tweaks after delivery",
 ] as const;
@@ -71,8 +71,8 @@ const PERKS = [
 const DISCOUNTS = [
   { label: "5 assets", off: "5% off" },
   { label: "10 assets", off: "10% off" },
-  { label: "25 assets", off: "20% off" },
-  { label: "50 assets", off: "40% off" },
+  { label: "20 assets", off: "15% off" },
+  { label: "40 assets", off: "25% off" },
 ] as const;
 
 export function OfferingsSection({ className }: { className?: string }) {
@@ -118,8 +118,8 @@ export function OfferingsSection({ className }: { className?: string }) {
             </motion.h2>
           </div>
           <p className="max-w-xl text-pretty text-sm leading-relaxed text-fog/80 md:col-span-7 md:justify-self-end">
-            Practical services for Roblox projects and interface-heavy launches. Each offer is scoped
-            around speed, accuracy, and a finished visual system that holds together in-game.
+            Practical services for Roblox projects and interface-heavy launches. Prices start simple,
+            then scale with screen count, asset count, deadline, and how much polish the project needs.
           </p>
         </header>
 
@@ -134,7 +134,7 @@ export function OfferingsSection({ className }: { className?: string }) {
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_360px]">
-          <SupportPanel title="Included Perks" eyebrow="Every Quote">
+          <SupportPanel title="Included" eyebrow="Every Quote">
             <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
               {PERKS.map((perk) => (
                 <div key={perk} className="flex items-center gap-3 text-xs leading-relaxed text-fog/72">

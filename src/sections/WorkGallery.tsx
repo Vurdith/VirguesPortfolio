@@ -81,7 +81,6 @@ export function WorkGallery({
 
       <div className="absolute inset-0 z-[1] pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-void via-transparent to-void" />
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay [background:repeating-linear-gradient(to_bottom,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_1px,transparent_2px,transparent_10px)] animate-scanlines" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-10">

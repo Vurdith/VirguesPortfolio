@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { FloatingHeader } from "@/components/FloatingHeader";
 import { LoadingScene } from "@/components/LoadingScene";
 import { ParticleField } from "@/components/ParticleField";
+import { SignalCathedral } from "@/components/SignalCathedral";
 import { SoundToggle } from "@/components/SoundToggle";
 
 export function ClientChrome() {
@@ -16,6 +17,7 @@ export function ClientChrome() {
   return (
     <>
       {pathname === "/" ? <LoadingScene /> : null}
+      <SignalCathedral />
       <ParticleField />
       <FloatingHeader />
       <div className="fixed bottom-5 right-5 z-50">

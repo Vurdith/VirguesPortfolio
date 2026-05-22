@@ -9,17 +9,24 @@ const INTRO_VIDEO = "/intro-loader-v2.mp4";
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
 
+let introSeenInRuntime = false;
+
 export function LoadingScene() {
-  const [visible, setVisible] = React.useState(true);
+  const [visible, setVisible] = React.useState(!introSeenInRuntime);
   const [videoDone, setVideoDone] = React.useState(false);
   const [showLoader, setShowLoader] = React.useState(false);
   const [percent, setPercent] = React.useState(0);
   const musicStartedRef = React.useRef(false);
+  const videoFinishedRef = React.useRef(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const canEnter = percent >= 100;
   const { playHover, playClick, toggleMuted, muted } = useUiSounds();
 
   const finishVideo = React.useCallback(() => {
+    if (videoFinishedRef.current) return;
+
+    videoFinishedRef.current = true;
+    videoRef.current?.pause();
     setVideoDone(true);
     if (!musicStartedRef.current && muted) {
       musicStartedRef.current = true;
@@ -29,7 +36,7 @@ export function LoadingScene() {
 
   const playIntroVideo = React.useCallback(async () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || videoFinishedRef.current || videoDone) return;
 
     video.muted = false;
     video.volume = VIDEO_VOLUME;
@@ -40,7 +47,7 @@ export function LoadingScene() {
       video.muted = true;
       await video.play().catch(finishVideo);
     }
-  }, [finishVideo]);
+  }, [finishVideo, videoDone]);
 
   React.useEffect(() => {
     playIntroVideo();
@@ -68,6 +75,7 @@ export function LoadingScene() {
   const enterSite = React.useCallback(() => {
     if (!canEnter) return;
     playClick();
+    introSeenInRuntime = true;
     setVisible(false);
   }, [canEnter, playClick]);
 
@@ -126,6 +134,10 @@ export function LoadingScene() {
                 onError={finishVideo}
                 onCanPlay={() => {
                   playIntroVideo();
+                }}
+                onPlay={(event) => {
+                  if (!videoFinishedRef.current) return;
+                  event.currentTarget.pause();
                 }}
                 exit={{
                   opacity: 0,

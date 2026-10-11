@@ -9,10 +9,15 @@ import { cn } from "@/lib/cn";
 import {
   QUOTE_BUDGET_STEPS,
   QUOTE_BUDGET_UNSURE,
+  QUOTE_CONTACTS,
+  QUOTE_CONTACT_INFO,
   QUOTE_DEADLINES,
   QUOTE_LIMITS,
   QUOTE_SERVICES,
   QUOTE_SERVICE_HINTS,
+  cleanHandle,
+  isValidContact,
+  type QuoteContact,
 } from "@/lib/quoteLimits";
 import { SITE } from "@/lib/site";
 
@@ -23,29 +28,35 @@ type Fields = {
   budget: string;
   deadline: string;
   name: string;
+  /** Which ways to reach the visitor are switched on. Any combination is allowed. */
+  methods: QuoteContact[];
   email: string;
+  discord: string;
+  x: string;
   company: string; // honeypot
 };
-type FieldKey = "service" | "details" | "name" | "email";
+type FieldKey = "service" | "details" | "name" | "contact" | QuoteContact;
 type Errors = Partial<Record<FieldKey, string>>;
 
 const STEPS = [
   { title: "What do you need?", label: "NEED", fields: ["service"] },
   { title: "Tell me about it.", label: "DETAILS", fields: ["details"] },
   { title: "Budget and timing.", label: "SCOPE", fields: [] },
-  { title: "Where do I reply?", label: "CONTACT", fields: ["name", "email"] },
+  { title: "Where do I reply?", label: "CONTACT", fields: ["name", "contact", "email", "discord", "x"] },
 ] as const satisfies readonly { title: string; label: string; fields: readonly FieldKey[] }[];
 
 const DRAFT_KEY = "ui:quoteDraft";
 const EASE = [0.22, 1, 0.36, 1] as const;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPTY: Fields = {
   service: "",
   details: "",
   budget: QUOTE_BUDGET_UNSURE,
   deadline: "Flexible",
   name: "",
+  methods: ["email"],
   email: "",
+  discord: "",
+  x: "",
   company: "",
 };
 
@@ -62,7 +73,10 @@ function validate(fields: Fields): Errors {
     errors.details = `A little more detail helps: ${QUOTE_LIMITS.details.min - detailsLength} more characters.`;
   }
   if (fields.name.trim().length < QUOTE_LIMITS.name.min) errors.name = "Add your name.";
-  if (!EMAIL_PATTERN.test(fields.email.trim())) errors.email = "Add an email I can reply to.";
+  if (!fields.methods.length) errors.contact = "Pick at least one way for me to reach you.";
+  for (const method of fields.methods) {
+    if (!isValidContact(method, fields[method])) errors[method] = QUOTE_CONTACT_INFO[method].invalid;
+  }
   return errors;
 }
 
@@ -93,7 +107,11 @@ export function QuoteForm({ className }: { className?: string }) {
     try {
       const saved = window.localStorage.getItem(DRAFT_KEY);
       if (!saved) return;
-      const restored = { ...EMPTY, ...(JSON.parse(saved) as Partial<Fields>), company: "" };
+      const parsed = JSON.parse(saved) as Partial<Fields>;
+      const methods = Array.isArray(parsed.methods)
+        ? parsed.methods.filter((m): m is QuoteContact => QUOTE_CONTACTS.includes(m))
+        : EMPTY.methods;
+      const restored = { ...EMPTY, ...parsed, methods, company: "" };
       setFields(restored);
       const resume = firstStepWithError(validate(restored));
       if (resume > 0) setStep(resume);
@@ -107,7 +125,7 @@ export function QuoteForm({ className }: { className?: string }) {
     try {
       const { company, ...draft } = fields;
       void company;
-      if (draft.details || draft.name || draft.email || draft.service) {
+      if (draft.details || draft.name || draft.email || draft.discord || draft.x || draft.service) {
         window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       }
     } catch {
@@ -152,7 +170,18 @@ export function QuoteForm({ className }: { className?: string }) {
       const res = await fetch("/api/quotes", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(fields),
+        body: JSON.stringify({
+          service: fields.service,
+          details: fields.details,
+          budget: fields.budget,
+          deadline: fields.deadline,
+          name: fields.name,
+          company: fields.company,
+          // Only the ways of replying that are switched on are sent.
+          ...(fields.methods.includes("email") ? { email: fields.email.trim() } : {}),
+          ...(fields.methods.includes("discord") ? { discord: cleanHandle(fields.discord) } : {}),
+          ...(fields.methods.includes("x") ? { x: cleanHandle(fields.x) } : {}),
+        }),
       });
       const data = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) throw new Error(data?.error || "Could not send. Try the email instead.");
@@ -259,7 +288,7 @@ export function QuoteForm({ className }: { className?: string }) {
               Got it, {fields.name.trim().split(" ")[0]}.
             </h3>
             <p className="mt-5 max-w-prose text-sm leading-relaxed text-fog/80">
-              I’ll reply to {fields.email.trim()} within a day or two with questions or a price. If it’s
+              I’ll reply {replyChannels(fields)} within a day or two with questions or a price. If it’s
               urgent, email{" "}
               <a className="text-ink underline underline-offset-4" href={`mailto:${SITE.email}`}>
                 {SITE.email}
@@ -401,26 +430,20 @@ export function QuoteForm({ className }: { className?: string }) {
                         autoFocus
                         onChange={(value) => update("name", value)}
                       />
-                      <TextField
-                        id="quote-email"
-                        field="email"
-                        label="EMAIL"
-                        type="email"
-                        value={fields.email}
-                        error={shown("email")}
+                      <ContactPicker
+                        fields={fields}
+                        shown={shown}
                         shake={shake}
-                        autoComplete="email"
-                        placeholder="you@studio.com"
-                        maxLength={160}
-                        onChange={(value) => update("email", value)}
+                        onToggle={(method) =>
+                          setFields((previous) => ({
+                            ...previous,
+                            methods: previous.methods.includes(method)
+                              ? previous.methods.filter((m) => m !== method)
+                              : [...previous.methods, method],
+                          }))
+                        }
+                        onChange={(method, value) => update(method, value)}
                       />
-                      <div className="text-xs leading-relaxed text-fog/72">
-                        <span className="text-ink/90">{fields.service || "Project"}</span>
-                        {" · "}
-                        {fields.budget}
-                        {" · "}
-                        {fields.deadline}
-                      </div>
                     </div>
                   ) : null}
                 </motion.div>
@@ -805,5 +828,142 @@ function TextField({
         </motion.p>
       ) : null}
     </div>
+  );
+}
+
+/** "by email (a@b.com), on Discord (name) and on X (@handle)" for the confirmation message. */
+function replyChannels(fields: Fields) {
+  const parts = fields.methods.map((method) => {
+    if (method === "email") return `by email (${fields.email.trim()})`;
+    if (method === "discord") return `on Discord (${cleanHandle(fields.discord)})`;
+    return `on X (@${cleanHandle(fields.x)})`;
+  });
+  if (parts.length < 2) return parts[0] ?? "";
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+/** Pick any mix of email, Discord and X. Each one you switch on opens its own input. */
+function ContactPicker({
+  fields,
+  shown,
+  shake,
+  onToggle,
+  onChange,
+}: {
+  fields: Fields;
+  shown: (key: FieldKey) => string | undefined;
+  shake: number;
+  onToggle: (method: QuoteContact) => void;
+  onChange: (method: QuoteContact, value: string) => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const groupError = shown("contact");
+
+  const toggle = (method: QuoteContact) => {
+    const turningOn = !fields.methods.includes(method);
+    onToggle(method);
+    if (turningOn) {
+      window.setTimeout(() => document.getElementById(`quote-${method}`)?.focus({ preventScroll: true }), 80);
+    }
+  };
+
+  return (
+    <fieldset>
+      <legend className={LABEL}>HOW SHOULD I REPLY? (PICK ANY)</legend>
+      <div className="mt-3 border-t border-line/12">
+        {QUOTE_CONTACTS.map((method, index) => {
+          const selected = fields.methods.includes(method);
+          const info = QUOTE_CONTACT_INFO[method];
+          const error = shown(method);
+          return (
+            <div key={method} className="border-b border-line/12">
+              <label className="group relative flex cursor-pointer items-center gap-4 overflow-hidden px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => toggle(method)}
+                  data-field={index === 0 ? "contact" : undefined}
+                  className="peer sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 origin-left scale-x-0 bg-white/[0.04] transition-transform duration-500 ease-out group-hover:scale-x-100"
+                />
+                <span className="pointer-events-none absolute inset-0 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:-outline-offset-2 peer-focus-visible:outline-ink/85" />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "relative grid size-5 shrink-0 place-items-center border transition-colors duration-300",
+                    selected ? "border-ink bg-ink" : "border-line/40",
+                  )}
+                >
+                  <svg viewBox="0 0 16 16" className="size-3 text-void" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <motion.path
+                      d="M3 8.5l3.2 3.2L13 4.8"
+                      strokeLinecap="square"
+                      initial={false}
+                      animate={{ pathLength: selected ? 1 : 0, opacity: selected ? 1 : 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.3, ease: EASE }}
+                    />
+                  </svg>
+                </span>
+                <span className="relative flex-1 font-serif text-xl leading-tight tracking-[-0.03em] md:text-2xl">
+                  {info.label}
+                </span>
+                <span className="relative hidden text-xs text-fog/72 sm:block">{info.hint}</span>
+              </label>
+
+              <AnimatePresence initial={false}>
+                {selected ? (
+                  <motion.div
+                    key="input"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.35, ease: EASE }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 pl-[3.25rem]">
+                      <input
+                        id={`quote-${method}`}
+                        data-field={method}
+                        type={method === "email" ? "email" : "text"}
+                        value={fields[method]}
+                        maxLength={method === "email" ? 160 : 64}
+                        autoComplete={method === "email" ? "email" : "off"}
+                        placeholder={info.placeholder}
+                        aria-label={`${info.label} to reply to`}
+                        aria-invalid={Boolean(error)}
+                        aria-describedby={error ? `quote-${method}-error` : undefined}
+                        onChange={(event) => onChange(method, event.target.value)}
+                        className={cn(FIELD, "mt-0", error ? "border-red-300/60" : "border-line/14")}
+                      />
+                      {error ? (
+                        <motion.p
+                          key={shake}
+                          id={`quote-${method}-error`}
+                          role="alert"
+                          initial={{ x: -6 }}
+                          animate={{ x: [-6, 6, -4, 4, 0] }}
+                          transition={{ duration: 0.4 }}
+                          className="mt-1.5 text-xs text-red-200"
+                        >
+                          {error}
+                        </motion.p>
+                      ) : null}
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+      <HintRow
+        error={groupError}
+        shake={shake}
+        hint="Pick one or more. Turn on as many as you like."
+      />
+    </fieldset>
   );
 }

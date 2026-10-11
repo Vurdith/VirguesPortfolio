@@ -5,13 +5,16 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 
 import { useFinePointer } from "@/hooks/useFinePointer";
 
-type CursorMode = "default" | "link" | "view" | "hidden";
+type CursorMode = "default" | "link" | "view" | "drag" | "hidden";
 
 const INTERACTIVE = 'a, button, [role="button"], label, summary';
-const TEXT_FIELDS = 'input, textarea, select, [contenteditable="true"]';
+// Only real text entry hides the cursor; sliders, checkboxes and radios keep it.
+const TEXT_FIELDS =
+  'textarea, select, [contenteditable="true"], input:not([type="range"]):not([type="checkbox"]):not([type="radio"])';
 
 function modeFor(target: EventTarget | null): CursorMode {
   if (!(target instanceof Element)) return "default";
+  if (target.closest('input[type="range"]')) return "drag";
   if (target.closest(TEXT_FIELDS)) return "hidden";
   if (target.closest('[data-cursor="view"]')) return "view";
   if (target.closest(INTERACTIVE)) return "link";
@@ -67,14 +70,15 @@ export function CustomCursor() {
   if (!enabled) return null;
 
   const visible = inside && mode !== "hidden";
-  const ringSize = mode === "view" ? 92 : mode === "link" ? 52 : 30;
+  const filled = mode === "view" || mode === "drag";
+  const ringSize = mode === "view" ? 92 : mode === "drag" ? 64 : mode === "link" ? 52 : 30;
 
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[200] mix-blend-difference">
       <motion.div className="absolute left-0 top-0" style={{ x, y }}>
         <motion.div
           className="-ml-[3px] -mt-[3px] size-[6px] rounded-full bg-white"
-          animate={{ opacity: visible && mode !== "view" ? 1 : 0, scale: pressed ? 0.6 : 1 }}
+          animate={{ opacity: visible && !filled ? 1 : 0, scale: pressed ? 0.6 : 1 }}
           transition={{ duration: 0.18 }}
         />
       </motion.div>
@@ -89,16 +93,16 @@ export function CustomCursor() {
             height: ringSize,
             opacity: visible ? 1 : 0,
             scale: pressed ? 0.88 : 1,
-            backgroundColor: mode === "view" ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)",
+            backgroundColor: filled ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)",
           }}
           transition={{ type: "spring", stiffness: 360, damping: 30, mass: 0.7 }}
         >
           <motion.span
             className="text-[10px] font-semibold tracking-[0.22em] text-black"
-            animate={{ opacity: mode === "view" ? 1 : 0, scale: mode === "view" ? 1 : 0.6 }}
+            animate={{ opacity: filled ? 1 : 0, scale: filled ? 1 : 0.6 }}
             transition={{ duration: 0.2 }}
           >
-            VIEW
+            {mode === "drag" ? "◂ ▸" : "VIEW"}
           </motion.span>
         </motion.div>
       </motion.div>

@@ -81,12 +81,32 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
                     {new Date(quote.createdAt).toLocaleDateString()}
                   </time>
                 </div>
-                <a
-                  href={`mailto:${quote.email}?subject=${encodeURIComponent("Your quote request")}`}
-                  className="mt-2 block text-sm text-fog/80 underline-offset-4 hover:text-ink hover:underline"
-                >
-                  {quote.email}
-                </a>
+                <div className="mt-2 space-y-1 text-sm text-fog/80">
+                  {quote.email ? (
+                    <a
+                      href={`mailto:${quote.email}?subject=${encodeURIComponent("Your quote request")}`}
+                      className="block underline-offset-4 hover:text-ink hover:underline"
+                    >
+                      {quote.email}
+                    </a>
+                  ) : null}
+                  {quote.discord ? (
+                    <p>
+                      <span className="text-[10px] tracking-[0.22em] text-fog/60">DISCORD </span>
+                      {quote.discord}
+                    </p>
+                  ) : null}
+                  {quote.x ? (
+                    <a
+                      href={`https://x.com/${encodeURIComponent(quote.x)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block underline-offset-4 hover:text-ink hover:underline"
+                    >
+                      <span className="text-[10px] tracking-[0.22em] text-fog/60">X </span>@{quote.x}
+                    </a>
+                  ) : null}
+                </div>
                 <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[10px] tracking-[0.18em] text-fog/60">
                   <dt>SERVICE</dt>
                   <dd className="text-fog/85">{quote.service}</dd>

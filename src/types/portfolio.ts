@@ -47,7 +47,10 @@ export type QuoteStatus = "new" | "replied" | "closed";
 export type QuoteRequest = {
   id: string;
   name: string;
-  email: string;
+  /** At least one of email, discord or x is always set. */
+  email?: string;
+  discord?: string;
+  x?: string;
   service: string;
   budget: string;
   deadline: string;

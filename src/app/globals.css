@@ -257,6 +257,9 @@ html.has-custom-cursor,
 html.has-custom-cursor a,
 html.has-custom-cursor button,
 html.has-custom-cursor [role="button"],
+html.has-custom-cursor input[type="range"],
+html.has-custom-cursor input[type="checkbox"],
+html.has-custom-cursor input[type="radio"],
 html.has-custom-cursor label,
 html.has-custom-cursor summary {
   cursor: none;

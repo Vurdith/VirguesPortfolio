@@ -29,3 +29,31 @@ export const QUOTE_BUDGETS = [...QUOTE_BUDGET_STEPS, QUOTE_BUDGET_UNSURE] as con
 
 /** Timeline stops, soonest to most relaxed. */
 export const QUOTE_DEADLINES = ["ASAP", "Within a month", "1–3 months", "Flexible"] as const;
+
+/** Ways a visitor can ask to be contacted. They can pick any combination. */
+export const QUOTE_CONTACTS = ["email", "discord", "x"] as const;
+export type QuoteContact = (typeof QUOTE_CONTACTS)[number];
+
+export const QUOTE_CONTACT_INFO: Record<
+  QuoteContact,
+  { label: string; hint: string; placeholder: string; invalid: string }
+> = {
+  email: { label: "Email", hint: "Replies in your inbox", placeholder: "you@studio.com", invalid: "Add a valid email address." },
+  discord: { label: "Discord", hint: "I’ll send you a message", placeholder: "username", invalid: "Add your Discord username." },
+  x: { label: "X", hint: "I’ll reply by DM", placeholder: "@handle", invalid: "Add your X handle (letters, numbers, underscores)." },
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DISCORD_PATTERN = /^@?[A-Za-z0-9_.#]{2,40}$/;
+const X_PATTERN = /^@?[A-Za-z0-9_]{1,15}$/;
+
+/** True when `value` is acceptable for that contact method (used by the form and the API). */
+export function isValidContact(method: QuoteContact, value: string): boolean {
+  const trimmed = value.trim();
+  if (method === "email") return trimmed.length <= 160 && EMAIL_PATTERN.test(trimmed);
+  if (method === "discord") return DISCORD_PATTERN.test(trimmed);
+  return X_PATTERN.test(trimmed);
+}
+
+/** Stored form of a handle: no leading @. */
+export const cleanHandle = (value: string) => value.trim().replace(/^@/, "");

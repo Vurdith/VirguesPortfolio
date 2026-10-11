@@ -58,28 +58,32 @@ async function syncCollection<T extends { id: string }>(name: string, before: T[
   }
 }
 
-export async function readFirestoreDb(): Promise<Db> {
-  const root = await rootRef().get();
-  const rootData = root.data() as
-    | {
-        auth?: {
-          passwordHash?: string | null;
-          sessions?: DbSession[];
-        };
-      }
-    | undefined;
+type RootData = { auth?: { passwordHash?: string | null; sessions?: DbSession[] } } | undefined;
 
-  const [works, reviews, quotes] = await Promise.all([
+function authFrom(rootData: RootData): Db["auth"] {
+  return {
+    passwordHash: rootData?.auth?.passwordHash ?? DEFAULT_DB.auth.passwordHash,
+    sessions: rootData?.auth?.sessions ?? DEFAULT_DB.auth.sessions,
+  };
+}
+
+/** Just the auth document: one read instead of the whole database. */
+export async function readFirestoreAuth(): Promise<Db["auth"]> {
+  const root = await rootRef().get();
+  return authFrom(root.data() as RootData);
+}
+
+export async function readFirestoreDb(): Promise<Db> {
+  // All four reads go out together, so a full read costs one round trip, not two.
+  const [root, works, reviews, quotes] = await Promise.all([
+    rootRef().get(),
     readCollection<Work>(WORKS_COLLECTION),
     readCollection<Review>(REVIEWS_COLLECTION),
     readCollection<QuoteRequest>(QUOTES_COLLECTION),
   ]);
 
   return {
-    auth: {
-      passwordHash: rootData?.auth?.passwordHash ?? DEFAULT_DB.auth.passwordHash,
-      sessions: rootData?.auth?.sessions ?? DEFAULT_DB.auth.sessions,
-    },
+    auth: authFrom(root.data() as RootData),
     works: works.sort(byNewest),
     reviews: reviews.sort(byNewest),
     quotes: quotes.sort(byNewest),

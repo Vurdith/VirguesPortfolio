@@ -10,19 +10,52 @@ import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
-const NAV = [
-  { label: "WORK", href: "/#work" },
-  { label: "SERVICES", href: "/#offerings" },
-  { label: "PROCESS", href: "/#process" },
-  { label: "PAYMENT", href: "/#payment" },
-  { label: "REVIEWS", href: "/#reviews" },
-  { label: "CONTACT", href: "/#contact" },
-] as const;
+type NavItemData = {
+  label: string;
+  /** Shorter wording for phones; still a real word, never an initial. */
+  short: string;
+  href: string;
+  /** Page sections that count as "you are here" for this link. */
+  sections: readonly string[];
+  cta?: boolean;
+};
 
-type NavItemData = (typeof NAV)[number];
+// Process and payment live under Services: they explain how the work is done and paid for.
+const LEFT_NAV: readonly NavItemData[] = [
+  { label: "WORK", short: "WORK", href: "/#work", sections: ["work"] },
+  { label: "SERVICES", short: "SERVICES", href: "/#offerings", sections: ["offerings", "process", "payment"] },
+];
+const RIGHT_NAV: readonly NavItemData[] = [
+  { label: "REVIEWS", short: "REVIEWS", href: "/#reviews", sections: ["reviews"] },
+  { label: "REQUEST A QUOTE", short: "QUOTE", href: "/#contact", sections: ["contact"], cta: true },
+];
+const TRACKED_SECTIONS = [...LEFT_NAV, ...RIGHT_NAV].flatMap((item) => item.sections);
 
-const LEFT_NAV = NAV.slice(0, 3);
-const RIGHT_NAV = NAV.slice(3);
+/** The id of the section crossing the middle of the viewport, or null away from the home page. */
+function useCurrentSection() {
+  const [current, setCurrent] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.add(entry.target.id);
+          else visible.delete(entry.target.id);
+        }
+        setCurrent(TRACKED_SECTIONS.find((id) => visible.has(id)) ?? null);
+      },
+      { rootMargin: "-48% 0px -48% 0px" },
+    );
+    for (const id of TRACKED_SECTIONS) {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  return current;
+}
 
 const VIZ_BARS = 20;
 const VIZ_SEQUENCE = [0, 7, 3, 11, 15, 5, 18, 2, 13, 9, 16, 4, 19, 1, 12, 6, 17, 8, 14, 10] as const;
@@ -38,6 +71,7 @@ type SpokeStyle = React.CSSProperties & { "--a": string };
 
 export function FloatingHeader({ className }: { className?: string }) {
   const { scrollY } = useScroll();
+  const current = useCurrentSection();
 
   // One spring drives the small "settle" effect applied once the page starts scrolling.
   const settle = useSpring(useTransform(scrollY, [0, 180], [0, 1]), SPRING);
@@ -58,7 +92,7 @@ export function FloatingHeader({ className }: { className?: string }) {
       transition={{ duration: 0.85, ease: [0.2, 0.85, 0.2, 1] }}
     >
       <nav
-        className="tc-nav pointer-events-auto relative grid w-fit max-w-[calc(100vw-1.25rem)] grid-cols-[300px_76px_300px] items-center justify-center gap-3 overflow-visible border border-white/10 bg-black/75 px-3 py-2"
+        className="tc-nav pointer-events-auto relative grid w-fit max-w-[calc(100vw-1.25rem)] grid-cols-[280px_76px_280px] items-center justify-center gap-3 overflow-visible border border-white/10 bg-black/75 px-3 py-2"
         aria-label="Primary"
       >
         <CornerMarks className="opacity-80" />
@@ -67,7 +101,7 @@ export function FloatingHeader({ className }: { className?: string }) {
 
         <div className="nav-group relative z-10 flex justify-end gap-3">
           {LEFT_NAV.map((item) => (
-            <NavItem item={item} key={item.href} />
+            <NavItem item={item} key={item.href} active={current !== null && item.sections.includes(current)} />
           ))}
         </div>
 
@@ -76,7 +110,7 @@ export function FloatingHeader({ className }: { className?: string }) {
 
         <div className="nav-group relative z-10 flex justify-start gap-3">
           {RIGHT_NAV.map((item) => (
-            <NavItem item={item} key={item.href} />
+            <NavItem item={item} key={item.href} active={current !== null && item.sections.includes(current)} />
           ))}
         </div>
       </nav>
@@ -84,31 +118,51 @@ export function FloatingHeader({ className }: { className?: string }) {
   );
 }
 
-const NavItem = React.memo(function NavItem({ item }: { item: NavItemData }) {
+const NavItem = React.memo(function NavItem({ item, active }: { item: NavItemData; active: boolean }) {
   const [hovered, setHovered] = React.useState(false);
 
   return (
     <Link
       href={item.href}
+      aria-current={active ? "location" : undefined}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
       className={cn(
-        "relative z-10 inline-flex h-8 w-[44px] min-w-0 items-center justify-center overflow-hidden border border-line/15 bg-void/70 px-2 text-[10px] tracking-[0.18em] text-fog/75 transition-colors duration-300 md:h-9 md:w-[92px]",
-        hovered ? "border-line/35 text-ink" : "hover:border-line/30 hover:text-fog/95",
+        "relative z-10 inline-flex h-11 min-w-0 items-center justify-center overflow-hidden border px-2 text-[10px] tracking-[0.1em] transition-colors duration-300 flex-auto md:h-10 md:px-3 md:text-[11px] md:tracking-[0.18em]",
+        item.cta
+          ? "border-ink bg-ink font-medium text-void hover:bg-white"
+          : cn(
+              "border-line/15 bg-void/70",
+              active ? "border-line/45 text-ink" : "text-fog/90",
+              hovered ? "border-line/35 text-ink" : "hover:border-line/30",
+            ),
       )}
     >
-      <span className="relative z-10 hidden md:inline">
+      <span className="relative z-10 hidden whitespace-nowrap md:inline">
         <ScrambleText active={hovered} text={item.label} />
       </span>
-      <span className="relative z-10 md:hidden">{item.label.slice(0, 1)}</span>
-      <span
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute inset-0 border border-line/20 bg-white/[0.035] transition-opacity duration-300",
-          hovered ? "opacity-100" : "opacity-0",
-        )}
-      />
-      <CornerMarks size={2} tone="border-line/35" className="opacity-75" />
+      <span className="relative z-10 md:hidden">{item.short}</span>
+      {item.cta ? null : (
+        <>
+          <span
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-0 border border-line/20 bg-white/[0.035] transition-opacity duration-300",
+              hovered ? "opacity-100" : "opacity-0",
+            )}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-x-2 bottom-0 h-px origin-left bg-ink transition-transform duration-300",
+              active ? "scale-x-100" : "scale-x-0",
+            )}
+          />
+          <CornerMarks size={2} tone="border-line/35" className="opacity-75" />
+        </>
+      )}
     </Link>
   );
 });
@@ -154,8 +208,8 @@ const ProfileHome = React.memo(function ProfileHome() {
 });
 
 const SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-const SCRAMBLE_TICK_MS = 30;
-const SCRAMBLE_REVEAL_PER_TICK = 1 / 3;
+const SCRAMBLE_TICK_MS = 26;
+const SCRAMBLE_REVEAL_PER_TICK = 1 / 2;
 
 /** Shows `text`, scrambling its letters and settling left to right while `active` is true. */
 function useScrambledText(text: string, active: boolean) {

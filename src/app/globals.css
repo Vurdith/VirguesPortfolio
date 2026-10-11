@@ -102,8 +102,8 @@
 
 @media (max-width: 560px) {
   .tc-nav {
-    grid-template-columns: 100px 62px 150px;
-    width: auto;
+    grid-template-columns: minmax(0, 1fr) 62px minmax(0, 1fr);
+    width: calc(100vw - 1.25rem);
     gap: 8px;
     padding: 7px 9px;
   }

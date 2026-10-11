@@ -49,10 +49,24 @@ const OFFERINGS = [
     description:
       "Ongoing support for active projects, with priority queue access, recurring imports, seasonal UI updates, and cleaner long-term direction.",
     why: "Strong value for studios that need regular updates, predictable cost, and one visual standard across the year.",
-    badge: "From £1650 / yr",
+    badge: "£3750 / yr",
   },
   {
     code: "05",
+    title: "Full Game Package",
+    description:
+      "A complete interface for a whole game in one package: every screen designed in one consistent style at a fixed price.",
+    why: "Best for launching a game with one consistent look instead of quoting task by task.",
+    badge: "£1650 package",
+    extra: {
+      label: "Add importing + final polish pass",
+      description:
+        "A complete interface for a whole game in one package: every screen designed in one consistent style, imported into Studio and finished with a final polish pass.",
+      badge: "£2150 package",
+    },
+  },
+  {
+    code: "06",
     title: "Branding & Art Direction",
     description:
       "Typography, spacing rules, component direction, and visual standards that keep UI and promo assets consistent.",
@@ -60,7 +74,7 @@ const OFFERINGS = [
     badge: "From £50",
   },
   {
-    code: "06",
+    code: "07",
     title: "QA & Polish",
     description:
       "A final pass for spacing, alignment, hierarchy, and screenshot-readiness before the work goes public.",
@@ -175,6 +189,10 @@ function OfferingCard({
   offering: (typeof OFFERINGS)[number];
   spanClass: string;
 }) {
+  const [extras, setExtras] = React.useState(false);
+  const extra = "extra" in offering ? offering.extra : null;
+  const badge = extra && extras ? extra.badge : offering.badge;
+
   return (
     <article
       className={cn(
@@ -204,9 +222,23 @@ function OfferingCard({
           </div>
         </div>
 
-        <p className="mt-6 min-h-[4.6rem] text-sm leading-relaxed text-fog/82">
-          {offering.description}
-        </p>
+        {/* Both versions share one grid cell so toggling never changes the card's height, and the
+            minimum keeps the "why" lines aligned across a row of cards. */}
+        <div
+          className={cn(
+            "mt-6 grid min-h-[4.6rem] text-sm leading-relaxed text-fog/82 md:min-h-[6.2rem]",
+            spanClass.includes("col-span-4") ? "lg:min-h-[8.6rem]" : "lg:min-h-[4.6rem]",
+          )}
+        >
+          <p className={cn("col-start-1 row-start-1", extra && extras && "invisible")} aria-hidden={extra && extras ? true : undefined}>
+            {offering.description}
+          </p>
+          {extra && (
+            <p className={cn("col-start-1 row-start-1", !extras && "invisible")} aria-hidden={!extras ? true : undefined}>
+              {extra.description}
+            </p>
+          )}
+        </div>
         <p className="mt-4 border-l border-line/16 pl-4 text-xs leading-relaxed text-fog/72">
           {offering.why}
         </p>
@@ -246,9 +278,35 @@ function OfferingCard({
           </details>
         )}
 
+        {extra && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={extras}
+            onClick={() => setExtras((on) => !on)}
+            className="mt-5 grid w-full grid-cols-[1fr_auto] items-center gap-4 border border-line/10 bg-white/[0.025] px-3 py-3 text-left text-[11px] tracking-[0.2em] text-fog/75 transition-colors duration-200 hover:bg-white/[0.05]"
+          >
+            <span>{extra.label.toUpperCase()}</span>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "relative h-5 w-9 border transition-colors duration-200",
+                extras ? "border-line/50 bg-white/10" : "border-line/20",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-3.5 bg-ink transition-all duration-200",
+                  extras ? "left-[1.1rem]" : "left-0.5 opacity-50",
+                )}
+              />
+            </span>
+          </button>
+        )}
+
         <div className="mt-auto pt-6">
           <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
-            <CountUpText text={offering.badge.toUpperCase()} />
+            <CountUpText text={badge.toUpperCase()} />
           </span>
         </div>
       </div>
@@ -261,6 +319,7 @@ const OFFERING_SPANS = [
   "lg:col-span-5",
   "lg:col-span-5",
   "lg:col-span-7",
-  "lg:col-span-6",
-  "lg:col-span-6",
+  "lg:col-span-4",
+  "lg:col-span-4",
+  "lg:col-span-4",
 ] as const;

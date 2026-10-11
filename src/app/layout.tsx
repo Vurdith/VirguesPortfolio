@@ -26,7 +26,7 @@ const serif = Instrument_Serif({
 
 const TITLE = `${SITE.name} — UI Designer & Developer`;
 const DESCRIPTION =
-  "UI designer and developer. Custom interface design, game UI, asset imports, and polish for games and interface-heavy launches.";
+  "UI designer for Roblox games. Menus, shops, HUDs, clean imports into Studio and the final polish, quoted before any work starts.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -39,7 +39,8 @@ export const metadata: Metadata = {
     siteName: SITE.name,
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: `${SITE.name}, UI designer and developer` }],
+    // Animated GIF of the intro so link previews (Discord, etc.) keep playing it.
+    images: [{ url: "/og-intro.gif", width: 480, height: 270, type: "image/gif", alt: `${SITE.name} intro` }],
   },
   twitter: {
     card: "summary_large_image",

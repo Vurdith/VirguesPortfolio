@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { AnimationGate } from "@/components/AnimationGate";
 import { CursorSpotlight } from "@/components/CursorSpotlight";
 import { CustomCursor } from "@/components/CustomCursor";
 import { FloatingHeader } from "@/components/FloatingHeader";
@@ -22,6 +23,7 @@ export function ClientChrome() {
       <CursorSpotlight />
       <TapRipple />
       {pathname === "/" ? <LoadingScene /> : null}
+      {pathname === "/" ? <AnimationGate /> : null}
       <ParticleField />
       <FloatingHeader />
       {pathname === "/" ? <ScrollProgress /> : null}

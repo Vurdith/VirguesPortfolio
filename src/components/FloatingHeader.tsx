@@ -3,10 +3,11 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring, useTransform } from "framer-motion";
 
 import { CornerMarks } from "@/components/CornerMarks";
 import { cn } from "@/lib/cn";
+import { usePageScroll } from "@/hooks/usePageScroll";
 import { SITE } from "@/lib/site";
 import { useCurrentSection } from "@/hooks/useCurrentSection";
 import { useUiSounds } from "@/hooks/useUiSounds";
@@ -45,7 +46,7 @@ const SPRING = { stiffness: 520, damping: 54, mass: 0.7 } as const;
 type SpokeStyle = React.CSSProperties & { "--a": string };
 
 export function FloatingHeader({ className }: { className?: string }) {
-  const { scrollY } = useScroll();
+  const { scrollY } = usePageScroll();
   const current = useCurrentSection(TRACKED_SECTIONS);
 
   // One spring drives the small "settle" effect applied once the page starts scrolling.

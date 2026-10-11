@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring, useTransform } from "framer-motion";
 
 import { BrandLogo, type BrandName } from "@/components/BrandLogo";
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
+import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 const STRIPE_URL = "https://buy.stripe.com/6oUaEZ9geg0p0Qm3X7aMU00";
 const WISE_URL = "https://wise.com/pay/me/reeceluisl";
@@ -46,10 +47,7 @@ const PAYMENT_METHODS = [
 
 export function PaymentSection({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+  const scrollYProgress = useSectionProgress(ref, "enter-exit");
 
   const lineScale = useSpring(useTransform(scrollYProgress, [0.18, 0.82], [0, 1]), {
     stiffness: 120,

@@ -74,8 +74,15 @@ export function CustomCursor() {
   const ringSize = mode === "view" ? 92 : mode === "drag" ? 64 : mode === "link" ? 52 : 30;
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[200] mix-blend-difference">
-      <motion.div className="absolute left-0 top-0" style={{ x, y }}>
+    // The difference blend sits on the dot and the ring themselves rather than on one full-screen
+    // layer: a blended full-screen layer makes the browser re-read the whole page behind it. The
+    // ring resizes with width/height, so it is contained to keep that out of the page's layout.
+    <>
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-[200] mix-blend-difference [contain:layout_style]"
+        style={{ x, y }}
+      >
         <motion.div
           className="-ml-[3px] -mt-[3px] size-[6px] rounded-full bg-white"
           animate={{ opacity: visible && !filled ? 1 : 0, scale: pressed ? 0.6 : 1 }}
@@ -83,7 +90,11 @@ export function CustomCursor() {
         />
       </motion.div>
 
-      <motion.div className="absolute left-0 top-0" style={{ x: ringX, y: ringY }}>
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-[200] mix-blend-difference [contain:layout_style]"
+        style={{ x: ringX, y: ringY }}
+      >
         <motion.div
           className="grid place-items-center rounded-full border border-white"
           style={{ translateX: "-50%", translateY: "-50%" }}
@@ -106,6 +117,6 @@ export function CustomCursor() {
           </motion.span>
         </motion.div>
       </motion.div>
-    </div>
+    </>
   );
 }

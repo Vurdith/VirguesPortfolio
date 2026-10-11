@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 const KindSchema = z.enum(["image", "video", "poster"]);
 
-const MAX_BYTES = 25 * 1024 * 1024; // 25MB
+const MAX_BYTES = 100 * 1024 * 1024; // 100MB
 const MAX_IMAGE_WIDTH = 2560;
 
 export async function POST(req: NextRequest) {
@@ -36,8 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "File too large." }, { status: 413 });
   }
 
-  // Animated GIFs would be flattened by the image pipeline, so only the R2 upload accepts them.
-  const ext = file.type === "image/gif" ? null : extensionForMime(file.type);
+  const ext = extensionForMime(file.type);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported file type." }, { status: 415 });
   }
@@ -51,7 +50,10 @@ export async function POST(req: NextRequest) {
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const isVideo = kindParsed.data === "video";
-  const output = isVideo
+  // Animated GIFs would be flattened by the image pipeline, so they are stored as uploaded.
+  const isGif = file.type === "image/gif";
+  const passthrough = isVideo || isGif;
+  const output = passthrough
     ? bytes
     : await sharp(bytes)
         .rotate()
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
         })
         .webp({ quality: 88, effort: 6, smartSubsample: true })
         .toBuffer();
-  const filename = `${kindParsed.data}_${crypto.randomUUID()}.${isVideo ? ext : "webp"}`;
+  const filename = `${kindParsed.data}_${crypto.randomUUID()}.${passthrough ? ext : "webp"}`;
   const outDir = path.join(process.cwd(), "public", "uploads");
   const outPath = path.join(outDir, filename);
 

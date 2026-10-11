@@ -207,7 +207,7 @@ function TrophyCard({
       onPointerMove={(event) => canTilt(event) && pointer.onPointerMove(event)}
       onPointerLeave={pointer.onPointerLeave}
       className={cn(
-        "trophy-card group relative h-full overflow-hidden border border-line/14 bg-void/50",
+        "trophy-card group relative flex h-full flex-col overflow-hidden border border-line/14 bg-void/50",
         "transition-[border-color,box-shadow,transform] duration-500 ease-out hover:border-line/40",
         "hover:shadow-[0_30px_80px_-30px_rgba(255,255,255,0.18)]",
       )}
@@ -244,8 +244,8 @@ function TrophyCard({
         </div>
       </div>
 
-      <div className="relative p-5 md:p-6">
-        <div className="flex items-baseline justify-between gap-4">
+      <div className="relative flex flex-1 flex-col p-5 md:p-6">
+        <div className="mb-6 flex items-baseline justify-between gap-4">
           <h3 className={cn("font-serif leading-none tracking-[-0.04em]", large ? "text-3xl" : "text-2xl")}>
             <a
               href={item.url}
@@ -262,7 +262,7 @@ function TrophyCard({
           ) : null}
         </div>
 
-        <dl className={cn("mt-6 grid gap-px border border-line/12 bg-line/12", "grid-cols-3")}>
+        <dl className="mt-auto grid grid-cols-3 gap-px border border-line/12 bg-line/12">
           {stats.map((stat) => (
             <div key={stat.label} className="bg-void/80 px-3 py-3">
               <dt className="text-[10px] tracking-[0.2em] text-fog/70">{stat.label}</dt>

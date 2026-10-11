@@ -359,7 +359,7 @@ export function WorkForm({
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <div>
             <div className="text-[11px] tracking-[0.22em] text-fog/70">
-              {state.mediaKind === "video" ? "VIDEO SOURCE" : "IMAGE SOURCE"}
+              {state.mediaKind === "video" ? "VIDEO SOURCE (MP4 / WEBM)" : "IMAGE SOURCE (JPG / PNG / WEBP / GIF)"}
             </div>
 
             {state.srcType === "url" ? (
@@ -373,7 +373,7 @@ export function WorkForm({
               <div className="mt-2 space-y-3">
                 <input
                   type="file"
-                  accept={state.mediaKind === "video" ? "video/mp4,video/webm" : "image/*"}
+                  accept={state.mediaKind === "video" ? "video/mp4,video/webm" : "image/jpeg,image/png,image/webp,image/gif"}
                   onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)}
                   className="block w-full text-xs text-fog/70 file:mr-3 file:border-0 file:bg-void/40 file:px-4 file:py-2 file:text-xs file:tracking-[0.22em] file:text-ink"
                 />

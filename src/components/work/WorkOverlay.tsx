@@ -16,6 +16,7 @@ export const workLayoutId = (id: string) => `work-media-${id}`;
  */
 export function WorkOverlay({ work, onClose }: { work: Work; onClose: () => void }) {
   const reduceMotion = useReducedMotion();
+  const backdropSrc = work.media.kind === "video" ? work.media.poster : work.media.src;
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const closeRef = React.useRef<HTMLButtonElement>(null);
 
@@ -80,7 +81,7 @@ export function WorkOverlay({ work, onClose }: { work: Work; onClose: () => void
         <div
           className="absolute inset-0 scale-110 opacity-40 blur-3xl"
           style={{
-            backgroundImage: work.media.src ? `url(${work.media.src})` : undefined,
+            backgroundImage: backdropSrc ? `url(${backdropSrc})` : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}

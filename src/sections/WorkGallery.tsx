@@ -202,7 +202,8 @@ function WorkCard({
   });
 
   // Cards are a few hundred pixels wide; don't download the full-size original for them.
-  const cardSrc = work.media.kind === "image" ? optimizedImage(work.media.src) : work.media.src;
+  const isVideo = work.media.kind === "video";
+  const cardSrc = isVideo ? work.media.poster || "" : optimizedImage(work.media.src);
 
   return (
     <Link
@@ -241,13 +242,20 @@ function WorkCard({
           className="absolute inset-0 blur-[2px]"
           style={{
             scale: 1.025,
-            backgroundImage: work.media.src
+            backgroundImage: cardSrc
               ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${cardSrc}), ${backdrop}`
               : `${backdrop}, linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.8) 100%)`,
             backgroundSize: "cover",
             backgroundPosition: focusPosition(work.media),
           }}
-        />
+        >
+          {isVideo && work.media.src ? (
+            <>
+              <CardVideo src={work.media.src} poster={work.media.poster} position={focusPosition(work.media)} />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80" />
+            </>
+          ) : null}
+        </motion.div>
 
         {/* Sharp-field revealed only under the moving lens (mask). */}
         <motion.div
@@ -262,9 +270,7 @@ function WorkCard({
           <div
             className="absolute inset-0 scale-[1.01]"
             style={{ 
-              backgroundImage: work.media.src 
-                ? `url(${cardSrc})` 
-                : `${backdrop}`,
+              backgroundImage: cardSrc ? `url(${cardSrc})` : `${backdrop}`,
               backgroundSize: "cover",
               backgroundPosition: focusPosition(work.media),
             }}
@@ -315,3 +321,38 @@ function WorkCard({
 }
 
 
+
+/** Muted looping preview for video works; only plays while the card is on screen. */
+function CardVideo({ src, poster, position }: { src: string; poster?: string; position: string }) {
+  const ref = React.useRef<HTMLVideoElement>(null);
+
+  React.useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) void video.play().catch(() => {});
+        else video.pause();
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      aria-hidden="true"
+      className="absolute inset-0 h-full w-full object-cover"
+      style={{ objectPosition: position }}
+      src={src}
+      poster={poster || undefined}
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      tabIndex={-1}
+    />
+  );
+}

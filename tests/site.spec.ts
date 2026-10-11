@@ -19,7 +19,7 @@ test("home page loads with every section and no console or CSP errors", async ({
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-  for (const id of ["work", "about", "offerings", "process", "payment", "reviews", "contact"]) {
+  for (const id of ["work", "offerings", "process", "payment", "reviews", "contact"]) {
     await expect(page.locator(`#${id}`)).toHaveCount(1);
   }
 

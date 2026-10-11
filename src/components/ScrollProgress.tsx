@@ -9,7 +9,6 @@ import { useUiSounds } from "@/hooks/useUiSounds";
 const SECTIONS = [
   { id: "top", label: "INTRO" },
   { id: "work", label: "WORK" },
-  { id: "about", label: "ABOUT" },
   { id: "offerings", label: "SERVICES" },
   { id: "process", label: "PROCESS" },
   { id: "payment", label: "PAYMENT" },

@@ -6,10 +6,8 @@ import { CursorSpotlight } from "@/components/CursorSpotlight";
 import { CustomCursor } from "@/components/CustomCursor";
 import { FloatingHeader } from "@/components/FloatingHeader";
 import { LoadingScene } from "@/components/LoadingScene";
-import { MotionToggle } from "@/components/MotionToggle";
 import { ParticleField } from "@/components/ParticleField";
 import { ScrollProgress } from "@/components/ScrollProgress";
-import { SoundToggle } from "@/components/SoundToggle";
 import { TapRipple } from "@/components/TapRipple";
 
 export function ClientChrome() {
@@ -27,10 +25,6 @@ export function ClientChrome() {
       <ParticleField />
       <FloatingHeader />
       {pathname === "/" ? <ScrollProgress /> : null}
-      <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2">
-        <MotionToggle />
-        <SoundToggle />
-      </div>
     </>
   );
 }

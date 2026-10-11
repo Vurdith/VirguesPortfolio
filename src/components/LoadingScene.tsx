@@ -6,49 +6,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CornerMarks } from "@/components/CornerMarks";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
-const INTRO_VIDEO = "/intro-loader-v3.mp4";
+const INTRO_VIDEO = "/intro-loader-hq.mp4";
 const INTRO_POSTER = "/intro-poster.webp";
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
 
-const INTRO_SEEN_KEY = "virgue-intro-seen";
-// Remembered across visits: the film plays once, after that visitors go straight to the loader.
-const INTRO_VIDEO_SEEN_KEY = "virgue-intro-video-seen";
-
+// The intro plays in full on every page load; this only stops it replaying when you navigate
+// back to the home page inside the same visit.
 let introSeenInRuntime = false;
-
-function readIntroSeen() {
-  if (introSeenInRuntime) return true;
-  try {
-    return window.sessionStorage.getItem(INTRO_SEEN_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
 
 function markIntroSeen() {
   introSeenInRuntime = true;
-  try {
-    window.sessionStorage.setItem(INTRO_SEEN_KEY, "1");
-  } catch {
-    // Storage can be blocked; the in-memory flag still covers this tab.
-  }
-}
-
-function readVideoSeen() {
-  try {
-    return window.localStorage.getItem(INTRO_VIDEO_SEEN_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function markVideoSeen() {
-  try {
-    window.localStorage.setItem(INTRO_VIDEO_SEEN_KEY, "1");
-  } catch {
-    // ignore
-  }
 }
 
 export function LoadingScene() {
@@ -66,7 +34,6 @@ export function LoadingScene() {
 
     videoFinishedRef.current = true;
     videoRef.current?.pause();
-    markVideoSeen();
     setVideoDone(true);
     setMusicDucked(false);
     enableByDefault();
@@ -79,19 +46,12 @@ export function LoadingScene() {
     return () => setMusicDucked(false);
   }, [visible, videoDone, setMusicDucked]);
 
-  // Returning visitors in the same session skip the intro.
+  // Coming back to the home page within the same visit goes straight to the site.
   React.useLayoutEffect(() => {
-    if (readIntroSeen()) {
+    if (introSeenInRuntime) {
       videoFinishedRef.current = true;
       videoRef.current?.pause();
       setVisible(false);
-      return;
-    }
-    // Returning on a later day: skip the film, keep the loader (its button also unlocks audio).
-    if (readVideoSeen()) {
-      videoFinishedRef.current = true;
-      videoRef.current?.pause();
-      setVideoDone(true);
     }
   }, []);
 
@@ -180,17 +140,6 @@ export function LoadingScene() {
             transition: { duration: 0.24, ease: EASE },
           }}
         >
-          {!videoDone ? (
-            <button
-              type="button"
-              onClick={finishVideo}
-              className="absolute bottom-6 right-6 z-10 inline-flex items-center gap-3 border border-line/20 bg-void/50 px-4 py-2.5 text-[10px] tracking-[0.3em] text-fog/85 backdrop-blur-md transition-colors hover:border-line/40 hover:text-ink"
-            >
-              SKIP INTRO
-              <span aria-hidden="true">→</span>
-            </button>
-          ) : null}
-
           <AnimatePresence>
             {!videoDone ? (
               <motion.video

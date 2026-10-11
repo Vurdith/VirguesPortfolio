@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/** The intro can't be skipped, so let it fail to load the film and press ENTER SITE. */
+async function openHome(page: Page) {
+  await page.route("**/intro-loader-hq.mp4", (route) => route.abort());
+  await page.goto("/");
+  await page.getByRole("button", { name: "ENTER SITE" }).click();
+}
+
 function watchPage(page: Page) {
   const problems: string[] = [];
   page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
@@ -15,8 +22,7 @@ function watchPage(page: Page) {
 
 test("home page loads with every section and no console or CSP errors", async ({ page }) => {
   const problems = watchPage(page);
-  await page.addInitScript(() => sessionStorage.setItem("virgue-intro-seen", "1"));
-  await page.goto("/");
+  await openHome(page);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   for (const id of ["work", "contributions", "offerings", "process", "payment", "reviews", "contact"]) {
@@ -42,8 +48,7 @@ test("privacy page renders", async ({ page }) => {
 
 test("quote request can be completed through all four steps", async ({ page }) => {
   const problems = watchPage(page);
-  await page.addInitScript(() => sessionStorage.setItem("virgue-intro-seen", "1"));
-  await page.goto("/");
+  await openHome(page);
 
   const form = page.getByRole("form", { name: "Request a quote" });
   await form.scrollIntoViewIfNeeded();
@@ -72,7 +77,7 @@ test("quote request can be completed through all four steps", async ({ page }) =
   await form.getByRole("button", { name: /SEND REQUEST/ }).click();
 
   await expect(page.getByRole("heading", { name: /Got it, E2E/ })).toBeVisible();
-  expect(problems).toEqual([]);
+  expect(problems, problems.join(" | ")).toEqual([]);
 });
 
 test("a honeypot submission is accepted silently but not stored", async ({ request }) => {

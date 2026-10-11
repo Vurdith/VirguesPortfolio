@@ -37,16 +37,6 @@ type WindowWithWebkitAudio = Window &
     webkitAudioContext?: typeof AudioContext;
   };
 
-/** Returns the saved choice, or null if the visitor has never toggled sound. */
-function readStoredMuted(): boolean | null {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw === null ? null : raw === "true";
-  } catch {
-    return null;
-  }
-}
-
 function storeMuted(muted: boolean) {
   try {
     window.localStorage.setItem(STORAGE_KEY, String(muted));
@@ -227,13 +217,13 @@ export function UiSoundProvider({ children }: { children: React.ReactNode }) {
     if (!hasChoiceRef.current && mutedRef.current) applyMuted(false, false);
   }, [applyMuted]);
 
-  // Restore the saved preference. Audio only starts after a user gesture.
+  // There is no on-page sound switch any more, so forget any choice saved by an older version.
   React.useEffect(() => {
-    const stored = readStoredMuted();
-    if (stored === null) return;
-    hasChoiceRef.current = true;
-    mutedRef.current = stored;
-    setMuted(stored);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }, []);
 
   // One delegated listener pair replaces per-element hover/click handlers across the site.

@@ -4,12 +4,10 @@ import * as React from "react";
 import { MotionConfig } from "framer-motion";
 
 type MotionPreference = {
-  /** True when the visitor chose to turn animations off with the on-page toggle. */
+  /** True when the visitor's operating system asks for reduced motion. */
   reduced: boolean;
-  toggle: () => void;
 };
 
-const STORAGE_KEY = "ui:reduceMotion";
 const MotionPreferenceContext = React.createContext<MotionPreference | null>(null);
 
 export function useMotionPreference() {
@@ -18,45 +16,27 @@ export function useMotionPreference() {
   return ctx;
 }
 
-/**
- * Adds a manual "reduce motion" switch on top of the OS setting. When on, framer-motion skips
- * transform animations, CSS animations are disabled through `html[data-motion="reduced"]`, and
- * heavy effects (the hero shader) are not mounted. The OS-level preference is still honoured.
- */
-export function MotionPreferenceProvider({ children }: { children: React.ReactNode }) {
+function MotionPreferenceState({ children }: { children: React.ReactNode }) {
+  // Starts false so the first client render matches the server HTML, then follows the OS.
   const [reduced, setReduced] = React.useState(false);
 
   React.useEffect(() => {
-    try {
-      if (window.localStorage.getItem(STORAGE_KEY) === "1") setReduced(true);
-    } catch {
-      // Storage can be blocked; the toggle still works for this visit.
-    }
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
   }, []);
 
-  React.useEffect(() => {
-    const root = document.documentElement;
-    if (reduced) root.dataset.motion = "reduced";
-    else delete root.dataset.motion;
-  }, [reduced]);
+  const value = React.useMemo(() => ({ reduced }), [reduced]);
+  return <MotionPreferenceContext.Provider value={value}>{children}</MotionPreferenceContext.Provider>;
+}
 
-  const toggle = React.useCallback(() => {
-    setReduced((current) => {
-      const next = !current;
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }, []);
-
-  const value = React.useMemo(() => ({ reduced, toggle }), [reduced, toggle]);
-
+/** Animations follow the operating system's "reduce motion" setting. */
+export function MotionPreferenceProvider({ children }: { children: React.ReactNode }) {
   return (
-    <MotionPreferenceContext.Provider value={value}>
-      <MotionConfig reducedMotion={reduced ? "always" : "user"}>{children}</MotionConfig>
-    </MotionPreferenceContext.Provider>
+    <MotionConfig reducedMotion="user">
+      <MotionPreferenceState>{children}</MotionPreferenceState>
+    </MotionConfig>
   );
 }

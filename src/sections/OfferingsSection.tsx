@@ -55,15 +55,15 @@ const OFFERINGS = [
     code: "05",
     title: "Full Game Package",
     description:
-      "Every screen of your game designed in one consistent style at a fixed price. Covers up to 40 screens.",
+      "Every screen of your game designed in one consistent style at a fixed price, delivered as design files. Covers up to 40 screens.",
     why: "Best for launching a game with one consistent look instead of quoting task by task.",
     badge: "£1650 package",
     extra: {
-      label: "Importing + polish",
+      label: "Full service",
       delta: "+£500",
       badge: "£2150 package",
       description:
-        "Every screen of your game designed in one consistent style, imported into Studio and finished with a final polish pass. Covers up to 40 screens.",
+        "Every screen of your game designed in one consistent style, plus the hands-on work to get them live: Studio importing and a final polish pass. Covers up to 40 screens.",
     },
   },
   {

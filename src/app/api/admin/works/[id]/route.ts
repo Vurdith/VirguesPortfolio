@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb, writeDb } from "@/lib/db";
 import { MISSING_MEDIA_MESSAGE, WorkPatchSchema } from "@/lib/validation/work";
+import { mergeWork, missingPieceIndex } from "@/lib/work";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,8 +50,8 @@ export async function PATCH(
       return;
     }
 
-    const candidate = { ...db.works[index], ...patch, updatedAt: now };
-    if (candidate.published && !candidate.media.src.trim()) {
+    const candidate = mergeWork(db.works[index], { ...patch, updatedAt: now });
+    if (candidate.published && missingPieceIndex(candidate) !== -1) {
       result.outcome = "no_media";
       return;
     }

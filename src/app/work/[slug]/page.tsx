@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { WorkViewer } from "@/components/work/WorkViewer";
 import { getPublicWorks } from "@/lib/db";
 import { SITE } from "@/lib/site";
+import { workPieces } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,9 @@ export default async function WorkPage({
   const work = await findWork(slug);
   if (!work) notFound();
 
-  const mediaUrl = work.media.src.startsWith("http") ? work.media.src : `${SITE.url}${work.media.src}`;
+  const images = workPieces(work)
+    .filter((piece) => piece.kind === "image" && piece.src)
+    .map((piece) => (piece.src.startsWith("http") ? piece.src : `${SITE.url}${piece.src}`));
 
   return (
     <>
@@ -59,7 +62,7 @@ export default async function WorkPage({
           name: work.title,
           description: work.summary || undefined,
           url: `${SITE.url}/work/${work.slug}`,
-          image: work.media.kind === "image" && work.media.src ? mediaUrl : undefined,
+          image: images.length > 1 ? images : images[0],
           dateCreated: work.year ? String(work.year) : undefined,
           keywords: work.tags.join(", ") || undefined,
           creator: { "@type": "Person", name: SITE.name, url: SITE.url },

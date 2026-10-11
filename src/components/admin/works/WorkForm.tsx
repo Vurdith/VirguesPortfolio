@@ -1,11 +1,18 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, type Variants } from "framer-motion";
 
 import type { Work } from "@/types/portfolio";
+import { CornerMarks } from "@/components/CornerMarks";
 import { cn } from "@/lib/cn";
 import { slugify } from "@/lib/slug";
+import { workPieces } from "@/lib/work";
+
+import { PiecesManager } from "./PiecesManager";
+import { draftFromMedia, looksLikeSource, mediaFromDraft, type PieceDraft } from "./pieces";
 
 type Mode = "create" | "edit";
 
@@ -22,14 +29,25 @@ type FormState = {
   result: string;
   link: string;
   published: boolean;
-  mediaKind: "image" | "video";
-  srcType: "upload" | "url";
-  src: string;
-  poster: string;
-  focusX: number;
-  focusY: number;
-  alt: string;
 };
+
+type FieldName = Exclude<keyof FormState, "published">;
+
+const FIELD_ORDER: FieldName[] = [
+  "title",
+  "slug",
+  "year",
+  "tags",
+  "summary",
+  "client",
+  "role",
+  "link",
+  "problem",
+  "solution",
+  "result",
+];
+
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function fromWork(work?: Work): FormState {
   return {
@@ -45,135 +63,207 @@ function fromWork(work?: Work): FormState {
     result: work?.result ?? "",
     link: work?.link ?? "",
     published: work?.published ?? false,
-    mediaKind: work?.media.kind ?? "image",
-    srcType: work?.media.srcType ?? "upload",
-    src: work?.media.src ?? "",
-    poster: work?.media.poster ?? "",
-    focusX: work?.media.focus?.x ?? 50,
-    focusY: work?.media.focus?.y ?? 50,
-    alt: work?.media.alt ?? "",
   };
 }
 
-async function uploadFile(file: File, kind: "image" | "video" | "poster") {
-  const signedRes = await fetch("/api/admin/upload-url", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      kind,
-      contentType: file.type,
-      size: file.size,
-    }),
-  });
-
-  if (signedRes.ok) {
-    const signed = (await signedRes.json()) as {
-      uploadUrl?: string;
-      publicUrl?: string;
-    };
-
-    if (!signed.uploadUrl || !signed.publicUrl) {
-      throw new Error("Upload setup failed.");
-    }
-
-    const uploadRes = await fetch(signed.uploadUrl, {
-      method: "PUT",
-      headers: { "content-type": file.type },
-      body: file,
-    });
-
-    if (!uploadRes.ok) throw new Error("Upload failed.");
-    return signed.publicUrl;
-  }
-
-  if (signedRes.status !== 501) {
-    const json = (await signedRes.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(json?.error ?? "Upload setup failed.");
-  }
-
-  const form = new FormData();
-  form.set("kind", kind);
-  form.set("file", file);
-
-  const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-  if (!res.ok) throw new Error("Upload failed.");
-  const json = (await res.json()) as { path?: string };
-  if (!json.path) throw new Error("Upload failed.");
-  return json.path;
+function piecesFromWork(work?: Work): PieceDraft[] {
+  if (!work) return [];
+  return workPieces(work)
+    .filter((piece) => piece.src)
+    .map(draftFromMedia);
 }
 
-export function WorkForm({
-  mode,
-  work,
-}: {
-  mode: Mode;
-  work?: Work;
-}) {
+const parseTags = (value: string) =>
+  value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+function buildPayload(state: FormState, pieces: PieceDraft[]) {
+  const medias = pieces.map(mediaFromDraft);
+  return {
+    title: state.title.trim(),
+    slug: state.slug.trim(),
+    year: state.year.trim() ? Number(state.year.trim()) : undefined,
+    tags: parseTags(state.tags),
+    // Empty strings (not undefined) so a cleared field is actually cleared on save.
+    summary: state.summary.trim(),
+    client: state.client.trim(),
+    role: state.role.trim(),
+    problem: state.problem.trim(),
+    solution: state.solution.trim(),
+    result: state.result.trim(),
+    link: state.link.trim(),
+    published: state.published,
+    media: medias[0] ?? { kind: "image" as const, srcType: "upload" as const, src: "" },
+    // Empty clears a collection that was reduced to a single piece.
+    items: medias.length > 1 ? medias : [],
+  };
+}
+
+type Issues = {
+  fields: Partial<Record<FieldName, string>>;
+  pieces: Record<string, string>;
+  /** Not tied to one field, e.g. publishing without any piece. */
+  general: string | null;
+};
+
+function validate(state: FormState, pieces: PieceDraft[]): Issues {
+  const fields: Issues["fields"] = {};
+
+  if (!state.title.trim()) fields.title = "A title is required.";
+  else if (state.title.trim().length > 80) fields.title = "Keep the title under 80 characters.";
+
+  if (!state.slug.trim()) fields.slug = "A slug is required.";
+  else if (!SLUG_PATTERN.test(state.slug.trim()))
+    fields.slug = "Use lowercase letters, numbers and single hyphens.";
+
+  if (state.year.trim()) {
+    const year = Number(state.year.trim());
+    if (!Number.isInteger(year) || year < 1970 || year > 2100)
+      fields.year = "Enter a year between 1970 and 2100.";
+  }
+
+  const tags = parseTags(state.tags);
+  if (tags.length > 12) fields.tags = "Up to 12 tags.";
+  else if (tags.some((tag) => tag.length > 24)) fields.tags = "Each tag can be up to 24 characters.";
+
+  const limits: [FieldName, number][] = [
+    ["summary", 420],
+    ["client", 80],
+    ["role", 80],
+    ["problem", 900],
+    ["solution", 900],
+    ["result", 900],
+  ];
+  for (const [name, max] of limits) {
+    if (state[name].trim().length > max) fields[name] = `Keep this under ${max} characters.`;
+  }
+
+  if (state.link.trim()) {
+    try {
+      const url = new URL(state.link.trim());
+      if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("protocol");
+    } catch {
+      fields.link = "Enter a full link, e.g. https://example.com.";
+    }
+  }
+
+  const byPiece: Record<string, string> = {};
+  let general: string | null = null;
+  pieces.forEach((piece) => {
+    if (piece.status === "error") byPiece[piece.key] = "This upload failed. Retry it or remove the piece.";
+    else if (piece.status === "ready" && !piece.src.trim() && (pieces.length > 1 || state.published)) {
+      byPiece[piece.key] = "Add a file or a URL, or remove this piece.";
+    } else if (piece.srcType === "url" && piece.src.trim() && !looksLikeSource(piece.src)) {
+      byPiece[piece.key] = "Enter a full https:// link or a path starting with /.";
+    }
+  });
+  if (state.published && pieces.length === 0) general = "Add at least one piece before publishing.";
+  else if (Object.keys(byPiece).length) {
+    const first = pieces.findIndex((piece) => byPiece[piece.key]);
+    general = `Piece ${first + 1}: ${byPiece[pieces[first].key]}`;
+  }
+
+  return { fields, pieces: byPiece, general };
+}
+
+const INPUT =
+  "w-full border bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40 transition-colors duration-200 hover:border-line/25 focus:border-line/40";
+
+const page: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+};
+const reveal: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+};
+
+export function WorkForm({ mode, work }: { mode: Mode; work?: Work }) {
   const router = useRouter();
 
   const [state, setState] = React.useState<FormState>(() => fromWork(work));
-  const [slugTouched, setSlugTouched] = React.useState(false);
+  const [pieces, setPieces] = React.useState<PieceDraft[]>(() => piecesFromWork(work));
+  const [slugTouched, setSlugTouched] = React.useState(mode === "edit");
+  const [touched, setTouched] = React.useState<Set<string>>(() => new Set());
+  const [submitted, setSubmitted] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [slugConflict, setSlugConflict] = React.useState<string | null>(null);
 
-  const [pendingFile, setPendingFile] = React.useState<File | null>(null);
-  const [pendingPoster, setPendingPoster] = React.useState<File | null>(null);
+  const saved = React.useRef(false);
+  const [baseline] = React.useState(() => JSON.stringify(buildPayload(fromWork(work), piecesFromWork(work))));
 
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
-    setState((s) => ({ ...s, [k]: v }));
-
-  const onTitleChange = (v: string) => {
-    set("title", v);
-    if (!slugTouched) set("slug", slugify(v));
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setState((current) => ({ ...current, [key]: value }));
+    if (key === "slug") setSlugConflict(null);
   };
 
+  const onTitleChange = (value: string) => {
+    set("title", value);
+    if (!slugTouched) set("slug", slugify(value));
+  };
+
+  const touch = (name: string) =>
+    setTouched((current) => (current.has(name) ? current : new Set(current).add(name)));
+
+  const issues = React.useMemo(() => validate(state, pieces), [state, pieces]);
+  const uploading = pieces.filter((piece) => piece.status === "uploading").length;
+  const showIssue = (name: FieldName) => (submitted || touched.has(name) ? issues.fields[name] : undefined);
+  const visiblePieceErrors = submitted ? issues.pieces : {};
+  const issueCount = Object.keys(issues.fields).length + (issues.general ? 1 : 0);
+
+  const serialized = JSON.stringify(buildPayload(state, pieces));
+  const dirty = baseline !== serialized;
+
+  React.useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (saved.current) return;
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
   const submit = async () => {
-    setBusy(true);
+    if (busy) return;
+    setSubmitted(true);
     setError(null);
+
+    if (uploading) {
+      setError(`Wait for ${uploading} upload${uploading === 1 ? "" : "s"} to finish.`);
+      return;
+    }
+
+    const firstField = FIELD_ORDER.find((name) => issues.fields[name]);
+    if (firstField || issues.general) {
+      if (firstField) document.getElementById(`wf-${firstField}`)?.focus();
+      else document.getElementById("wf-pieces")?.scrollIntoView({ block: "center" });
+      return;
+    }
+
+    setBusy(true);
     try {
-      const tags = state.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-
-      const payload = {
-        title: state.title.trim(),
-        slug: state.slug.trim(),
-        year: state.year.trim() ? Number(state.year.trim()) : undefined,
-        tags,
-        // Empty strings (not undefined) so a cleared field is actually cleared on save.
-        summary: state.summary.trim(),
-        client: state.client.trim(),
-        role: state.role.trim(),
-        problem: state.problem.trim(),
-        solution: state.solution.trim(),
-        result: state.result.trim(),
-        link: state.link.trim(),
-        published: state.published,
-        media: {
-          kind: state.mediaKind,
-          srcType: state.srcType,
-          src: state.src.trim(),
-          poster: state.mediaKind === "video" && state.poster.trim() ? state.poster.trim() : undefined,
-          focus: { x: Math.round(state.focusX), y: Math.round(state.focusY) },
-          alt: state.alt.trim(),
-        },
-      };
-
       const endpoint = mode === "create" ? "/api/admin/works" : `/api/admin/works/${work?.id}`;
-      const method = mode === "create" ? "POST" : "PATCH";
-
       const res = await fetch(endpoint, {
-        method,
+        method: mode === "create" ? "POST" : "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(buildPayload(state, pieces)),
       });
 
       if (!res.ok) {
-        const j = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(j?.error ?? "Save failed.");
+        const json = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (res.status === 409) {
+          setSlugConflict(json?.error ?? "That slug is already in use.");
+          document.getElementById("wf-slug")?.focus();
+          return;
+        }
+        throw new Error(json?.error ?? "Save failed.");
       }
 
+      saved.current = true;
       router.push("/admin/works");
       router.refresh();
     } catch (e) {
@@ -183,383 +273,352 @@ export function WorkForm({
     }
   };
 
-  const uploadMain = async () => {
-    if (!pendingFile) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const kind = state.mediaKind === "video" ? "video" : "image";
-      const path = await uploadFile(pendingFile, kind);
-      set("src", path);
-      setPendingFile(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const submitRef = React.useRef(submit);
+  React.useEffect(() => {
+    submitRef.current = submit;
+  });
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        void submitRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
-  const uploadPoster = async () => {
-    if (!pendingPoster) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const path = await uploadFile(pendingPoster, "poster");
-      set("poster", path);
-      setPendingPoster(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const field = (name: FieldName) => ({
+    id: `wf-${name}`,
+    value: state[name],
+    error: name === "slug" ? (slugConflict ?? showIssue(name)) : showIssue(name),
+    onBlur: () => touch(name),
+  });
+
+  const status = busy
+    ? "SAVING…"
+    : error
+      ? error
+      : uploading
+        ? `UPLOADING ${uploading} FILE${uploading === 1 ? "" : "S"}…`
+        : submitted && issueCount
+          ? `${issueCount} ISSUE${issueCount === 1 ? "" : "S"} TO FIX`
+          : dirty
+            ? "UNSAVED CHANGES"
+            : mode === "edit"
+              ? "NO CHANGES"
+              : "NEW WORK";
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <p className="text-xs tracking-[0.22em] text-fog/70">
-            {mode === "create" ? "NEW WORK" : "EDIT WORK"}
-          </p>
-          <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
-            {mode === "create" ? "Compose." : "Refine."}
-          </h1>
-        </div>
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+      className="mx-auto max-w-7xl px-5 pt-8 md:px-8 md:pt-10"
+    >
+      <motion.div variants={page} initial="hidden" animate="show">
+        <motion.div
+          variants={reveal}
+          className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end"
+        >
+          <div>
+            <Link
+              href="/admin/works"
+              className="text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:text-ink"
+            >
+              ← WORKS
+            </Link>
+            <p className="mt-5 text-xs tracking-[0.22em] text-fog/70">
+              {mode === "create" ? "NEW WORK" : "EDIT WORK"}
+            </p>
+            <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
+              {mode === "create" ? "Compose." : "Refine."}
+            </h1>
+          </div>
+          {mode === "edit" && work?.published ? (
+            <Link
+              href={`/work/${work.slug}`}
+              target="_blank"
+              className="inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink"
+            >
+              VIEW LIVE ↗
+            </Link>
+          ) : null}
+        </motion.div>
 
-        <div className="flex items-center gap-2">
-          <label className="inline-flex items-center gap-3 border border-line/12 bg-void/30 px-4 py-3 text-[11px] tracking-[0.22em] text-fog/70">
-            <input
-              type="checkbox"
-              checked={state.published}
-              onChange={(e) => set("published", e.target.checked)}
+        <Section step="01" title="BASICS" hint="What the work is called and how it is found.">
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextField
+              {...field("title")}
+              label="TITLE"
+              placeholder="Work title"
+              maxLength={80}
+              onChange={onTitleChange}
             />
-            PUBLISHED
-          </label>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void submit()}
+            <TextField
+              {...field("slug")}
+              label="SLUG"
+              placeholder="kebab-case"
+              hint="The address of the work page: /work/your-slug."
+              onChange={(value) => {
+                setSlugTouched(true);
+                set("slug", value);
+              }}
+            />
+            <TextField
+              {...field("year")}
+              label="YEAR (OPTIONAL)"
+              placeholder="2025"
+              inputMode="numeric"
+              onChange={(value) => set("year", value)}
+            />
+            <TextField
+              {...field("tags")}
+              label="TAGS (COMMA SEPARATED)"
+              placeholder="UI, Motion, Systems"
+              hint={`${parseTags(state.tags).length} / 12`}
+              onChange={(value) => set("tags", value)}
+            />
+          </div>
+          <div className="mt-4">
+            <TextField
+              {...field("summary")}
+              label="SUMMARY (OPTIONAL)"
+              placeholder="Short description (kept tight)."
+              multiline
+              rows={3}
+              maxLength={420}
+              onChange={(value) => set("summary", value)}
+            />
+          </div>
+        </Section>
+
+        <Section
+          id="wf-pieces"
+          step="02"
+          title="PIECES"
+          hint="Add one piece, or several to make a collection. The first piece is the cover; drag tiles or use the arrows to reorder."
+        >
+          <PiecesManager pieces={pieces} setPieces={setPieces} errors={visiblePieceErrors} />
+          {submitted && issues.general && !Object.keys(issues.pieces).length ? (
+            <p role="alert" className="mt-4 text-xs text-red-300/90">
+              {issues.general}
+            </p>
+          ) : null}
+        </Section>
+
+        <Section
+          step="03"
+          title="CASE STUDY (OPTIONAL)"
+          hint="Shown under the work. Fill in only what helps: the story is what turns a screenshot into proof."
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <TextField
+              {...field("client")}
+              label="CLIENT"
+              placeholder="Studio or game"
+              onChange={(v) => set("client", v)}
+            />
+            <TextField
+              {...field("role")}
+              label="YOUR ROLE"
+              placeholder="UI design and implementation"
+              onChange={(v) => set("role", v)}
+            />
+            <TextField
+              {...field("link")}
+              label="LIVE LINK"
+              placeholder="https://…"
+              onChange={(v) => set("link", v)}
+            />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <TextField
+              {...field("problem")}
+              label="THE PROBLEM"
+              placeholder="What was broken or missing?"
+              multiline
+              rows={6}
+              maxLength={900}
+              onChange={(v) => set("problem", v)}
+            />
+            <TextField
+              {...field("solution")}
+              label="WHAT I DID"
+              placeholder="The approach and the decisions."
+              multiline
+              rows={6}
+              maxLength={900}
+              onChange={(v) => set("solution", v)}
+            />
+            <TextField
+              {...field("result")}
+              label="THE RESULT"
+              placeholder="What changed, ideally with a number."
+              multiline
+              rows={6}
+              maxLength={900}
+              onChange={(v) => set("result", v)}
+            />
+          </div>
+        </Section>
+      </motion.div>
+
+      <div className="sticky bottom-0 z-30 -mx-5 mt-10 border-t border-line/15 bg-void/95 px-5 py-3 md:-mx-8 md:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p
+            role={error ? "alert" : "status"}
             className={cn(
-              "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
-              "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
+              "min-w-0 flex-1 text-[11px] tracking-[0.22em]",
+              error ? "text-red-300/90" : dirty ? "text-ink" : "text-fog/60",
             )}
           >
+            {status}
+          </p>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={state.published}
+            onClick={() => set("published", !state.published)}
+            className="inline-flex items-center gap-3 border border-line/12 bg-void/40 px-3 py-2.5 text-[11px] tracking-[0.22em] text-fog/80 transition-colors duration-200 hover:border-line/30"
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "relative h-4 w-8 border transition-colors duration-200",
+                state.published ? "border-line/60 bg-white/20" : "border-line/20 bg-transparent",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-2.5 bg-ink transition-[left] duration-200",
+                  state.published ? "left-[18px]" : "left-0.5 opacity-60",
+                )}
+              />
+            </span>
+            {state.published ? "PUBLISHED" : "DRAFT"}
+          </button>
+
+          <Link
+            href="/admin/works"
+            className="inline-flex items-center border border-line/12 px-4 py-2.5 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink"
+          >
+            CANCEL
+          </Link>
+          <button
+            type="submit"
+            disabled={busy || uploading > 0}
+            className="inline-flex items-center gap-3 border border-line/40 bg-white/[0.07] px-5 py-2.5 text-xs tracking-[0.22em] text-ink transition-[border-color,background-color,transform,opacity] duration-200 hover:-translate-y-px hover:border-line/60 hover:bg-white/[0.12] active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+          >
             <span>{busy ? "SAVING" : "SAVE"}</span>
-            <span className="h-px w-10 bg-line/15" />
+            <span aria-hidden="true" className="hidden text-[10px] text-fog/60 md:inline">
+              CTRL S
+            </span>
           </button>
         </div>
       </div>
-
-      <div className="mt-10 grid gap-4 md:grid-cols-2">
-        <Field label="TITLE">
-          <input
-            value={state.title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-            placeholder="Work title"
-          />
-        </Field>
-
-        <Field label="SLUG">
-          <input
-            value={state.slug}
-            onChange={(e) => {
-              setSlugTouched(true);
-              set("slug", e.target.value);
-            }}
-            className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-            placeholder="kebab-case"
-          />
-        </Field>
-
-        <Field label="YEAR (OPTIONAL)">
-          <input
-            value={state.year}
-            onChange={(e) => set("year", e.target.value)}
-            className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-            placeholder="2025"
-          />
-        </Field>
-
-        <Field label="TAGS (comma separated)">
-          <input
-            value={state.tags}
-            onChange={(e) => set("tags", e.target.value)}
-            className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-            placeholder="UI, Motion, Systems"
-          />
-        </Field>
-      </div>
-
-      <div className="mt-4">
-        <Field label="SUMMARY (OPTIONAL)">
-          <textarea
-            value={state.summary}
-            onChange={(e) => set("summary", e.target.value)}
-            className="h-28 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-            placeholder="Short description (kept tight)."
-          />
-        </Field>
-      </div>
-
-      <div className="mt-10 border border-line/12 bg-void/25 p-6">
-        <div className="text-xs tracking-[0.22em] text-fog/70">CASE STUDY (OPTIONAL)</div>
-        <p className="mt-2 text-xs text-fog/70">
-          Shown under the work. Fill in only what helps: the story is what turns a screenshot into proof.
-        </p>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <Field label="CLIENT">
-            <input value={state.client} onChange={(e) => set("client", e.target.value)} className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="Studio or game" />
-          </Field>
-          <Field label="YOUR ROLE">
-            <input value={state.role} onChange={(e) => set("role", e.target.value)} className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="UI design and implementation" />
-          </Field>
-          <Field label="LIVE LINK">
-            <input value={state.link} onChange={(e) => set("link", e.target.value)} className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="https://…" />
-          </Field>
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <Field label="THE PROBLEM">
-            <textarea value={state.problem} onChange={(e) => set("problem", e.target.value)} className="h-32 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="What was broken or missing?" />
-          </Field>
-          <Field label="WHAT I DID">
-            <textarea value={state.solution} onChange={(e) => set("solution", e.target.value)} className="h-32 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="The approach and the decisions." />
-          </Field>
-          <Field label="THE RESULT">
-            <textarea value={state.result} onChange={(e) => set("result", e.target.value)} className="h-32 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="What changed, ideally with a number." />
-          </Field>
-        </div>
-      </div>
-
-      <div className="mt-10 border border-line/12 bg-void/25 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="text-xs tracking-[0.22em] text-fog/70">MEDIA</div>
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={state.mediaKind}
-              onChange={(e) => set("mediaKind", e.target.value as "image" | "video")}
-              className="border border-line/12 bg-void/35 px-3 py-2 text-xs tracking-[0.22em] text-fog/80"
-            >
-              <option value="image">IMAGE</option>
-              <option value="video">VIDEO</option>
-            </select>
-            <select
-              value={state.srcType}
-              onChange={(e) => set("srcType", e.target.value as "upload" | "url")}
-              className="border border-line/12 bg-void/35 px-3 py-2 text-xs tracking-[0.22em] text-fog/80"
-            >
-              <option value="upload">UPLOAD</option>
-              <option value="url">URL</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <div>
-            <div className="text-[11px] tracking-[0.22em] text-fog/70">
-              {state.mediaKind === "video" ? "VIDEO SOURCE (MP4 / WEBM)" : "IMAGE SOURCE (JPG / PNG / WEBP / GIF)"}
-            </div>
-
-            {state.srcType === "url" ? (
-              <input
-                value={state.src}
-                onChange={(e) => set("src", e.target.value)}
-                className="mt-2 w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-                placeholder={state.mediaKind === "video" ? "https://…/video.mp4" : "https://…/image.jpg"}
-              />
-            ) : (
-              <div className="mt-2 space-y-3">
-                <input
-                  type="file"
-                  accept={state.mediaKind === "video" ? "video/mp4,video/webm" : "image/jpeg,image/png,image/webp,image/gif"}
-                  onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)}
-                  className="block w-full text-xs text-fog/70 file:mr-3 file:border-0 file:bg-void/40 file:px-4 file:py-2 file:text-xs file:tracking-[0.22em] file:text-ink"
-                />
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    disabled={busy || !pendingFile}
-                    onClick={() => void uploadMain()}
-                    className={cn(
-                      "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
-                      "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
-                    )}
-                  >
-                    <span>{busy ? "UPLOADING" : "UPLOAD"}</span>
-                    <span className="h-px w-8 bg-line/15" />
-                  </button>
-                  <div className="text-xs text-fog/70">{state.src ? state.src : "—"}</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <div className="text-[11px] tracking-[0.22em] text-fog/70">
-              {state.mediaKind === "video" ? "POSTER (OPTIONAL)" : "PREVIEW"}
-            </div>
-
-            {state.mediaKind === "video" ? (
-              state.srcType === "url" ? (
-                <input
-                  value={state.poster}
-                  onChange={(e) => set("poster", e.target.value)}
-                  className="mt-2 w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-                  placeholder="Poster URL (optional)"
-                />
-              ) : (
-                <div className="mt-2 space-y-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setPendingPoster(e.target.files?.[0] ?? null)}
-                    className="block w-full text-xs text-fog/70 file:mr-3 file:border-0 file:bg-void/40 file:px-4 file:py-2 file:text-xs file:tracking-[0.22em] file:text-ink"
-                  />
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      disabled={busy || !pendingPoster}
-                      onClick={() => void uploadPoster()}
-                      className={cn(
-                        "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
-                        "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
-                      )}
-                    >
-                      <span>{busy ? "UPLOADING" : "UPLOAD"}</span>
-                      <span className="h-px w-8 bg-line/15" />
-                    </button>
-                    <div className="text-xs text-fog/70">{state.poster ? state.poster : "—"}</div>
-                  </div>
-                </div>
-              )
-            ) : state.src ? (
-              <FocusPicker
-                src={state.src}
-                x={state.focusX}
-                y={state.focusY}
-                onChange={(x, y) => setState((current) => ({ ...current, focusX: x, focusY: y }))}
-              />
-            ) : (
-              <div className="mt-2 h-40 w-full border border-line/12 bg-void/25" />
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <Field label="ALT TEXT (DESCRIBE THE IMAGE FOR SCREEN READERS)">
-            <input
-              value={state.alt}
-              onChange={(e) => set("alt", e.target.value)}
-              maxLength={200}
-              className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
-              placeholder="e.g. Inventory screen with a 6x4 item grid and a crafting panel"
-            />
-          </Field>
-        </div>
-
-        {error ? <div className="mt-6 text-sm text-fog/80">{error}</div> : null}
-      </div>
-    </div>
+    </form>
   );
 }
 
-function Field({
-  label,
+function Section({
+  id,
+  step,
+  title,
+  hint,
   children,
 }: {
-  label: string;
+  id?: string;
+  step: string;
+  title: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block">
-      <span className="text-[11px] tracking-[0.22em] text-fog/70">{label}</span>
-      <div className="mt-2">{children}</div>
-    </label>
+    <motion.section
+      id={id}
+      variants={reveal}
+      aria-label={title}
+      className="relative mt-8 scroll-mt-24 border border-line/12 bg-void/25 p-5 md:p-6"
+    >
+      <CornerMarks />
+      <div className="flex items-baseline gap-3 text-xs tracking-[0.22em]">
+        <span className="text-fog/50">{step} /</span>
+        <h2 className="text-ink">{title}</h2>
+      </div>
+      {hint ? <p className="mt-2 max-w-2xl text-xs leading-relaxed text-fog/70">{hint}</p> : null}
+      <div className="mt-6">{children}</div>
+    </motion.section>
   );
 }
 
-/**
- * Click the image to choose the focal point. The thumbnails show how it crops into the gallery
- * card (4:5) and a wide strip, so you can see what a crop keeps before saving.
- */
-function FocusPicker({
-  src,
-  x,
-  y,
+function TextField({
+  id,
+  label,
+  value,
   onChange,
+  onBlur,
+  error,
+  hint,
+  placeholder,
+  multiline,
+  rows,
+  maxLength,
+  inputMode,
 }: {
-  src: string;
-  x: number;
-  y: number;
-  onChange: (x: number, y: number) => void;
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  error?: string;
+  hint?: string;
+  placeholder?: string;
+  multiline?: boolean;
+  rows?: number;
+  maxLength?: number;
+  inputMode?: "numeric";
 }) {
-  const clamp = (value: number) => Math.min(100, Math.max(0, value));
-
-  const pick = (event: React.PointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    onChange(
-      clamp(((event.clientX - rect.left) / rect.width) * 100),
-      clamp(((event.clientY - rect.top) / rect.height) * 100),
-    );
-  };
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const step = event.shiftKey ? 10 : 2;
-    const delta: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
-    };
-    const move = delta[event.key];
-    if (!move) return;
-    event.preventDefault();
-    onChange(clamp(x + move[0]), clamp(y + move[1]));
-  };
-
-  const thumb = (aspect: string, width: string) => (
-    <div
-      className={cn("shrink-0 border border-line/12 bg-void/40 bg-cover", aspect, width)}
-      style={{ backgroundImage: `url(${src})`, backgroundPosition: `${x}% ${y}%` }}
-    />
-  );
+  const messageId = `${id}-message`;
+  const className = cn(INPUT, error ? "border-red-300/50" : "border-line/12", multiline && "resize-none");
+  const shared = {
+    id,
+    value,
+    placeholder,
+    onBlur,
+    className,
+    "aria-invalid": Boolean(error),
+    "aria-describedby": error || hint ? messageId : undefined,
+  } as const;
 
   return (
-    <div className="mt-2">
-      <div
-        role="slider"
-        aria-label="Focal point"
-        aria-valuenow={Math.round(x)}
-        aria-valuetext={`${Math.round(x)}% across, ${Math.round(y)}% down`}
-        tabIndex={0}
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          pick(event);
-        }}
-        onPointerMove={(event) => {
-          if (event.buttons) pick(event);
-        }}
-        onKeyDown={onKeyDown}
-        className="relative inline-block max-w-full cursor-crosshair touch-none border border-line/12"
+    <div>
+      <label
+        htmlFor={id}
+        className="flex items-baseline justify-between text-[11px] tracking-[0.22em] text-fog/70"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" draggable={false} className="block max-h-56 max-w-full select-none" />
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
-          style={{ left: `${x}%`, top: `${y}%` }}
-        />
+        <span>{label}</span>
+        {multiline && maxLength ? (
+          <span className={cn("text-fog/50", value.length > maxLength && "text-red-300/90")}>
+            {value.length}/{maxLength}
+          </span>
+        ) : null}
+      </label>
+      <div className="mt-2">
+        {multiline ? (
+          <textarea {...shared} rows={rows} onChange={(event) => onChange(event.target.value)} />
+        ) : (
+          <input {...shared} inputMode={inputMode} onChange={(event) => onChange(event.target.value)} />
+        )}
       </div>
-      <div className="mt-3 flex items-end gap-3">
-        {thumb("aspect-[4/5]", "w-16")}
-        {thumb("aspect-[16/6]", "w-32")}
-        <span className="text-[11px] tracking-[0.22em] text-fog/70">
-          FOCAL POINT · CLICK OR USE ARROWS
-        </span>
-      </div>
+      {error || hint ? (
+        <p id={messageId} className={cn("mt-1.5 text-xs", error ? "text-red-300/90" : "text-fog/55")}>
+          {error ?? hint}
+        </p>
+      ) : null}
     </div>
   );
 }

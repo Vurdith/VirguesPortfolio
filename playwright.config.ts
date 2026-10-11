@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 
-const PORT = 3200;
+const PORT = Number(process.env.E2E_PORT ?? 3200);
 
 // Tests run against a production build (so the real CSP and headers apply) with a throwaway
 // database, never the developer's data/db.json.

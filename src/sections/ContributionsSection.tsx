@@ -74,7 +74,6 @@ export function ContributionsSection({
   const livePlayers = items.some((item) => item.playing !== null)
     ? items.reduce((sum, item) => sum + (item.playing ?? 0), 0)
     : null;
-  const released = items.filter((item) => item.status === "released").length;
 
   return (
     <section
@@ -101,18 +100,18 @@ export function ContributionsSection({
         </header>
 
         <dl className="mt-10 grid grid-cols-3 border border-line/12 bg-void/30 backdrop-blur-sm">
-          <Total label="GAMES" note={`${released} released`}>
+          <Total label="GAMES">
             <CountUp value={items.length} />
           </Total>
-          <Total label="TOTAL VISITS" note="across all games" divided>
+          <Total label="TOTAL VISITS" divided>
             <CountUp value={totalVisits} />
           </Total>
           {highestPeak !== null ? (
-            <Total label="HIGHEST PEAK" note="players at once, one game" divided>
+            <Total label="HIGHEST PEAK" divided>
               <CountUp value={highestPeak} />
             </Total>
           ) : (
-            <Total label="PLAYING NOW" note="right now" divided live>
+            <Total label="PLAYING NOW" divided>
               <CountUp value={livePlayers} />
             </Total>
           )}
@@ -132,7 +131,7 @@ export function ContributionsSection({
                 index === items.length - 1 && items.length % 2 === 1 && "md:col-span-2 lg:col-span-2",
               )}
             >
-              <TrophyCard item={item} rank={index + 1} featured={index === 0} large={index < 2} />
+              <TrophyCard item={item} rank={index + 1} large={index < 2} />
             </motion.li>
           ))}
         </ul>
@@ -143,47 +142,28 @@ export function ContributionsSection({
 
 function Total({
   label,
-  note,
   divided,
-  live,
   children,
 }: {
   label: string;
-  note: string;
   divided?: boolean;
-  live?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className={cn("relative px-4 py-5 md:px-8 md:py-7", divided && "border-l border-line/12")}>
-      <dt className="flex items-center gap-2 text-[10px] tracking-[0.22em] text-fog/70">
-        {live ? <LiveDot /> : null}
-        {label}
-      </dt>
+      <dt className="text-[10px] tracking-[0.22em] text-fog/70">{label}</dt>
       <dd className="mt-3 font-serif text-3xl leading-none tracking-[-0.05em] md:text-6xl">{children}</dd>
-      <p className="mt-2 hidden text-[10px] tracking-[0.18em] text-fog/55 md:block">{note.toUpperCase()}</p>
     </div>
-  );
-}
-
-function LiveDot() {
-  return (
-    <span aria-hidden="true" className="relative flex size-1.5">
-      <span className="absolute inline-flex size-full animate-ping rounded-full bg-ink/60" />
-      <span className="relative inline-flex size-1.5 rounded-full bg-ink" />
-    </span>
   );
 }
 
 function TrophyCard({
   item,
   rank,
-  featured,
   large,
 }: {
   item: Contribution;
   rank: number;
-  featured: boolean;
   large: boolean;
 }) {
   const ref = React.useRef<HTMLElement>(null);
@@ -213,11 +193,11 @@ function TrophyCard({
     event.pointerType === "mouse" && document.documentElement.dataset.motion !== "reduced";
 
   const stats = [
-    { label: "VISITS", value: item.visits, live: false },
+    { label: "VISITS", value: item.visits },
     item.peak !== null
-      ? { label: "PEAK PLAYERS", value: item.peak, live: false }
-      : { label: "PLAYING", value: item.playing, live: true },
-    { label: "FAVOURITES", value: item.favorites, live: false },
+      ? { label: "PEAK PLAYERS", value: item.peak }
+      : { label: "PLAYING", value: item.playing },
+    { label: "FAVOURITES", value: item.favorites },
   ];
 
   return (
@@ -257,18 +237,10 @@ function TrophyCard({
         <div aria-hidden="true" className="scanlines opacity-0 transition-opacity duration-500 group-hover:opacity-60" />
         <div aria-hidden="true" className="trophy-glare absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
-          <div className="flex items-center gap-2 text-[10px] tracking-[0.22em] text-ink">
-            <span className="border border-line/35 bg-black/60 px-2 py-1 tabular-nums backdrop-blur-sm">
-              Nº {String(rank).padStart(2, "0")}
-            </span>
-            {featured && item.visits !== null ? (
-              <span className="hidden border border-ink bg-ink px-2 py-1 font-medium text-void sm:inline">
-                MOST VISITED
-              </span>
-            ) : null}
-          </div>
-          <StatusPill status={item.status} />
+        <div className="absolute inset-x-0 top-0 p-4">
+          <span className="inline-block border border-line/35 bg-black/60 px-2 py-1 text-[10px] tabular-nums tracking-[0.22em] text-ink backdrop-blur-sm">
+            Nº {String(rank).padStart(2, "0")}
+          </span>
         </div>
       </div>
 
@@ -293,10 +265,7 @@ function TrophyCard({
         <dl className={cn("mt-6 grid gap-px border border-line/12 bg-line/12", "grid-cols-3")}>
           {stats.map((stat) => (
             <div key={stat.label} className="bg-void/80 px-3 py-3">
-              <dt className="flex items-center gap-1.5 text-[9px] tracking-[0.2em] text-fog/60">
-                {stat.live && stat.value ? <LiveDot /> : null}
-                {stat.label}
-              </dt>
+              <dt className="text-[9px] tracking-[0.2em] text-fog/60">{stat.label}</dt>
               <dd className="mt-1.5 font-serif text-xl leading-none tracking-[-0.03em] md:text-2xl">
                 <CountUp value={stat.value} />
               </dd>
@@ -313,24 +282,5 @@ function TrophyCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function StatusPill({ status }: { status: Contribution["status"] }) {
-  const released = status === "released";
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 border bg-black/60 px-2.5 py-1 text-[10px] tracking-[0.22em] backdrop-blur-sm",
-        released ? "border-line/40 text-ink" : "border-dashed border-line/40 text-fog/80",
-      )}
-    >
-      {released ? (
-        <LiveDot />
-      ) : (
-        <span aria-hidden="true" className="size-1.5 rounded-full border border-fog/70" />
-      )}
-      {released ? "RELEASED" : "UNRELEASED"}
-    </span>
   );
 }

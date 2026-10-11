@@ -1,22 +1,28 @@
 import { Hero } from "@/sections/Hero";
 import { WorkGallery } from "@/sections/WorkGallery";
+import { ContributionsSection } from "@/sections/ContributionsSection";
 import { OfferingsSection } from "@/sections/OfferingsSection";
 import { ProcessBlueprint } from "@/sections/ProcessBlueprint";
 import { ReviewsSection } from "@/sections/ReviewsSection";
 import { PaymentSection } from "@/sections/PaymentSection";
 import { ContactFooter } from "@/sections/ContactFooter";
 
+import { getContributions } from "@/lib/contributions";
 import { getPublicPortfolioData } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { works, reviews } = await getPublicPortfolioData();
+  const [{ works, reviews }, contributions] = await Promise.all([
+    getPublicPortfolioData(),
+    getContributions(),
+  ]);
 
   return (
     <main id="main" tabIndex={-1} className="film-grain vignette outline-none">
       <Hero />
       <WorkGallery works={works} />
+      <ContributionsSection items={contributions} />
       <OfferingsSection />
       <ProcessBlueprint />
       <PaymentSection />

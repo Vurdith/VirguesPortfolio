@@ -378,7 +378,26 @@ html.has-custom-cursor summary {
   }
 }
 
+/* Contribution cards: tilt toward the pointer, with a foil glare under it. */
+.trophy-card {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  will-change: transform;
+}
+
+.trophy-glare {
+  mix-blend-mode: overlay;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgb(255 255 255 / 0.34),
+    transparent 55%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .trophy-card {
+    transform: none !important;
+  }
+
   html {
     scroll-behavior: auto;
   }

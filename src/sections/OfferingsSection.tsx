@@ -176,9 +176,7 @@ function OfferingCard({
   spanClass: string;
 }) {
   return (
-    <motion.article
-      layout
-      transition={{ layout: { duration: 0.24, ease: "easeOut" } }}
+    <article
       className={cn(
         "perf-card group relative h-full min-h-[250px] overflow-hidden border border-line/12 bg-void/35 p-5",
         "transition-colors duration-300 hover:border-line/30",
@@ -254,7 +252,7 @@ function OfferingCard({
           </span>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
 

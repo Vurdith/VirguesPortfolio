@@ -173,6 +173,7 @@
   border-radius: 9999px;
   opacity: 0.7;
   pointer-events: none;
+  border: 1px solid rgb(255 255 255 / 0.4);
   animation: profile-pulse 2.2s ease-out infinite;
 }
 
@@ -231,11 +232,13 @@
 
 @keyframes profile-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgb(255 255 255 / 0.28);
+    transform: scale(1);
+    opacity: 0.7;
   }
   70%,
   100% {
-    box-shadow: 0 0 0 16px rgb(255 255 255 / 0);
+    transform: scale(1.9);
+    opacity: 0;
   }
 }
 
@@ -270,7 +273,6 @@ html.has-custom-cursor summary {
   overflow: hidden;
   isolation: isolate;
   transition: transform 0.3s cubic-bezier(0.2, 0.85, 0.2, 1), box-shadow 0.3s ease;
-  animation: quote-pulse 3.2s ease-out infinite;
 }
 
 .quote-cta:hover {
@@ -317,16 +319,6 @@ html.has-custom-cursor summary {
   }
 }
 
-@keyframes quote-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgb(255 255 255 / 0.32);
-  }
-  70%,
-  100% {
-    box-shadow: 0 0 0 14px rgb(255 255 255 / 0);
-  }
-}
-
 /* CRT-style scanlines: fine dark lines that crawl one full period per loop (so the loop is
    seamless), plus a soft bright band that rolls down like a refresh sweep. */
 .scanlines {
@@ -342,7 +334,6 @@ html.has-custom-cursor summary {
     transparent 4px
   );
   background-size: 100% 4px;
-  animation: scanlines-crawl 1.1s linear infinite;
 }
 
 .scanlines::after {
@@ -360,12 +351,13 @@ html.has-custom-cursor summary {
   );
   transform: translateY(-110%);
   animation: scanlines-sweep 3.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-play-state: paused;
 }
 
-@keyframes scanlines-crawl {
-  to {
-    background-position-y: 4px;
-  }
+/* The sweep only runs while its card is being looked at. */
+.group:hover .scanlines::after,
+.group:focus-within .scanlines::after {
+  animation-play-state: running;
 }
 
 @keyframes scanlines-sweep {
@@ -478,4 +470,14 @@ html[data-motion="reduced"] .review-rail-track {
 
 html[data-motion="reduced"] .hero-fade {
   animation: none;
+}
+
+/* Lens rings on work cards only spin while the card is hovered or focused. */
+.animate-ring {
+  animation-play-state: paused;
+}
+
+.group:hover .animate-ring,
+.group:focus-within .animate-ring {
+  animation-play-state: running;
 }

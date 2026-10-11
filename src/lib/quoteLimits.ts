@@ -20,3 +20,5 @@ export const QUOTE_BUDGETS = [
   "£1000+",
   "Not sure yet",
 ] as const;
+
+export const QUOTE_DEADLINES = ["ASAP", "Within a month", "1–3 months", "Flexible"] as const;

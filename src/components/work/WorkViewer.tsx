@@ -89,7 +89,7 @@ export function WorkMedia({ work }: { work: Work }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={work.media.src}
-      alt={work.title}
+      alt={work.media.alt || work.title}
       className="max-h-[78svh] w-auto max-w-[92vw] object-contain"
       loading="eager"
     />

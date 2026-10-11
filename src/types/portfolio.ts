@@ -3,6 +3,8 @@ export type Media = {
   srcType: "upload" | "url";
   src: string;
   poster?: string;
+  /** Description for screen readers and search; falls back to the work title. */
+  alt?: string;
   /** Focal point (0-100) used when the image is cropped into a card. */
   focus?: { x: number; y: number };
 };
@@ -57,4 +59,6 @@ export type QuoteRequest = {
   details: string;
   status: QuoteStatus;
   createdAt: string;
+  /** Salted hash of the sender's IP, kept briefly for rate limiting and then dropped. */
+  ipHash?: string;
 };

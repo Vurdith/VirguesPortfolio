@@ -3,8 +3,12 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
+import Link from "next/link";
+
 import { CornerMarks } from "@/components/CornerMarks";
+import { TurnstileWidget, turnstileConfigured } from "@/components/TurnstileWidget";
 import { useUiSounds } from "@/hooks/useUiSounds";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import {
   QUOTE_BUDGET_STEPS,
@@ -96,6 +100,8 @@ export function QuoteForm({ className }: { className?: string }) {
   const [serverError, setServerError] = React.useState<string | null>(null);
   const stepRef = React.useRef<HTMLDivElement>(null);
   const advanceTimer = React.useRef<number | null>(null);
+  const started = React.useRef(false);
+  const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
 
   const errors = validate(fields);
   const current = STEPS[step];
@@ -154,10 +160,16 @@ export function QuoteForm({ className }: { className?: string }) {
     return () => window.clearTimeout(timer);
   }, [step, reduceMotion]);
 
-  const update = <K extends keyof Fields>(key: K, value: Fields[K]) =>
+  const update = <K extends keyof Fields>(key: K, value: Fields[K]) => {
+    if (!started.current && key !== "company") {
+      started.current = true;
+      trackEvent("quote_started");
+    }
     setFields((previous) => ({ ...previous, [key]: value }));
+  };
 
   const go = React.useCallback((target: number) => {
+    trackEvent("quote_step", { step: target + 1 });
     setDirection(target > step ? 1 : -1);
     setStep(Math.max(0, Math.min(STEPS.length - 1, target)));
     setAttempted(false);
@@ -177,6 +189,7 @@ export function QuoteForm({ className }: { className?: string }) {
           deadline: fields.deadline,
           name: fields.name,
           company: fields.company,
+          ...(turnstileToken ? { turnstileToken } : {}),
           // Only the ways of replying that are switched on are sent.
           ...(fields.methods.includes("email") ? { email: fields.email.trim() } : {}),
           ...(fields.methods.includes("discord") ? { discord: cleanHandle(fields.discord) } : {}),
@@ -190,6 +203,7 @@ export function QuoteForm({ className }: { className?: string }) {
       } catch {
         // ignore
       }
+      trackEvent("quote_sent");
       setStatus("sent");
     } catch (err) {
       setStatus("error");
@@ -209,6 +223,11 @@ export function QuoteForm({ className }: { className?: string }) {
     }
     if (!isLast) {
       go(step + 1);
+      return;
+    }
+    if (isLast && turnstileConfigured && !turnstileToken) {
+      setStatus("error");
+      setServerError("Please complete the human check first.");
       return;
     }
     // Final step: make sure nothing earlier is still missing (e.g. a stale draft).
@@ -444,6 +463,15 @@ export function QuoteForm({ className }: { className?: string }) {
                         }
                         onChange={(method, value) => update(method, value)}
                       />
+                      <TurnstileWidget onToken={setTurnstileToken} />
+                      <p className="text-xs leading-relaxed text-fog/60">
+                        I use these details only to reply to this request. A scrambled version of your
+                        IP address is kept for a day or two to stop spam. See the{" "}
+                        <Link href="/privacy" className="text-fog/80 underline underline-offset-4 hover:text-ink">
+                          privacy note
+                        </Link>
+                        .
+                      </p>
                     </div>
                   ) : null}
                 </motion.div>

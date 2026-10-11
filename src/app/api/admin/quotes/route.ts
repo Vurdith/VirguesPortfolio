@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
-import { readDb } from "@/lib/db";
+import { publicQuote, readDb } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,5 +11,5 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = await readDb();
-  return NextResponse.json({ quotes: db.quotes }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ quotes: db.quotes.map(publicQuote) }, { headers: { "cache-control": "no-store" } });
 }

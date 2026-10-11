@@ -6,7 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CornerMarks } from "@/components/CornerMarks";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
-const INTRO_VIDEO = "/intro-loader-v2.mp4";
+const INTRO_VIDEO = "/intro-loader-v3.mp4";
+const INTRO_POSTER = "/intro-poster.webp";
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
 
@@ -197,6 +198,7 @@ export function LoadingScene() {
                 key="intro-video"
                 className="h-full w-full object-cover"
                 src={INTRO_VIDEO}
+                poster={INTRO_POSTER}
                 autoPlay
                 playsInline
                 preload="auto"

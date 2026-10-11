@@ -1,0 +1,76 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { SITE } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Privacy",
+  description: `What ${SITE.name} stores when you send a quote request or a review, and why.`,
+  alternates: { canonical: "/privacy" },
+};
+
+const SECTIONS = [
+  {
+    title: "Quote requests",
+    body: [
+      "When you send a quote request I store what you type: your name, the way you asked me to reply (email, Discord and/or X), the project details, budget and timeline.",
+      "I use it only to reply to you and to keep a record of the conversation. Nothing is sold or shared for marketing.",
+      "To stop spam, I also keep a scrambled (hashed) version of your IP address next to the request. It cannot be turned back into your address and is deleted after a day or two.",
+    ],
+  },
+  {
+    title: "Reviews",
+    body: [
+      "If you leave a review, your name, rating and message are stored and shown on the site only after I approve them.",
+    ],
+  },
+  {
+    title: "On your device",
+    body: [
+      "The site saves a few preferences in your browser: whether sound and motion are on, whether you have seen the intro, and an unsent quote draft so a refresh does not lose your message. They never leave your device, and the draft is removed once you send it.",
+    ],
+  },
+  {
+    title: "Analytics and hosting",
+    body: [
+      "Visits are counted with Vercel Web Analytics, which does not use cookies or track you across sites. The site is hosted on Vercel; data is stored in Google Firestore and files in Cloudflare R2.",
+    ],
+  },
+  {
+    title: "Your choices",
+    body: [
+      `You can ask me to see, correct or delete anything I hold about you by emailing ${SITE.email}. I will reply within a few days.`,
+    ],
+  },
+] as const;
+
+export default function PrivacyPage() {
+  return (
+    <main id="main" tabIndex={-1} className="film-grain vignette min-h-dvh px-6 py-16 outline-none md:px-10 md:py-20">
+      <div className="mx-auto max-w-3xl">
+        <Link href="/" className="text-xs tracking-[0.22em] text-fog/72 hover:text-ink">
+          ← {SITE.name.toUpperCase()}
+        </Link>
+        <p className="mt-10 text-xs tracking-[0.22em] text-fog/72">PRIVACY</p>
+        <h1 className="mt-4 font-serif text-5xl leading-[0.92] tracking-[-0.06em] md:text-6xl">
+          What I keep, and why.
+        </h1>
+
+        <div className="mt-12 space-y-10">
+          {SECTIONS.map((section) => (
+            <section key={section.title}>
+              <h2 className="text-[10px] tracking-[0.22em] text-fog/72">{section.title.toUpperCase()}</h2>
+              <div className="mt-3 space-y-3">
+                {section.body.map((paragraph) => (
+                  <p key={paragraph} className="text-pretty text-sm leading-relaxed text-fog/85 md:text-base">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}

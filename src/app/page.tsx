@@ -1,4 +1,5 @@
 import { Hero } from "@/sections/Hero";
+import { AboutSection } from "@/sections/AboutSection";
 import { WorkGallery } from "@/sections/WorkGallery";
 import { OfferingsSection } from "@/sections/OfferingsSection";
 import { ProcessBlueprint } from "@/sections/ProcessBlueprint";
@@ -17,6 +18,7 @@ export default async function Home() {
     <main id="main" tabIndex={-1} className="film-grain vignette outline-none">
       <Hero />
       <WorkGallery works={works} />
+      <AboutSection />
       <OfferingsSection />
       <ProcessBlueprint />
       <PaymentSection />

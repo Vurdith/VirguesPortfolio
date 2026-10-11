@@ -123,7 +123,7 @@ export function Hero({ className }: { className?: string }) {
             sizes="100vw"
             className="object-cover object-center"
           />
-          {motionOff ? null : <HeroShader src={SITE.heroImage} />}
+          {motionOff ? null : <HeroShader src={`/_next/image?url=${encodeURIComponent(SITE.heroImage)}&w=2048&q=82`} />}
         </motion.div>
       </motion.div>
 

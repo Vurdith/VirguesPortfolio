@@ -4,7 +4,7 @@ import path from "node:path";
 import { createMutex } from "./mutex";
 import { DEFAULT_DB, type Db } from "./types";
 
-const DB_PATH = path.join(process.cwd(), "data", "db.json");
+const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), "data", "db.json");
 const DB_DIR = path.dirname(DB_PATH);
 
 const runExclusive = createMutex();

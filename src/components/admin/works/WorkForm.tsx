@@ -28,6 +28,7 @@ type FormState = {
   poster: string;
   focusX: number;
   focusY: number;
+  alt: string;
 };
 
 function fromWork(work?: Work): FormState {
@@ -50,6 +51,7 @@ function fromWork(work?: Work): FormState {
     poster: work?.media.poster ?? "",
     focusX: work?.media.focus?.x ?? 50,
     focusY: work?.media.focus?.y ?? 50,
+    alt: work?.media.alt ?? "",
   };
 }
 
@@ -154,6 +156,7 @@ export function WorkForm({
           src: state.src.trim(),
           poster: state.mediaKind === "video" && state.poster.trim() ? state.poster.trim() : undefined,
           focus: { x: Math.round(state.focusX), y: Math.round(state.focusY) },
+          alt: state.alt.trim(),
         },
       };
 
@@ -442,6 +445,18 @@ export function WorkForm({
               <div className="mt-2 h-40 w-full border border-line/12 bg-void/25" />
             )}
           </div>
+        </div>
+
+        <div className="mt-6">
+          <Field label="ALT TEXT (DESCRIBE THE IMAGE FOR SCREEN READERS)">
+            <input
+              value={state.alt}
+              onChange={(e) => set("alt", e.target.value)}
+              maxLength={200}
+              className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
+              placeholder="e.g. Inventory screen with a 6x4 item grid and a crafting panel"
+            />
+          </Field>
         </div>
 
         {error ? <div className="mt-6 text-sm text-fog/80">{error}</div> : null}

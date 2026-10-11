@@ -121,6 +121,13 @@ export function ContactFooter({ className }: { className?: string }) {
             <QuoteForm />
           </div>
         </div>
+
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line/10 pt-6 text-[10px] tracking-[0.22em] text-fog/72">
+          <span>© {new Date().getFullYear()} {SITE.name.toUpperCase()}</span>
+          <Link href="/privacy" className="hover:text-ink">
+            PRIVACY
+          </Link>
+        </div>
       </div>
     </footer>
   );

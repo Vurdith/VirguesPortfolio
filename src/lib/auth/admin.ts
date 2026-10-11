@@ -177,3 +177,25 @@ export async function getAdminSession(token: string | undefined): Promise<DbSess
 
 
 
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const db = await readDb();
+  if (!db.auth.passwordHash) return { ok: false as const, reason: "not_setup" as const };
+
+  const valid = await bcrypt.compare(currentPassword, db.auth.passwordHash);
+  if (!valid) return { ok: false as const, reason: "invalid" as const };
+
+  const hash = await bcrypt.hash(newPassword, 12);
+  const { session } = newSession();
+  // Without ADMIN_AUTH_SECRET the signing key is the password hash, so the old cookies stop
+  // working here as well; either way every other session is revoked.
+  const token = createSignedToken(session, hash);
+  if (!token) return { ok: false as const, reason: "signing_failed" as const };
+
+  await writeDb((next) => {
+    next.auth.passwordHash = hash;
+    next.auth.sessions = [session];
+  });
+
+  return { ok: true as const, token };
+}

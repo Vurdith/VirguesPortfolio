@@ -6,7 +6,10 @@ import { SITE } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries: MetadataRoute.Sitemap = [{ url: SITE.url, changeFrequency: "monthly", priority: 1 }];
+  const entries: MetadataRoute.Sitemap = [
+    { url: SITE.url, changeFrequency: "monthly", priority: 1 },
+    { url: `${SITE.url}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+  ];
 
   try {
     const works = await getPublicWorks();

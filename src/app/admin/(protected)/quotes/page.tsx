@@ -1,5 +1,5 @@
 import { QuotesTable } from "@/components/admin/quotes/QuotesTable";
-import { readDb } from "@/lib/db";
+import { publicQuote, readDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function AdminQuotesPage() {
       </div>
 
       <div className="mt-10">
-        <QuotesTable initialQuotes={db.quotes} />
+        <QuotesTable initialQuotes={db.quotes.map(publicQuote)} />
       </div>
     </div>
   );

@@ -4,6 +4,36 @@ import type { NextConfig } from "next";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
+const isProd = process.env.NODE_ENV === "production";
+
+// Next.js inlines small scripts and styles, so those need 'unsafe-inline'. Everything else is
+// locked to this origin plus the few services the site actually uses. Dev needs eval for HMR.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} https://va.vercel-scripts.com https://challenges.cloudflare.com`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: https:",
+  "font-src 'self' data:",
+  // Admin uploads PUT straight to the storage bucket, whose host is configurable.
+  "connect-src 'self' https: wss:",
+  "frame-src https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  ...(isProd ? [{ key: "Content-Security-Policy", value: contentSecurityPolicy }] : []),
+];
+
 const nextConfig: NextConfig = {
   // Lets a verification build run beside the dev server without touching its .next folder.
   distDir: process.env.NEXT_DIST_DIR || ".next",
@@ -20,11 +50,14 @@ const nextConfig: NextConfig = {
     ];
 
     return [
+      { source: "/:path*", headers: securityHeaders },
       { source: "/hero/:path*", headers: staticAssetHeaders },
       { source: "/uploads/:path*", headers: staticAssetHeaders },
       { source: "/music/:path*", headers: staticAssetHeaders },
       { source: "/noise.svg", headers: staticAssetHeaders },
-      { source: "/intro-loader-v2.mp4", headers: staticAssetHeaders },
+      { source: "/intro-loader-v3.mp4", headers: staticAssetHeaders },
+      { source: "/intro-poster.webp", headers: staticAssetHeaders },
+      { source: "/og.jpg", headers: staticAssetHeaders },
       { source: "/ayanakoji-profile-320.webp", headers: staticAssetHeaders },
     ];
   },

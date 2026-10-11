@@ -5,6 +5,7 @@ export const MediaSchema = z.object({
   srcType: z.enum(["upload", "url"]),
   src: z.string().trim().max(2048),
   poster: z.string().trim().optional(),
+  alt: z.string().trim().max(200).optional(),
   focus: z
     .object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) })
     .optional(),

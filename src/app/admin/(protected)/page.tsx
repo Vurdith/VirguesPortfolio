@@ -1,3 +1,4 @@
+import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 import { readDb } from "@/lib/db";
 import type { ReactNode } from "react";
 
@@ -56,6 +57,14 @@ export default async function AdminDashboardPage() {
           ) : (
             <p className="text-sm text-fog/70">No work entries yet.</p>
           )}
+        </Panel>
+      </div>
+
+      <div className="mt-4">
+        <Panel title="Security">
+          <div className="max-w-md">
+            <ChangePasswordForm />
+          </div>
         </Panel>
       </div>
     </div>

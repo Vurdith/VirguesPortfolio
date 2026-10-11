@@ -3,7 +3,7 @@
 import * as React from "react";
 import { animate, useInView, useReducedMotion } from "framer-motion";
 
-const NUMBER = /\d+/;
+const NUMBER = /\d+(?:\.\d+)?/;
 
 /**
  * Renders `text` and counts its first number up from zero the first time it scrolls into view
@@ -16,6 +16,7 @@ export function CountUpText({ text, className }: { text: string; className?: str
 
   const match = NUMBER.exec(text);
   const target = match ? Number(match[0]) : null;
+  const decimals = match?.[0].split(".")[1]?.length ?? 0;
   const [value, setValue] = React.useState(target);
 
   // Start from zero on the client; the server renders the real number for no-JS and search.
@@ -28,17 +29,17 @@ export function CountUpText({ text, className }: { text: string; className?: str
     const controls = animate(0, target, {
       duration: 1.3,
       ease: [0.2, 0.85, 0.2, 1],
-      onUpdate: (latest) => setValue(Math.round(latest)),
+      onUpdate: (latest) => setValue(Number(latest.toFixed(decimals))),
     });
     return () => controls.stop();
-  }, [inView, target, reduceMotion]);
+  }, [inView, target, decimals, reduceMotion]);
 
   if (!match || value === null) return <span className={className}>{text}</span>;
 
   return (
     <span ref={ref} className={className}>
       {text.slice(0, match.index)}
-      <span className="tabular-nums">{value}</span>
+      <span className="tabular-nums">{value.toFixed(decimals)}</span>
       {text.slice(match.index + match[0].length)}
     </span>
   );

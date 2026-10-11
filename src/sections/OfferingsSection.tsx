@@ -23,7 +23,7 @@ const OFFERINGS = [
     description:
       "Custom interface screens shaped around your game's style, from rough layout to polished visual design.",
     why: "Best for menus, shops, HUDs, dashboards, and systems that need to feel finished instead of patched together.",
-    badge: "From £50 / task",
+    badge: "From £30 / task",
     discounts: TASK_DISCOUNTS,
   },
   {
@@ -32,7 +32,7 @@ const OFFERINGS = [
     description:
       "Clean Roblox imports with sizing checks, greyscale support, and careful translation from source files into Studio.",
     why: "Good for getting assets in-game cleanly the first time, with fewer alignment and fidelity issues.",
-    badge: "From £30 / task",
+    badge: "From £12.50 / task",
     discounts: TASK_DISCOUNTS,
   },
   {

@@ -59,10 +59,9 @@ const OFFERINGS = [
     why: "Best for launching a game with one consistent look instead of quoting task by task.",
     badge: "£1650 package",
     extra: {
-      baseLabel: "Design only",
-      basePrice: "£1650",
-      label: "+ Importing & polish",
-      price: "£2150",
+      label: "Importing + polish",
+      delta: "+£500",
+      badge: "£2150 package",
       description:
         "Every screen of your game designed in one consistent style, imported into Studio and finished with a final polish pass. Covers up to 40 screens.",
     },
@@ -279,41 +278,38 @@ function OfferingCard({
           </details>
         )}
 
-        <div className="mt-auto pt-6">
-          {extra ? (
-            <div role="radiogroup" aria-label="Package scope" className="grid grid-cols-2 gap-2">
-              {[
-                { on: false, label: extra.baseLabel, price: extra.basePrice },
-                { on: true, label: extra.label, price: extra.price },
-              ].map((option) => {
-                const selected = extras === option.on;
-                return (
-                  <button
-                    key={option.label}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setExtras(option.on)}
-                    className={cn(
-                      "relative border px-3 py-2.5 text-left transition-colors duration-300",
-                      selected
-                        ? "border-ink/60 bg-white/[0.07] text-ink"
-                        : "border-line/15 bg-white/[0.02] text-fog/65 hover:border-line/35 hover:text-ink",
-                    )}
-                  >
-                    <span className="block text-[10px] tracking-[0.18em]">{option.label.toUpperCase()}</span>
-                    <span className="mt-1 block text-sm tabular-nums tracking-[0.12em]">
-                      <CountUpText text={option.price} />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
-              <CountUpText text={offering.badge.toUpperCase()} />
-            </span>
+        <div className="mt-auto flex flex-col items-start gap-3 pt-6">
+          {extra && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={extras}
+              onClick={() => setExtras((on) => !on)}
+              className="group/toggle flex items-center gap-3 text-[11px] tracking-[0.18em] text-fog/70 transition-colors duration-200 hover:text-ink"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "relative h-[18px] w-8 shrink-0 rounded-full border transition-colors duration-300",
+                  extras ? "border-ink bg-ink" : "border-line/30 bg-transparent group-hover/toggle:border-line/50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute left-[2px] top-[2px] size-3 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+                    extras ? "translate-x-3.5 bg-void" : "bg-fog/70",
+                  )}
+                />
+              </span>
+              <span className={cn("transition-colors duration-300", extras && "text-ink")}>
+                {extra.label.toUpperCase()}
+              </span>
+              <span className="text-fog/55">{extra.delta}</span>
+            </button>
           )}
+          <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
+            <CountUpText text={(extra && extras ? extra.badge : offering.badge).toUpperCase()} />
+          </span>
         </div>
       </div>
     </article>

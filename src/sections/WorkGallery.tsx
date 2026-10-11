@@ -349,6 +349,10 @@ function DeckLayer({ piece, depth, backdrop }: { piece: Media; depth: number; ba
     "--deck-y": `${-depth * 10}px`,
     "--deck-z": `${-depth * 8}px`,
     "--deck-s": 1 - depth * 0.045,
+    // On hover the pieces fan out like a hand of cards: higher, to alternating sides, tilted.
+    "--fan-x": `${(depth % 2 ? 1 : -1) * depth * 14}px`,
+    "--fan-y": `${-depth * 18}px`,
+    "--fan-r": `${(depth % 2 ? 1 : -1) * (2 + depth * 2.5)}deg`,
     animationDelay: `${-depth * 1.4}s`,
   } as React.CSSProperties;
 

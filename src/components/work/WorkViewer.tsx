@@ -191,9 +191,9 @@ export function WorkMedia({ work, onPieceChange }: { work: Work; onPieceChange?:
               }
             }}
             style={{ touchAction: "pan-y" }}
-            className="flex max-h-full max-w-full items-center justify-center"
+            className="flex size-full items-center justify-center"
           >
-            <PieceView piece={pieces[index]} work={work} index={index} count={count} />
+            <PieceView piece={pieces[index]} work={work} index={index} count={count} inStage />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -296,18 +296,21 @@ function PieceView({
   work,
   index,
   count,
+  inStage = false,
 }: {
   piece: Media;
   work: Work;
   index: number;
   count: number;
+  /** Inside the fixed-height carousel stage: fit the piece to the stage instead of the viewport. */
+  inStage?: boolean;
 }) {
   const description = piece.alt || (count > 1 ? `${work.title}, piece ${index + 1} of ${count}` : work.title);
 
   if (piece.kind === "video") {
     return piece.src ? (
       <video
-        className="max-h-[78svh] w-auto max-w-[92vw] object-contain"
+        className={inStage ? "max-h-full max-w-full object-contain" : "max-h-[78svh] w-auto max-w-[92vw] object-contain"}
         controls
         playsInline
         preload="metadata"
@@ -326,7 +329,10 @@ function PieceView({
     <img
       src={piece.src}
       alt={description}
-      className="max-h-[78svh] w-auto max-w-[92vw] select-none object-contain"
+      className={cn(
+        "select-none object-contain",
+        inStage ? "max-h-full max-w-full" : "max-h-[78svh] w-auto max-w-[92vw]",
+      )}
       draggable={false}
       loading="eager"
     />

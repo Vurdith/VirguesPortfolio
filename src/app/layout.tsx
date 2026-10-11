@@ -26,7 +26,7 @@ const serif = Instrument_Serif({
 
 const TITLE = `${SITE.name} — UI Designer & Developer`;
 const DESCRIPTION =
-  "UI designer for Roblox games. Menus, shops, HUDs, clean imports into Studio and the final polish, quoted before any work starts.";
+  "UI designer specialising in Roblox games. Clean, consistent interfaces, taken from concept through to final implementation.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),

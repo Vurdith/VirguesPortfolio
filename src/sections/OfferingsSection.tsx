@@ -59,12 +59,12 @@ const OFFERINGS = [
     why: "Best for launching a game with one consistent look instead of quoting task by task.",
     badge: "£1650 package",
     extra: {
-      label: "Importing + final polish",
-      hint: "Studio imports, then a spacing and alignment pass",
-      delta: "+£500",
+      baseLabel: "Design only",
+      basePrice: "£1650",
+      label: "+ Importing & polish",
+      price: "£2150",
       description:
         "Every screen of your game designed in one consistent style, imported into Studio and finished with a final polish pass. Covers up to 40 screens.",
-      badge: "£2150 package",
     },
   },
   {
@@ -193,7 +193,6 @@ function OfferingCard({
 }) {
   const [extras, setExtras] = React.useState(false);
   const extra = "extra" in offering ? offering.extra : null;
-  const badge = extra && extras ? extra.badge : offering.badge;
 
   return (
     <article
@@ -280,52 +279,41 @@ function OfferingCard({
           </details>
         )}
 
-        {extra && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={extras}
-            onClick={() => setExtras((on) => !on)}
-            className={cn(
-              "group/toggle relative mt-5 flex w-full items-center gap-4 border px-3 py-3 text-left transition-colors duration-300",
-              extras
-                ? "border-line/45 bg-white/[0.06]"
-                : "border-line/12 bg-white/[0.02] hover:border-line/28 hover:bg-white/[0.04]",
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "relative h-6 w-11 shrink-0 border transition-colors duration-300",
-                extras ? "border-ink/70 bg-ink" : "border-line/30 bg-void/60",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute left-0.5 top-0.5 size-4 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-                  extras ? "translate-x-5 bg-void" : "bg-fog/70",
-                )}
-              />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[11px] tracking-[0.2em] text-ink">{extra.label.toUpperCase()}</span>
-              <span className="mt-1 block text-xs leading-snug text-fog/65">{extra.hint}</span>
-            </span>
-            <span
-              className={cn(
-                "shrink-0 border px-2 py-1 text-[11px] tabular-nums tracking-[0.16em] transition-colors duration-300",
-                extras ? "border-ink/60 text-ink" : "border-line/20 text-fog/70",
-              )}
-            >
-              {extra.delta}
-            </span>
-          </button>
-        )}
-
         <div className="mt-auto pt-6">
-          <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
-            <CountUpText text={badge.toUpperCase()} />
-          </span>
+          {extra ? (
+            <div role="radiogroup" aria-label="Package scope" className="grid grid-cols-2 gap-2">
+              {[
+                { on: false, label: extra.baseLabel, price: extra.basePrice },
+                { on: true, label: extra.label, price: extra.price },
+              ].map((option) => {
+                const selected = extras === option.on;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setExtras(option.on)}
+                    className={cn(
+                      "relative border px-3 py-2.5 text-left transition-colors duration-300",
+                      selected
+                        ? "border-ink/60 bg-white/[0.07] text-ink"
+                        : "border-line/15 bg-white/[0.02] text-fog/65 hover:border-line/35 hover:text-ink",
+                    )}
+                  >
+                    <span className="block text-[10px] tracking-[0.18em]">{option.label.toUpperCase()}</span>
+                    <span className="mt-1 block text-sm tabular-nums tracking-[0.12em]">
+                      <CountUpText text={option.price} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
+              <CountUpText text={offering.badge.toUpperCase()} />
+            </span>
+          )}
         </div>
       </div>
     </article>

@@ -49,10 +49,18 @@ const OFFERINGS = [
     description:
       "Ongoing support for active projects, with priority queue access, recurring imports, seasonal UI updates, and cleaner long-term direction.",
     why: "Strong value for studios that need regular updates, predictable cost, and one visual standard across the year.",
-    badge: "From £1650 / yr",
+    badge: "£3750 / yr",
   },
   {
     code: "05",
+    title: "Full Game Package",
+    description:
+      "A complete interface for a whole game in one package: every screen, the Studio imports and a final polish pass, scoped together.",
+    why: "Best for launching a game with one consistent look and one fixed price instead of quoting task by task.",
+    badge: "£1650 package",
+  },
+  {
+    code: "06",
     title: "Branding & Art Direction",
     description:
       "Typography, spacing rules, component direction, and visual standards that keep UI and promo assets consistent.",
@@ -60,7 +68,7 @@ const OFFERINGS = [
     badge: "From £50",
   },
   {
-    code: "06",
+    code: "07",
     title: "QA & Polish",
     description:
       "A final pass for spacing, alignment, hierarchy, and screenshot-readiness before the work goes public.",
@@ -261,6 +269,7 @@ const OFFERING_SPANS = [
   "lg:col-span-5",
   "lg:col-span-5",
   "lg:col-span-7",
-  "lg:col-span-6",
-  "lg:col-span-6",
+  "lg:col-span-4",
+  "lg:col-span-4",
+  "lg:col-span-4",
 ] as const;

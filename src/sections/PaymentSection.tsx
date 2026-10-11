@@ -10,7 +10,7 @@ import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
 
 const STRIPE_URL = "https://buy.stripe.com/6oUaEZ9geg0p0Qm3X7aMU00";
-const PAYPAL_EMAIL = "reeceleneveu@gmail.com";
+const PAYPAL_EMAIL = "reeceleneveubusiness@gmail.com";
 const PAYPAL_URL = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(
   PAYPAL_EMAIL
 )}&item_name=${encodeURIComponent("Virgue project payment")}&currency_code=GBP`;
@@ -18,7 +18,6 @@ const PAYPAL_URL = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=$
 const PAYMENT_METHODS = [
   {
     title: "Stripe",
-    eyebrow: "Live Checkout",
     description:
       "Fast encrypted checkout for cards and supported wallets. Confirmation is handled immediately after payment.",
     cta: "Pay with Stripe",
@@ -26,7 +25,6 @@ const PAYMENT_METHODS = [
   },
   {
     title: "PayPal",
-    eyebrow: "Invoice Payment",
     description:
       "Prefer PayPal? Pay through PayPal once the project scope and quote are confirmed.",
     cta: "Pay with PayPal",
@@ -99,8 +97,7 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
       <div className="relative flex h-full flex-col">
         <div className="flex items-start justify-between gap-5">
           <div>
-            <p className="text-[11px] tracking-[0.28em] text-fog/72">{method.eyebrow}</p>
-            <h3 className="mt-4 font-serif text-3xl leading-none tracking-[-0.05em]">
+            <h3 className="font-serif text-3xl leading-none tracking-[-0.05em]">
               {method.title}
             </h3>
           </div>

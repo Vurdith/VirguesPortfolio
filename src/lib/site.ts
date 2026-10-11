@@ -8,7 +8,7 @@ export const SITE = {
   workImage: "/hero/gun-2560.webp",
   socials: {
     discord: "https://discord.com/users/872621837572538408",
-    x: "https://x.com/Yeodene_",
+    x: "https://x.com/virgueui",
   },
 } as const;
 

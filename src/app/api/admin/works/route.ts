@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Slug already exists." }, { status: 409 });
   }
 
+  revalidatePath("/");
   return NextResponse.json({ ok: true, id: work.id }, { status: 201 });
 }
 

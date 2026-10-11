@@ -49,7 +49,7 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
           <CornerLines />
           <div className="flex items-center justify-between">
             <div className="text-xs tracking-[0.22em] text-fog/70">ADMIN</div>
-            <div className="text-[10px] tracking-[0.22em] text-fog/50">
+            <div className="text-[11px] tracking-[0.22em] text-fog/70">
               {mode === "setup" ? "INITIAL SETUP" : "LOGIN"}
             </div>
           </div>
@@ -65,7 +65,7 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
 
           <div className="mt-8">
             <label className="block">
-              <span className="text-[10px] tracking-[0.22em] text-fog/70">PASSWORD</span>
+              <span className="text-[11px] tracking-[0.22em] text-fog/70">PASSWORD</span>
               <input
                 type="password"
                 value={password}
@@ -78,7 +78,7 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
 
             {mode === "setup" ? (
               <label className="mt-5 block">
-                <span className="text-[10px] tracking-[0.22em] text-fog/70">SETUP TOKEN</span>
+                <span className="text-[11px] tracking-[0.22em] text-fog/70">SETUP TOKEN</span>
                 <input
                   type="password"
                   value={setupToken}

@@ -57,7 +57,7 @@ export function ScrollProgress() {
       aria-label="Page sections"
       className="pointer-events-none fixed right-5 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-end gap-4 lg:flex"
     >
-      <div className="text-[10px] tabular-nums tracking-[0.28em] text-fog/70">
+      <div className="text-[11px] tabular-nums tracking-[0.28em] text-fog/70">
         <span className="text-ink">{pad(active + 1)}</span>
         <span className="text-fog/40"> / {pad(SECTIONS.length)}</span>
       </div>
@@ -83,7 +83,7 @@ export function ScrollProgress() {
             >
               <span
                 className={cn(
-                  "text-[9px] tracking-[0.24em] transition-all duration-300",
+                  "text-[10px] tracking-[0.24em] transition-all duration-300",
                   isActive
                     ? "translate-x-0 text-ink opacity-100"
                     : "translate-x-1 text-fog/70 opacity-0 group-hover:translate-x-0 group-hover:opacity-100",

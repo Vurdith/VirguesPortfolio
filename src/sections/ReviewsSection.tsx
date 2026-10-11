@@ -86,7 +86,7 @@ function ReviewRail({
 }) {
   return (
     <div
-      className="review-rail perf-card mt-10 overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm"
+      className="review-rail perf-card mt-10 overflow-hidden border border-line/12 bg-void/25"
       style={{ "--review-duration": `${duration}s` } as React.CSSProperties}
     >
       <div
@@ -141,9 +141,9 @@ function ReviewRail({
 
 function EmptyReviews() {
   return (
-    <div className="perf-card mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+    <div className="perf-card mt-10 border border-line/12 bg-void/25 p-6">
       <div className="max-w-2xl">
-        <p className="text-[10px] tracking-[0.28em] text-fog/72">NO APPROVED REVIEWS YET</p>
+        <p className="text-[11px] tracking-[0.28em] text-fog/72">NO APPROVED REVIEWS YET</p>
         <p className="mt-3 text-sm leading-relaxed text-fog/78">
           Reviews from clients will show up here. If we have worked together, you can leave one
           below.
@@ -158,7 +158,7 @@ function ReviewChip({ review }: { review: Review }) {
     <article className="perf-card w-[min(420px,80vw)] border border-line/12 bg-void/35 px-6 py-5">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="truncate text-[10px] font-bold uppercase tracking-[0.3em] text-ink/90">
+          <div className="truncate text-[11px] font-bold uppercase tracking-[0.3em] text-ink/90">
             {review.name || "Anonymous"}
           </div>
           <Stars rating={review.rating} />
@@ -307,7 +307,7 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <label className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-fog/72">NAME</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-fog/72">NAME</span>
             <input
               value={name}
               maxLength={REVIEW_LIMITS.name.max}
@@ -319,7 +319,7 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
           </label>
 
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-fog/72">RATING</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-fog/72">RATING</span>
             <div className="mt-3 flex h-[46px] items-center gap-2" role="radiogroup" aria-label="Rating">
               {([1, 2, 3, 4, 5] as const).map((n) => (
                 <button
@@ -343,7 +343,7 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
         </div>
 
         <label className="mt-4 block">
-          <span className="text-[10px] tracking-[0.22em] text-fog/70">MESSAGE</span>
+          <span className="text-[11px] tracking-[0.22em] text-fog/70">MESSAGE</span>
           <textarea
             value={text}
             maxLength={REVIEW_LIMITS.text.max}

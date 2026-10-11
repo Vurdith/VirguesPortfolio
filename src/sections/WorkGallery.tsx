@@ -17,6 +17,7 @@ import type { Work } from "@/types/portfolio";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { WorkOverlay, workLayoutId } from "@/components/work/WorkOverlay";
+import { optimizedImage } from "@/lib/images";
 import { cn } from "@/lib/cn";
 import { focusPosition } from "@/lib/focus";
 import { SITE } from "@/lib/site";
@@ -200,6 +201,9 @@ function WorkCard({
     },
   });
 
+  // Cards are a few hundred pixels wide; don't download the full-size original for them.
+  const cardSrc = work.media.kind === "image" ? optimizedImage(work.media.src) : work.media.src;
+
   return (
     <Link
       href={`/work/${work.slug}`}
@@ -238,7 +242,7 @@ function WorkCard({
           style={{
             scale: 1.025,
             backgroundImage: work.media.src
-              ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${work.media.src}), ${backdrop}`
+              ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${cardSrc}), ${backdrop}`
               : `${backdrop}, linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.8) 100%)`,
             backgroundSize: "cover",
             backgroundPosition: focusPosition(work.media),
@@ -259,7 +263,7 @@ function WorkCard({
             className="absolute inset-0 scale-[1.01]"
             style={{ 
               backgroundImage: work.media.src 
-                ? `url(${work.media.src})` 
+                ? `url(${cardSrc})` 
                 : `${backdrop}`,
               backgroundSize: "cover",
               backgroundPosition: focusPosition(work.media),
@@ -292,13 +296,13 @@ function WorkCard({
         <div className="absolute inset-x-0 bottom-0 p-4">
           <div className="flex items-baseline justify-between gap-4">
             <h3 className="font-serif text-xl leading-none tracking-[-0.03em]">{work.title}</h3>
-            <div className="text-[10px] tracking-[0.22em] text-fog/70">{work.year ?? "—"}</div>
+            <div className="text-[11px] tracking-[0.22em] text-fog/70">{work.year ?? "—"}</div>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {work.tags.slice(0, 3).map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70"
+                className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70"
               >
                 {t.toUpperCase()}
               </span>

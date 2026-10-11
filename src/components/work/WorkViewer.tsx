@@ -112,7 +112,7 @@ export function WorkInfo({ work }: { work: Work }) {
           {work.tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70 backdrop-blur-sm"
+              className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70"
             >
               {t.toUpperCase()}
             </span>
@@ -152,13 +152,13 @@ function CaseStudy({ work }: { work: Work }) {
         <dl className="flex flex-wrap items-end gap-x-10 gap-y-4">
           {facts.map((fact) => (
             <div key={fact.label}>
-              <dt className="text-[10px] tracking-[0.22em] text-fog/72">{fact.label}</dt>
+              <dt className="text-[11px] tracking-[0.22em] text-fog/72">{fact.label}</dt>
               <dd className="mt-1.5 text-sm text-ink/90">{fact.value}</dd>
             </div>
           ))}
           {work.link ? (
             <div>
-              <dt className="text-[10px] tracking-[0.22em] text-fog/72">LIVE</dt>
+              <dt className="text-[11px] tracking-[0.22em] text-fog/72">LIVE</dt>
               <dd className="mt-1.5 text-sm">
                 <a
                   href={work.link}
@@ -178,7 +178,7 @@ function CaseStudy({ work }: { work: Work }) {
         <div className="grid gap-8 md:grid-cols-3">
           {story.map((part) => (
             <section key={part.label}>
-              <h2 className="text-[10px] tracking-[0.22em] text-fog/72">{part.label}</h2>
+              <h2 className="text-[11px] tracking-[0.22em] text-fog/72">{part.label}</h2>
               <p className="mt-3 whitespace-pre-line text-pretty text-sm leading-relaxed text-fog/85">
                 {part.text}
               </p>

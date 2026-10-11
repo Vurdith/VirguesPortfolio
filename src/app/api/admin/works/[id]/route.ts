@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
@@ -69,6 +70,7 @@ export async function PATCH(
     case "slug_taken":
       return NextResponse.json({ error: "Slug already exists." }, { status: 409 });
     default:
+      revalidatePath("/");
       return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
   }
 }
@@ -90,6 +92,7 @@ export async function DELETE(
     next.works = next.works.filter((w) => w.id !== id);
   });
 
+  revalidatePath("/");
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }
 

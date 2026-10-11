@@ -34,12 +34,26 @@ const securityHeaders = [
   ...(isProd ? [{ key: "Content-Security-Policy", value: contentSecurityPolicy }] : []),
 ];
 
+const r2Host = (() => {
+  try {
+    return process.env.R2_PUBLIC_BASE_URL ? new URL(process.env.R2_PUBLIC_BASE_URL).hostname : null;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   // Lets a verification build run beside the dev server without touching its .next folder.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   outputFileTracingRoot: projectRoot,
+  env: {
+    // Exposed to the browser so image URLs can be routed through the optimizer.
+    NEXT_PUBLIC_R2_PUBLIC_BASE_URL: process.env.R2_PUBLIC_BASE_URL ?? "",
+  },
   images: {
     qualities: [75, 82, 100],
+    // Uploaded work images live in R2; allow the optimizer to resize them.
+    remotePatterns: r2Host ? [{ protocol: "https", hostname: r2Host }] : [],
   },
   async headers() {
     const staticAssetHeaders = [
@@ -56,6 +70,7 @@ const nextConfig: NextConfig = {
       { source: "/music/:path*", headers: staticAssetHeaders },
       { source: "/noise.svg", headers: staticAssetHeaders },
       { source: "/intro-loader-hq.mp4", headers: staticAssetHeaders },
+      { source: "/intro-loader-720.mp4", headers: staticAssetHeaders },
       { source: "/intro-poster.webp", headers: staticAssetHeaders },
       { source: "/og.jpg", headers: staticAssetHeaders },
       { source: "/ayanakoji-profile-320.webp", headers: staticAssetHeaders },

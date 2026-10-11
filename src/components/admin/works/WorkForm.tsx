@@ -227,7 +227,7 @@ export function WorkForm({
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="inline-flex items-center gap-3 border border-line/12 bg-void/30 px-4 py-3 text-[10px] tracking-[0.22em] text-fog/70">
+          <label className="inline-flex items-center gap-3 border border-line/12 bg-void/30 px-4 py-3 text-[11px] tracking-[0.22em] text-fog/70">
             <input
               type="checkbox"
               checked={state.published}
@@ -302,9 +302,9 @@ export function WorkForm({
         </Field>
       </div>
 
-      <div className="mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+      <div className="mt-10 border border-line/12 bg-void/25 p-6">
         <div className="text-xs tracking-[0.22em] text-fog/70">CASE STUDY (OPTIONAL)</div>
-        <p className="mt-2 text-xs text-fog/60">
+        <p className="mt-2 text-xs text-fog/70">
           Shown under the work. Fill in only what helps: the story is what turns a screenshot into proof.
         </p>
 
@@ -333,7 +333,7 @@ export function WorkForm({
         </div>
       </div>
 
-      <div className="mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+      <div className="mt-10 border border-line/12 bg-void/25 p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="text-xs tracking-[0.22em] text-fog/70">MEDIA</div>
           <div className="flex flex-wrap gap-2">
@@ -358,7 +358,7 @@ export function WorkForm({
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <div>
-            <div className="text-[10px] tracking-[0.22em] text-fog/70">
+            <div className="text-[11px] tracking-[0.22em] text-fog/70">
               {state.mediaKind === "video" ? "VIDEO SOURCE" : "IMAGE SOURCE"}
             </div>
 
@@ -397,7 +397,7 @@ export function WorkForm({
           </div>
 
           <div>
-            <div className="text-[10px] tracking-[0.22em] text-fog/70">
+            <div className="text-[11px] tracking-[0.22em] text-fog/70">
               {state.mediaKind === "video" ? "POSTER (OPTIONAL)" : "PREVIEW"}
             </div>
 
@@ -474,7 +474,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-[10px] tracking-[0.22em] text-fog/70">{label}</span>
+      <span className="text-[11px] tracking-[0.22em] text-fog/70">{label}</span>
       <div className="mt-2">{children}</div>
     </label>
   );
@@ -556,7 +556,7 @@ function FocusPicker({
       <div className="mt-3 flex items-end gap-3">
         {thumb("aspect-[4/5]", "w-16")}
         {thumb("aspect-[16/6]", "w-32")}
-        <span className="text-[10px] tracking-[0.22em] text-fog/60">
+        <span className="text-[11px] tracking-[0.22em] text-fog/70">
           FOCAL POINT · CLICK OR USE ARROWS
         </span>
       </div>

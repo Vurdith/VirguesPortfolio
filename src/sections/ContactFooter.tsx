@@ -68,7 +68,7 @@ export function ContactFooter({ className }: { className?: string }) {
       <div aria-hidden="true" className="section-grid-bg" />
       <div className="relative mx-auto max-w-6xl px-6 md:px-10">
         <div className="grid gap-12 md:grid-cols-12 md:gap-12">
-          <div className="md:col-span-5">
+          <div className="min-w-0 md:col-span-5">
             <div className="flex items-center gap-3 text-xs tracking-[0.22em] text-fog/70">
               <MonoIcon name="mail" className="size-4" />
               <span>CONTACT</span>
@@ -91,7 +91,7 @@ export function ContactFooter({ className }: { className?: string }) {
             >
               <span className="flex min-w-0 items-center gap-3">
                 <MonoIcon name="mail" className="size-4 shrink-0" />
-                <span className="truncate font-medium">{SITE.email}</span>
+                <span className="truncate font-medium tracking-normal sm:tracking-[0.22em]">{SITE.email}</span>
               </span>
               <span className="shrink-0 text-fog/70" aria-live="polite">
                 {copied ? "COPIED" : "COPY"}
@@ -117,12 +117,12 @@ export function ContactFooter({ className }: { className?: string }) {
             </div>
           </div>
 
-          <div id="quote" className="relative z-[41] scroll-mt-24 md:col-span-7">
+          <div id="quote" className="relative z-[41] min-w-0 scroll-mt-24 md:col-span-7">
             <QuoteForm />
           </div>
         </div>
 
-        <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line/10 pt-6 text-[10px] tracking-[0.22em] text-fog/72">
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line/10 pt-6 text-[11px] tracking-[0.22em] text-fog/72">
           <span>© {new Date().getFullYear()} {SITE.name.toUpperCase()}</span>
           <Link href="/privacy" className="hover:text-ink">
             PRIVACY

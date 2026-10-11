@@ -42,7 +42,7 @@ export function ChangePasswordForm() {
   return (
     <form onSubmit={(event) => void submit(event)} className="grid gap-4">
       <label className="block">
-        <span className="text-[10px] tracking-[0.22em] text-fog/70">CURRENT PASSWORD</span>
+        <span className="text-[11px] tracking-[0.22em] text-fog/70">CURRENT PASSWORD</span>
         <input
           type="password"
           autoComplete="current-password"
@@ -52,7 +52,7 @@ export function ChangePasswordForm() {
         />
       </label>
       <label className="block">
-        <span className="text-[10px] tracking-[0.22em] text-fog/70">NEW PASSWORD</span>
+        <span className="text-[11px] tracking-[0.22em] text-fog/70">NEW PASSWORD</span>
         <input
           type="password"
           autoComplete="new-password"

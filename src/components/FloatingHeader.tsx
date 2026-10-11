@@ -167,7 +167,7 @@ const ProfileHome = React.memo(function ProfileHome() {
           alt=""
           width={160}
           height={160}
-          quality={100}
+          quality={82}
           className="h-full w-full scale-[1.12] object-cover object-center"
           priority
         />

@@ -10,7 +10,8 @@ import { ContactFooter } from "@/sections/ContactFooter";
 import { getContributions } from "@/lib/contributions";
 import { getPublicPortfolioData } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+// Served from the cache and refreshed at most once a minute; admin edits refresh it at once.
+export const revalidate = 60;
 
 export default async function Home() {
   const [{ works, reviews }, contributions] = await Promise.all([

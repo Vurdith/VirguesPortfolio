@@ -29,8 +29,8 @@ export default async function AdminWorksPage() {
         </Link>
       </div>
 
-      <div className="mt-10 overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm">
-        <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[10px] tracking-[0.22em] text-fog/70 md:grid">
+      <div className="mt-10 overflow-hidden border border-line/12 bg-void/25">
+        <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[11px] tracking-[0.22em] text-fog/70 md:grid">
           <div className="col-span-2">ORDER / PREVIEW</div>
           <div className="col-span-3">TITLE</div>
           <div className="col-span-3">SLUG</div>

@@ -144,12 +144,12 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: index * 0.06, ease: [0.2, 0.85, 0.2, 1] }}
-      className="perf-card group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
+      className="perf-card group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
     >
       <CornerMarks size={4} className="opacity-70" />
 
       <div className="relative flex items-start justify-between gap-4 md:block">
-        <motion.div style={{ x: dx, y: dy }} className="text-[10px] tracking-[0.3em] text-fog/72">
+        <motion.div style={{ x: dx, y: dy }} className="text-[11px] tracking-[0.3em] text-fog/72">
           {step.n}
         </motion.div>
         <motion.div

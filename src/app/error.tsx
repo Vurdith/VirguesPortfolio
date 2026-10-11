@@ -29,7 +29,7 @@ export default function ErrorPage({
           Something broke while loading this page. It’s not you. Try again, or head back home.
         </p>
         {error.digest ? (
-          <p className="mt-4 text-[10px] tracking-[0.22em] text-fog/60">REF {error.digest}</p>
+          <p className="mt-4 text-[11px] tracking-[0.22em] text-fog/70">REF {error.digest}</p>
         ) : null}
 
         <div className="mt-10 flex flex-wrap gap-3">

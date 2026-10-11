@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import { focusPosition } from "@/lib/focus";
 
 const SMALL_BUTTON =
-  "inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[10px] tracking-[0.22em] text-fog/70 transition-colors duration-300 hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-300 hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
 
 /**
  * Catalog with manual ordering. Rows can be dragged or moved with the arrow buttons (which also
@@ -103,7 +103,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                   aria-label={`Move ${work.title} up`}
                   disabled={index === 0 || saving}
                   onClick={() => move(index, index - 1)}
-                  className="px-1 text-[10px] leading-none text-fog/60 hover:text-ink disabled:opacity-30"
+                  className="px-1 text-[11px] leading-none text-fog/70 hover:text-ink disabled:opacity-30"
                 >
                   ▲
                 </button>
@@ -112,7 +112,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                   aria-label={`Move ${work.title} down`}
                   disabled={index === works.length - 1 || saving}
                   onClick={() => move(index, index + 1)}
-                  className="px-1 text-[10px] leading-none text-fog/60 hover:text-ink disabled:opacity-30"
+                  className="px-1 text-[11px] leading-none text-fog/70 hover:text-ink disabled:opacity-30"
                 >
                   ▼
                 </button>
@@ -135,7 +135,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
 
             <div className="md:col-span-3">
               <div className="font-serif text-lg leading-none tracking-[-0.03em]">{work.title}</div>
-              <div className="mt-2 text-[10px] tracking-[0.22em] text-fog/60">
+              <div className="mt-2 text-[11px] tracking-[0.22em] text-fog/70">
                 UPDATED {new Date(work.updatedAt).toLocaleDateString()}
               </div>
             </div>
@@ -143,7 +143,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
             <div className="text-xs text-fog/80 md:col-span-3">{work.slug}</div>
 
             <div className="md:col-span-2">
-              <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70">
+              <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70">
                 {work.published ? "PUBLISHED" : "DRAFT"}
               </span>
             </div>

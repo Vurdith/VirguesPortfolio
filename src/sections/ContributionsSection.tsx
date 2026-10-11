@@ -99,7 +99,7 @@ export function ContributionsSection({
           </p>
         </header>
 
-        <dl className="mt-10 grid grid-cols-3 border border-line/12 bg-void/30 backdrop-blur-sm">
+        <dl className="mt-10 grid grid-cols-3 border border-line/12 bg-void/30">
           <Total label="GAMES">
             <CountUp value={items.length} />
           </Total>
@@ -151,7 +151,7 @@ function Total({
 }) {
   return (
     <div className={cn("relative px-4 py-5 md:px-8 md:py-7", divided && "border-l border-line/12")}>
-      <dt className="text-[10px] tracking-[0.22em] text-fog/70">{label}</dt>
+      <dt className="text-[11px] tracking-[0.22em] text-fog/70">{label}</dt>
       <dd className="mt-3 font-serif text-3xl leading-none tracking-[-0.05em] md:text-6xl">{children}</dd>
     </div>
   );
@@ -207,7 +207,7 @@ function TrophyCard({
       onPointerMove={(event) => canTilt(event) && pointer.onPointerMove(event)}
       onPointerLeave={pointer.onPointerLeave}
       className={cn(
-        "trophy-card group relative h-full overflow-hidden border border-line/14 bg-void/50 backdrop-blur-sm",
+        "trophy-card group relative h-full overflow-hidden border border-line/14 bg-void/50",
         "transition-[border-color,box-shadow,transform] duration-500 ease-out hover:border-line/40",
         "hover:shadow-[0_30px_80px_-30px_rgba(255,255,255,0.18)]",
       )}
@@ -238,7 +238,7 @@ function TrophyCard({
         <div aria-hidden="true" className="trophy-glare absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
         <div className="absolute inset-x-0 top-0 p-4">
-          <span className="inline-block border border-line/35 bg-black/60 px-2 py-1 text-[10px] tabular-nums tracking-[0.22em] text-ink backdrop-blur-sm">
+          <span className="inline-block border border-line/35 bg-black/60 px-2 py-1 text-[11px] tabular-nums tracking-[0.22em] text-ink">
             Nº {String(rank).padStart(2, "0")}
           </span>
         </div>
@@ -258,14 +258,14 @@ function TrophyCard({
             </a>
           </h3>
           {item.year ? (
-            <span className="shrink-0 text-[10px] tracking-[0.22em] text-fog/60">SINCE {item.year}</span>
+            <span className="shrink-0 text-[11px] tracking-[0.22em] text-fog/70">SINCE {item.year}</span>
           ) : null}
         </div>
 
         <dl className={cn("mt-6 grid gap-px border border-line/12 bg-line/12", "grid-cols-3")}>
           {stats.map((stat) => (
             <div key={stat.label} className="bg-void/80 px-3 py-3">
-              <dt className="text-[9px] tracking-[0.2em] text-fog/60">{stat.label}</dt>
+              <dt className="text-[10px] tracking-[0.2em] text-fog/70">{stat.label}</dt>
               <dd className="mt-1.5 font-serif text-xl leading-none tracking-[-0.03em] md:text-2xl">
                 <CountUp value={stat.value} />
               </dd>
@@ -273,7 +273,7 @@ function TrophyCard({
           ))}
         </dl>
 
-        <div className="mt-5 flex items-center justify-between text-[10px] tracking-[0.22em] text-fog/70 transition-colors group-hover:text-ink">
+        <div className="mt-5 flex items-center justify-between text-[11px] tracking-[0.22em] text-fog/70 transition-colors group-hover:text-ink">
           <span>VIEW ON ROBLOX</span>
           <span aria-hidden="true" className="flex items-center gap-2">
             <span className="h-px w-8 bg-line/30 transition-[width,background-color] duration-500 group-hover:w-16 group-hover:bg-ink" />

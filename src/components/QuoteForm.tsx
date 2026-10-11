@@ -64,7 +64,7 @@ const EMPTY: Fields = {
   company: "",
 };
 
-const LABEL = "text-[10px] tracking-[0.22em] text-fog/72";
+const LABEL = "text-[11px] tracking-[0.22em] text-fog/72";
 const FIELD =
   "mt-2 w-full border bg-void/35 px-4 py-3.5 text-base text-ink outline-none transition-[border-color,box-shadow] duration-300 placeholder:text-fog/50 focus:border-ink/70 focus:shadow-[0_0_0_4px_rgb(255_255_255/0.06)] md:text-sm";
 
@@ -269,7 +269,7 @@ export function QuoteForm({ className }: { className?: string }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -12% 0px" }}
       transition={{ duration: 0.8, ease: EASE }}
-      className={cn("relative border border-line/14 bg-void/30 backdrop-blur-sm", className)}
+      className={cn("relative border border-line/14 bg-void/30", className)}
     >
       <CornerMarks className="opacity-80" />
 
@@ -317,7 +317,7 @@ export function QuoteForm({ className }: { className?: string }) {
             <button
               type="button"
               onClick={reset}
-              className="mt-8 text-[10px] tracking-[0.22em] text-fog/72 underline-offset-4 hover:text-ink hover:underline"
+              className="mt-8 text-[11px] tracking-[0.22em] text-fog/72 underline-offset-4 hover:text-ink hover:underline"
             >
               SEND ANOTHER
             </button>
@@ -335,7 +335,7 @@ export function QuoteForm({ className }: { className?: string }) {
             className="p-6 md:p-10"
           >
             {/* Progress: four segments fill as you move through, with the step name beside the count. */}
-            <div className="flex items-center justify-between text-[10px] tracking-[0.22em] text-fog/72">
+            <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-fog/72">
               <span>
                 <span className="text-ink tabular-nums">{String(step + 1).padStart(2, "0")}</span>
                 <span className="tabular-nums"> / {String(STEPS.length).padStart(2, "0")}</span>
@@ -464,7 +464,7 @@ export function QuoteForm({ className }: { className?: string }) {
                         onChange={(method, value) => update(method, value)}
                       />
                       <TurnstileWidget onToken={setTurnstileToken} />
-                      <p className="text-xs leading-relaxed text-fog/60">
+                      <p className="text-xs leading-relaxed text-fog/70">
                         I use these details only to reply to this request. A scrambled version of your
                         IP address is kept for a day or two to stop spam. See the{" "}
                         <Link href="/privacy" className="text-fog/80 underline underline-offset-4 hover:text-ink">
@@ -496,7 +496,7 @@ export function QuoteForm({ className }: { className?: string }) {
                 type="button"
                 onClick={() => go(step - 1)}
                 disabled={step === 0 || status === "submitting"}
-                className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] text-fog/72 transition-[color,opacity] hover:text-ink disabled:pointer-events-none disabled:opacity-0"
+                className="inline-flex items-center gap-2 text-[11px] tracking-[0.22em] text-fog/72 transition-[color,opacity] hover:text-ink disabled:pointer-events-none disabled:opacity-0"
               >
                 <span aria-hidden="true">←</span> BACK
               </button>
@@ -581,8 +581,8 @@ function ServiceList({
               <span className="relative flex items-center gap-4 px-4 py-3.5 md:gap-6">
                 <span
                   className={cn(
-                    "w-6 text-[10px] tabular-nums tracking-[0.22em] transition-colors duration-300",
-                    selected ? "text-void/70" : "text-fog/60",
+                    "w-6 text-[11px] tabular-nums tracking-[0.22em] transition-colors duration-300",
+                    selected ? "text-void/70" : "text-fog/70",
                   )}
                 >
                   {String(index + 1).padStart(2, "0")}
@@ -724,7 +724,7 @@ function StepSlider({
         <span className="pointer-events-none absolute inset-0 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink/85" />
       </div>
 
-      <div className="mt-1 flex justify-between text-[10px] tracking-[0.18em] text-fog/60" aria-hidden="true">
+      <div className="mt-1 flex justify-between text-[11px] tracking-[0.18em] text-fog/70" aria-hidden="true">
         <span>{options[0].toUpperCase()}</span>
         <span>{options[options.length - 1].toUpperCase()}</span>
       </div>
@@ -745,7 +745,7 @@ function BudgetSlider({ value, onChange }: { value: string; onChange: (value: st
       onChange={onChange}
       onEngage={() => unsure && onChange(QUOTE_BUDGET_STEPS[1])}
       caption={
-        <label className="flex cursor-pointer items-center gap-2 text-[10px] tracking-[0.22em] text-fog/72 hover:text-ink">
+        <label className="flex cursor-pointer items-center gap-2 text-[11px] tracking-[0.22em] text-fog/72 hover:text-ink">
           <input
             type="checkbox"
             checked={unsure}
@@ -787,11 +787,11 @@ function HintRow({
         initial={error ? { x: -6 } : false}
         animate={{ x: error ? [-6, 6, -4, 4, 0] : 0 }}
         transition={{ duration: 0.4 }}
-        className={error ? "text-red-200" : "text-fog/60"}
+        className={error ? "text-red-200" : "text-fog/70"}
       >
         {error ?? hint}
       </motion.p>
-      {counter ? <span className="shrink-0 tabular-nums text-fog/60">{counter}</span> : null}
+      {counter ? <span className="shrink-0 tabular-nums text-fog/70">{counter}</span> : null}
     </div>
   );
 }

@@ -28,7 +28,7 @@ export function WorkDeleteButton({ id, className }: { id: string; className?: st
       disabled={busy}
       onClick={() => void onDelete()}
       className={cn(
-        "inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
+        "inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
         "hover:-translate-y-px hover:border-line/25 hover:text-ink active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

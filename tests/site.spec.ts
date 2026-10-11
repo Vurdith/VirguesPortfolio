@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 /** The intro can't be skipped, so let it fail to load the film and press ENTER SITE. */
 async function openHome(page: Page) {
-  await page.route("**/intro-loader-hq.mp4", (route) => route.abort());
+  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 }

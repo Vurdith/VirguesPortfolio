@@ -79,7 +79,7 @@ function AdminNavLink({
     <Link
       href={href}
       className={cn(
-        "relative inline-flex h-9 min-w-24 items-center justify-center border border-line/12 bg-void/35 px-4 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-px hover:border-line/30 hover:bg-void/55 hover:text-ink",
+        "relative inline-flex h-9 min-w-24 items-center justify-center border border-line/12 bg-void/35 px-4 text-[11px] tracking-[0.22em] text-fog/70 transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-px hover:border-line/30 hover:bg-void/55 hover:text-ink",
         active && "border-line/30 bg-white/[0.035] text-ink"
       )}
     >

@@ -88,9 +88,9 @@ export function PaymentSection({ className }: { className?: string }) {
             ))}
           </div>
 
-          <div className="perf-card relative overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm">
+          <div className="perf-card relative overflow-hidden border border-line/12 bg-void/30 p-5">
             <CornerMarks size={4} className="opacity-70" />
-            <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] text-fog/72">
+            <div className="flex items-center gap-3 text-[11px] tracking-[0.28em] text-fog/72">
               <MonoIcon name="process" className="size-4" />
               <span>FLOW</span>
             </div>
@@ -100,7 +100,7 @@ export function PaymentSection({ className }: { className?: string }) {
             <div className="mt-6 grid gap-5">
               {PAYMENT_FLOW.map((item, index) => (
                 <div key={item.label} className="grid grid-cols-[36px_1fr] gap-4">
-                  <div className="grid size-9 place-items-center border border-line/15 bg-black/35 text-[10px] text-fog/70">
+                  <div className="grid size-9 place-items-center border border-line/15 bg-black/35 text-[11px] text-fog/70">
                     {String(index + 1).padStart(2, "0")}
                   </div>
                   <div>
@@ -121,7 +121,7 @@ export function PaymentSection({ className }: { className?: string }) {
 
 function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number] }) {
   return (
-    <article className="perf-card group relative min-h-[320px] overflow-hidden border border-line/12 bg-void/35 p-6 backdrop-blur-sm transition-colors duration-300 hover:border-line/30">
+    <article className="perf-card group relative min-h-[320px] overflow-hidden border border-line/12 bg-void/35 p-6 transition-colors duration-300 hover:border-line/30">
       <CornerMarks size={4} className="opacity-70" />
       <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
         <div className="absolute inset-x-0 top-0 h-px bg-line/35" />
@@ -131,7 +131,7 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
       <div className="relative flex h-full flex-col">
         <div className="flex items-start justify-between gap-5">
           <div>
-            <p className="text-[10px] tracking-[0.28em] text-fog/72">{method.eyebrow}</p>
+            <p className="text-[11px] tracking-[0.28em] text-fog/72">{method.eyebrow}</p>
             <h3 className="mt-4 font-serif text-3xl leading-none tracking-[-0.05em]">
               {method.title}
             </h3>

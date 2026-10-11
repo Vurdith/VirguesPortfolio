@@ -66,7 +66,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
   };
 
   return (
-    <div className="overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm">
+    <div className="overflow-hidden border border-line/12 bg-void/25">
       {sorted.length ? (
         <div className="divide-y divide-line/10">
           {sorted.map((quote) => (
@@ -77,7 +77,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
               <div className="md:col-span-4">
                 <div className="flex flex-wrap items-baseline gap-3">
                   <h2 className="font-serif text-lg leading-none tracking-[-0.03em]">{quote.name}</h2>
-                  <time className="text-[10px] tracking-[0.22em] text-fog/55" dateTime={quote.createdAt}>
+                  <time className="text-[11px] tracking-[0.22em] text-fog/70" dateTime={quote.createdAt}>
                     {new Date(quote.createdAt).toLocaleDateString()}
                   </time>
                 </div>
@@ -92,7 +92,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
                   ) : null}
                   {quote.discord ? (
                     <p>
-                      <span className="text-[10px] tracking-[0.22em] text-fog/60">DISCORD </span>
+                      <span className="text-[11px] tracking-[0.22em] text-fog/70">DISCORD </span>
                       {quote.discord}
                     </p>
                   ) : null}
@@ -103,11 +103,11 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
                       rel="noopener noreferrer"
                       className="block underline-offset-4 hover:text-ink hover:underline"
                     >
-                      <span className="text-[10px] tracking-[0.22em] text-fog/60">X </span>@{quote.x}
+                      <span className="text-[11px] tracking-[0.22em] text-fog/70">X </span>@{quote.x}
                     </a>
                   ) : null}
                 </div>
-                <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[10px] tracking-[0.18em] text-fog/60">
+                <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] tracking-[0.18em] text-fog/70">
                   <dt>SERVICE</dt>
                   <dd className="text-fog/85">{quote.service}</dd>
                   <dt>BUDGET</dt>
@@ -124,7 +124,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
               <div className="flex flex-wrap items-start gap-2 md:col-span-2 md:flex-col md:items-end">
                 <span
                   className={cn(
-                    "inline-flex items-center border bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em]",
+                    "inline-flex items-center border bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em]",
                     quote.status === "new" ? "border-line/35 text-ink" : "border-line/12 text-fog/70",
                   )}
                 >
@@ -134,7 +134,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
                   type="button"
                   disabled={busyId === quote.id}
                   onClick={() => advance(quote)}
-                  className="inline-flex h-9 items-center border border-line/12 bg-void/35 px-3 text-[10px] tracking-[0.22em] text-fog/70 transition-colors hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 items-center border border-line/12 bg-void/35 px-3 text-[11px] tracking-[0.22em] text-fog/70 transition-colors hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   MARK {NEXT_STATUS[quote.status].toUpperCase()}
                 </button>
@@ -142,7 +142,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
                   type="button"
                   disabled={busyId === quote.id}
                   onClick={() => remove(quote)}
-                  className="inline-flex h-9 items-center border border-line/12 bg-void/35 px-3 text-[10px] tracking-[0.22em] text-fog/70 transition-colors hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 items-center border border-line/12 bg-void/35 px-3 text-[11px] tracking-[0.22em] text-fog/70 transition-colors hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   DEL
                 </button>

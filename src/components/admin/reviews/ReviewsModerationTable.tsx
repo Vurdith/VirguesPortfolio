@@ -70,8 +70,8 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
   }, [reviews]);
 
   return (
-    <div className="overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm">
-      <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[10px] tracking-[0.22em] text-fog/70 md:grid">
+    <div className="overflow-hidden border border-line/12 bg-void/25">
+      <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[11px] tracking-[0.22em] text-fog/70 md:grid">
         <div className="col-span-5">REVIEW</div>
         <div className="col-span-2">RATING</div>
         <div className="col-span-2">STATUS</div>
@@ -90,7 +90,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
               <div className="md:col-span-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <div className="font-serif text-lg leading-none tracking-[-0.03em]">{r.name}</div>
-                  <div className="text-[10px] tracking-[0.22em] text-fog/55">
+                  <div className="text-[11px] tracking-[0.22em] text-fog/70">
                     {new Date(r.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -139,7 +139,7 @@ function StatusBadge({ status }: { status: ReviewStatus }) {
   const label =
     status === "pending" ? "PENDING" : status === "approved" ? "APPROVED" : "REJECTED";
   return (
-    <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70">
+    <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70">
       {label}
     </span>
   );
@@ -163,7 +163,7 @@ function ActionButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
+        "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[11px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
         "hover:-translate-y-px hover:border-line/25 hover:text-ink active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         danger && "hover:border-line/35",
       )}

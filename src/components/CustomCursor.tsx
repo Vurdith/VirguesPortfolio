@@ -98,7 +98,7 @@ export function CustomCursor() {
           transition={{ type: "spring", stiffness: 360, damping: 30, mass: 0.7 }}
         >
           <motion.span
-            className="text-[10px] font-semibold tracking-[0.22em] text-black"
+            className="text-[11px] font-semibold tracking-[0.22em] text-black"
             animate={{ opacity: filled ? 1 : 0, scale: filled ? 1 : 0.6 }}
             transition={{ duration: 0.2 }}
           >

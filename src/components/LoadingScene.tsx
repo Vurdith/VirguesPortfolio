@@ -6,7 +6,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CornerMarks } from "@/components/CornerMarks";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
+// Phones get a smaller file of the same film; everything else gets the full 1080p original.
 const INTRO_VIDEO = "/intro-loader-hq.mp4";
+const INTRO_VIDEO_SMALL = "/intro-loader-720.mp4";
 const INTRO_POSTER = "/intro-poster.webp";
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
@@ -74,6 +76,19 @@ export function LoadingScene() {
     playIntroVideo();
   }, [playIntroVideo]);
 
+  // If the film can't load (offline, blocked, unsupported), move on instead of hanging on the
+  // poster. Errors raised before React attached its listeners are missed, so poll the element too.
+  React.useEffect(() => {
+    if (videoDone) return;
+    const timer = window.setInterval(() => {
+      const video = videoRef.current;
+      if (video && (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
+        finishVideo();
+      }
+    }, 400);
+    return () => window.clearInterval(timer);
+  }, [videoDone, finishVideo]);
+
   React.useEffect(() => {
     const unmuteAfterGesture = () => {
       const video = videoRef.current;
@@ -135,8 +150,10 @@ export function LoadingScene() {
         <motion.div
           className="fixed inset-0 z-[100] overflow-hidden bg-void"
           initial={{ opacity: 1 }}
+          // The fade-out must not swallow the first click on the page underneath.
           exit={{
             opacity: 0,
+            pointerEvents: "none",
             transition: { duration: 0.24, ease: EASE },
           }}
         >
@@ -146,7 +163,6 @@ export function LoadingScene() {
                 ref={videoRef}
                 key="intro-video"
                 className="h-full w-full object-cover"
-                src={INTRO_VIDEO}
                 poster={INTRO_POSTER}
                 autoPlay
                 playsInline
@@ -164,7 +180,11 @@ export function LoadingScene() {
                   opacity: 0,
                   transition: { duration: 0.55, ease: EASE },
                 }}
-              />
+              >
+                {/* A failing <source> reports on itself, not on the <video>, so listen here too. */}
+                <source src={INTRO_VIDEO_SMALL} type="video/mp4" media="(max-width: 767px)" onError={finishVideo} />
+                <source src={INTRO_VIDEO} type="video/mp4" onError={finishVideo} />
+              </motion.video>
             ) : null}
           </AnimatePresence>
 
@@ -205,11 +225,11 @@ export function LoadingScene() {
               >
                 <div className="mb-3 flex items-baseline justify-between px-1">
                   <div className="flex items-center gap-3">
-                    <span className="text-[9px] font-bold tracking-[0.4em] text-fog/45">
+                    <span className="text-[10px] font-bold tracking-[0.4em] text-fog/45">
                       {canEnter ? "READY" : "INITIALIZING"}
                     </span>
                     {!canEnter ? (
-                      <span className="text-[9px] tabular-nums tracking-[0.2em] text-ink/45">
+                      <span className="text-[10px] tabular-nums tracking-[0.2em] text-ink/45">
                         {percent}%
                       </span>
                     ) : null}
@@ -249,7 +269,7 @@ export function LoadingScene() {
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.42, ease: EASE }}
                         onClick={enterSite}
-                        className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[10px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
+                        className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[11px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
                       >
                         ENTER SITE
                         <CornerMarks

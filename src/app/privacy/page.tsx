@@ -59,7 +59,7 @@ export default function PrivacyPage() {
         <div className="mt-12 space-y-10">
           {SECTIONS.map((section) => (
             <section key={section.title}>
-              <h2 className="text-[10px] tracking-[0.22em] text-fog/72">{section.title.toUpperCase()}</h2>
+              <h2 className="text-[11px] tracking-[0.22em] text-fog/72">{section.title.toUpperCase()}</h2>
               <div className="mt-3 space-y-3">
                 {section.body.map((paragraph) => (
                   <p key={paragraph} className="text-pretty text-sm leading-relaxed text-fog/85 md:text-base">

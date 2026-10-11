@@ -79,6 +79,7 @@ function canRunShader() {
 export default function HeroShader({ src }: { src: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [ready, setReady] = React.useState(false);
+  const [attempt, setAttempt] = React.useState(0);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -126,6 +127,9 @@ export default function HeroShader({ src }: { src: string }) {
       loaded = true;
       draw(performance.now());
       setReady(true);
+      // The visibility observer usually reports before the texture arrives and the loop stops
+      // while nothing is loaded, so it has to be restarted here or the effect would stay frozen.
+      start();
     };
     image.src = src;
 
@@ -147,8 +151,17 @@ export default function HeroShader({ src }: { src: string }) {
       pointer.strength = Math.min(1, pointer.strength + Math.hypot(x - pointer.targetX, y - pointer.targetY) * 6);
       pointer.targetX = x;
       pointer.targetY = y;
+      start();
     };
     window.addEventListener("pointermove", onMove, { passive: true });
+
+    // A lost GPU context leaves a dead canvas: fall back to the static image, then rebuild.
+    const onContextLost = (event: Event) => {
+      event.preventDefault();
+      setReady(false);
+      window.setTimeout(() => !disposed && setAttempt((n) => n + 1), 300);
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost);
 
     function draw(now: number) {
       pointer.x += (pointer.targetX - pointer.x) * 0.08;
@@ -187,11 +200,12 @@ export default function HeroShader({ src }: { src: string }) {
       resizeObserver.disconnect();
       visibility.disconnect();
       window.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("webglcontextlost", onContextLost);
       document.removeEventListener("visibilitychange", onVisibility);
       canvas.remove();
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [src]);
+  }, [src, attempt]);
 
   return (
     <div

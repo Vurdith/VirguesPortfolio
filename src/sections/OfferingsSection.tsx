@@ -47,7 +47,7 @@ const OFFERINGS = [
     code: "04",
     title: "Yearly Subscription",
     description:
-      "Ongoing support for active projects, with priority queue access, recurring imports, seasonal UI updates, and cleaner long-term direction.",
+      "A year of support in one price: a full game package with importing and polish, priority queue access, and up to 10 tasks a month for updates and seasonal UI.",
     why: "Strong value for studios that need regular updates, predictable cost, and one visual standard across the year.",
     badge: "£3750 / yr",
   },
@@ -55,14 +55,15 @@ const OFFERINGS = [
     code: "05",
     title: "Full Game Package",
     description:
-      "A complete interface for a whole game in one package: every screen designed in one consistent style at a fixed price.",
+      "Every screen of your game designed in one consistent style at a fixed price, delivered as design files. Covers up to 40 screens.",
     why: "Best for launching a game with one consistent look instead of quoting task by task.",
     badge: "£1650 package",
     extra: {
-      label: "Add importing + final polish pass",
-      description:
-        "A complete interface for a whole game in one package: every screen designed in one consistent style, imported into Studio and finished with a final polish pass.",
+      label: "Full service",
+      delta: "+£500",
       badge: "£2150 package",
+      description:
+        "Every screen of your game designed in one consistent style, plus the hands-on work to get them live: Studio importing and a final polish pass. Covers up to 40 screens.",
     },
   },
   {
@@ -191,7 +192,6 @@ function OfferingCard({
 }) {
   const [extras, setExtras] = React.useState(false);
   const extra = "extra" in offering ? offering.extra : null;
-  const badge = extra && extras ? extra.badge : offering.badge;
 
   return (
     <article
@@ -278,35 +278,37 @@ function OfferingCard({
           </details>
         )}
 
-        {extra && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={extras}
-            onClick={() => setExtras((on) => !on)}
-            className="mt-5 grid w-full grid-cols-[1fr_auto] items-center gap-4 border border-line/10 bg-white/[0.025] px-3 py-3 text-left text-[11px] tracking-[0.2em] text-fog/75 transition-colors duration-200 hover:bg-white/[0.05]"
-          >
-            <span>{extra.label.toUpperCase()}</span>
-            <span
-              aria-hidden="true"
-              className={cn(
-                "relative h-5 w-9 border transition-colors duration-200",
-                extras ? "border-line/50 bg-white/10" : "border-line/20",
-              )}
+        <div className="mt-auto flex flex-col items-start gap-3 pt-6">
+          {extra && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={extras}
+              onClick={() => setExtras((on) => !on)}
+              className="group/toggle flex items-center gap-3 text-[11px] tracking-[0.18em] text-fog/70 transition-colors duration-200 hover:text-ink"
             >
               <span
+                aria-hidden="true"
                 className={cn(
-                  "absolute top-0.5 size-3.5 bg-ink transition-all duration-200",
-                  extras ? "left-[1.1rem]" : "left-0.5 opacity-50",
+                  "relative h-[18px] w-8 shrink-0 rounded-full border transition-colors duration-300",
+                  extras ? "border-ink bg-ink" : "border-line/30 bg-transparent group-hover/toggle:border-line/50",
                 )}
-              />
-            </span>
-          </button>
-        )}
-
-        <div className="mt-auto pt-6">
+              >
+                <span
+                  className={cn(
+                    "absolute left-[2px] top-[2px] size-3 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+                    extras ? "translate-x-3.5 bg-void" : "bg-fog/70",
+                  )}
+                />
+              </span>
+              <span className={cn("transition-colors duration-300", extras && "text-ink")}>
+                {extra.label.toUpperCase()}
+              </span>
+              <span className="text-fog/55">{extra.delta}</span>
+            </button>
+          )}
           <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
-            <CountUpText text={badge.toUpperCase()} />
+            <CountUpText text={(extra && extras ? extra.badge : offering.badge).toUpperCase()} />
           </span>
         </div>
       </div>

@@ -47,7 +47,7 @@ const OFFERINGS = [
     code: "04",
     title: "Yearly Subscription",
     description:
-      "Ongoing support for active projects, with priority queue access, recurring imports, seasonal UI updates, and cleaner long-term direction.",
+      "A year of support in one price: a full game package with importing and polish, priority queue access, and up to 10 tasks a month for updates and seasonal UI.",
     why: "Strong value for studios that need regular updates, predictable cost, and one visual standard across the year.",
     badge: "£3750 / yr",
   },
@@ -55,13 +55,15 @@ const OFFERINGS = [
     code: "05",
     title: "Full Game Package",
     description:
-      "A complete interface for a whole game in one package: every screen designed in one consistent style at a fixed price.",
+      "Every screen of your game designed in one consistent style at a fixed price. Covers up to 40 screens.",
     why: "Best for launching a game with one consistent look instead of quoting task by task.",
     badge: "£1650 package",
     extra: {
-      label: "Add importing + final polish pass",
+      label: "Importing + final polish",
+      hint: "Studio imports, then a spacing and alignment pass",
+      delta: "+£500",
       description:
-        "A complete interface for a whole game in one package: every screen designed in one consistent style, imported into Studio and finished with a final polish pass.",
+        "Every screen of your game designed in one consistent style, imported into Studio and finished with a final polish pass. Covers up to 40 screens.",
       badge: "£2150 package",
     },
   },
@@ -284,22 +286,38 @@ function OfferingCard({
             role="switch"
             aria-checked={extras}
             onClick={() => setExtras((on) => !on)}
-            className="mt-5 grid w-full grid-cols-[1fr_auto] items-center gap-4 border border-line/10 bg-white/[0.025] px-3 py-3 text-left text-[11px] tracking-[0.2em] text-fog/75 transition-colors duration-200 hover:bg-white/[0.05]"
+            className={cn(
+              "group/toggle relative mt-5 flex w-full items-center gap-4 border px-3 py-3 text-left transition-colors duration-300",
+              extras
+                ? "border-line/45 bg-white/[0.06]"
+                : "border-line/12 bg-white/[0.02] hover:border-line/28 hover:bg-white/[0.04]",
+            )}
           >
-            <span>{extra.label.toUpperCase()}</span>
             <span
               aria-hidden="true"
               className={cn(
-                "relative h-5 w-9 border transition-colors duration-200",
-                extras ? "border-line/50 bg-white/10" : "border-line/20",
+                "relative h-6 w-11 shrink-0 border transition-colors duration-300",
+                extras ? "border-ink/70 bg-ink" : "border-line/30 bg-void/60",
               )}
             >
               <span
                 className={cn(
-                  "absolute top-0.5 size-3.5 bg-ink transition-all duration-200",
-                  extras ? "left-[1.1rem]" : "left-0.5 opacity-50",
+                  "absolute left-0.5 top-0.5 size-4 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+                  extras ? "translate-x-5 bg-void" : "bg-fog/70",
                 )}
               />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] tracking-[0.2em] text-ink">{extra.label.toUpperCase()}</span>
+              <span className="mt-1 block text-xs leading-snug text-fog/65">{extra.hint}</span>
+            </span>
+            <span
+              className={cn(
+                "shrink-0 border px-2 py-1 text-[11px] tabular-nums tracking-[0.16em] transition-colors duration-300",
+                extras ? "border-ink/60 text-ink" : "border-line/20 text-fog/70",
+              )}
+            >
+              {extra.delta}
             </span>
           </button>
         )}

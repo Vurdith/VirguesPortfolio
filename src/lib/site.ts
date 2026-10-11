@@ -1,5 +1,6 @@
 export const SITE = {
   name: "Virguê",
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://virgue.work").replace(/\/$/, ""),
   role: "Expert UI/UX Designer • Roblox Developer",
   email: "reeceleneveubusiness@gmail.com",
   profileImage: "/ayanakoji-profile-320.webp",

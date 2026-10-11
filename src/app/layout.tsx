@@ -22,10 +22,29 @@ const serif = Instrument_Serif({
   style: ["normal", "italic"],
 });
 
+const TITLE = `${SITE.name} — Senior UI/UX Engineer • Creative Developer`;
+const DESCRIPTION =
+  "A monochrome cinematic-noir portfolio: strict grids, premium motion, tactile interactions.";
+
 export const metadata: Metadata = {
-  title: `${SITE.name} — Senior UI/UX Engineer • Creative Developer`,
-  description:
-    "A monochrome cinematic-noir portfolio: strict grids, premium motion, tactile interactions.",
+  metadataBase: new URL(SITE.url),
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: SITE.url,
+    siteName: SITE.name,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: SITE.heroImage }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [SITE.heroImage],
+  },
 };
 
 export default function RootLayout({

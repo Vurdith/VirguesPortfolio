@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAX_PIECES, missingPieceIndex } from "@/lib/work";
+
 export const MediaSchema = z.object({
   kind: z.enum(["image", "video"]),
   srcType: z.enum(["upload", "url"]),
@@ -30,6 +32,7 @@ const WorkFieldsSchema = z.object({
   link: z.union([z.literal(""), z.string().trim().url().max(2048)]),
   published: z.boolean(),
   media: MediaSchema,
+  items: z.array(MediaSchema).max(MAX_PIECES).optional(),
 });
 
 export const MISSING_MEDIA_MESSAGE = "Published works must have media.";
@@ -45,8 +48,14 @@ export const WorkInputSchema = WorkFieldsSchema.partial({
   link: true,
 }).superRefine(
   (work, ctx) => {
-    if (work.published && !work.media.src.trim()) {
-      ctx.addIssue({ code: "custom", path: ["media", "src"], message: MISSING_MEDIA_MESSAGE });
+    if (!work.published) return;
+    const missing = missingPieceIndex({ media: work.media, items: work.items });
+    if (missing !== -1) {
+      ctx.addIssue({
+        code: "custom",
+        path: work.items?.length ? ["items", missing, "src"] : ["media", "src"],
+        message: MISSING_MEDIA_MESSAGE,
+      });
     }
   },
 );

@@ -25,7 +25,10 @@ export type Work = {
   link?: string;
   /** Manual position in the gallery (lower first). Works without one follow, newest first. */
   order?: number;
+  /** Cover piece. When `items` is set, this mirrors `items[0]`. */
   media: Media;
+  /** Every piece of a collection, in order (cover first). Absent for single-piece works. */
+  items?: Media[];
   published: boolean;
   createdAt: string;
   updatedAt: string;

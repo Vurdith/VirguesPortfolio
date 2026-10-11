@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb, writeDb } from "@/lib/db";
 import { WorkInputSchema } from "@/lib/validation/work";
+import { normalizePieces } from "@/lib/work";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,12 +32,12 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date().toISOString();
-  const work = {
+  const work = normalizePieces({
     id: `w_${crypto.randomUUID()}`,
     ...parsed.data,
     createdAt: now,
     updatedAt: now,
-  };
+  });
 
   // Checked inside the write so two simultaneous creates cannot both claim the slug.
   let slugTaken = false;

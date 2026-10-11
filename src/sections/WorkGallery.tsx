@@ -13,18 +13,20 @@ import {
   useTransform,
 } from "framer-motion";
 
-import type { Work } from "@/types/portfolio";
+import type { Media, Work } from "@/types/portfolio";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { WorkOverlay, workLayoutId } from "@/components/work/WorkOverlay";
 import { optimizedImage } from "@/lib/images";
 import { cn } from "@/lib/cn";
 import { focusPosition } from "@/lib/focus";
+import { workPieces } from "@/lib/work";
 import { SITE } from "@/lib/site";
 import { usePointerTracking } from "@/hooks/usePointerTracking";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 const MAX_TILT_DEG = 15;
+const MAX_DECK_LAYERS = 3;
 
 const viewHash = (work: Work) => `#view-${work.slug}`;
 
@@ -205,11 +207,16 @@ function WorkCard({
   const isVideo = work.media.kind === "video";
   const cardSrc = isVideo ? work.media.poster || "" : optimizedImage(work.media.src);
 
+  // Collections show the next few pieces stacked behind the cover.
+  const pieces = workPieces(work);
+  const behind = pieces.slice(1, 1 + MAX_DECK_LAYERS);
+
   return (
     <Link
       href={`/work/${work.slug}`}
       className="group block"
       data-cursor="view"
+      data-pieces={pieces.length > 1 ? pieces.length : undefined}
       onClick={(event) => {
         // Let modified clicks (new tab, etc.) use the real /work/[slug] page.
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
@@ -229,94 +236,138 @@ function WorkCard({
         style={{
           rotateX: rotX,
           rotateY: rotY,
-          boxShadow: shadow,
           transformPerspective: 800,
         }}
-        className={cn(
-          "relative aspect-[4/5] overflow-hidden border border-white/5 bg-void/40",
-          "perf-card transform-gpu will-change-transform [transform-style:preserve-3d]",
-        )}
+        className="relative aspect-[4/5] transform-gpu will-change-transform [transform-style:preserve-3d]"
       >
-        <motion.div
-          layoutId={workLayoutId(work.id)}
-          className="absolute inset-0 blur-[2px]"
-          style={{
-            scale: 1.025,
-            backgroundImage: cardSrc
-              ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${cardSrc}), ${backdrop}`
-              : `${backdrop}, linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.8) 100%)`,
-            backgroundSize: "cover",
-            backgroundPosition: focusPosition(work.media),
-          }}
-        >
-          {isVideo && work.media.src ? (
-            <>
-              <CardVideo src={work.media.src} poster={work.media.poster} position={focusPosition(work.media)} />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80" />
-            </>
-          ) : null}
-        </motion.div>
+        {behind
+          .map((piece, i) => <DeckLayer key={i} piece={piece} depth={i + 1} backdrop={backdrop} />)
+          .reverse()}
 
-        {/* Sharp-field revealed only under the moving lens (mask). */}
         <motion.div
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            opacity: o,
-            WebkitMaskImage: mask as unknown as string,
-            maskImage: mask as unknown as string,
-          }}
+          style={{ boxShadow: shadow }}
+          className="perf-card absolute inset-0 overflow-hidden border border-white/5 bg-void/40"
         >
-          <div
-            className="absolute inset-0 scale-[1.01]"
-            style={{ 
-              backgroundImage: cardSrc ? `url(${cardSrc})` : `${backdrop}`,
+          <motion.div
+            layoutId={workLayoutId(work.id)}
+            className="absolute inset-0 blur-[2px]"
+            style={{
+              scale: 1.025,
+              backgroundImage: cardSrc
+                ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${cardSrc}), ${backdrop}`
+                : `${backdrop}, linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.8) 100%)`,
               backgroundSize: "cover",
               backgroundPosition: focusPosition(work.media),
             }}
-          />
-          <div aria-hidden="true" className="scanlines" />
-        </motion.div>
+          >
+            {isVideo && work.media.src ? (
+              <>
+                <CardVideo src={work.media.src} poster={work.media.poster} position={focusPosition(work.media)} />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80" />
+              </>
+            ) : null}
+          </motion.div>
 
-        {/* Lens hardware: rotating rings + soft glare. */}
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-0 top-0 size-64"
-          style={{
-            x: lensX,
-            y: lensY,
-            translateX: "-50%", 
-            translateY: "-50%",
-            opacity: o 
-          }}
-        >
-          <div className="absolute inset-0 rounded-full border border-line/30 animate-ring" />
-          <div className="absolute inset-[18px] rounded-full border border-line/20 [border-style:dashed] animate-ring [animation-duration:3.6s]" />
-          <div aria-hidden="true" className="absolute inset-[30px] overflow-hidden rounded-full">
-            <div className="scanlines opacity-70" />
-          </div>
-          <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
-        </motion.div>
+          {/* Sharp-field revealed only under the moving lens (mask). */}
+          <motion.div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{
+              opacity: o,
+              WebkitMaskImage: mask as unknown as string,
+              maskImage: mask as unknown as string,
+            }}
+          >
+            <div
+              className="absolute inset-0 scale-[1.01]"
+              style={{ 
+                backgroundImage: cardSrc ? `url(${cardSrc})` : `${backdrop}`,
+                backgroundSize: "cover",
+                backgroundPosition: focusPosition(work.media),
+              }}
+            />
+            <div aria-hidden="true" className="scanlines" />
+          </motion.div>
 
-        {/* Bottom metadata (kept inside the strict card). */}
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <div className="flex items-baseline justify-between gap-4">
-            <h3 className="font-serif text-xl leading-none tracking-[-0.03em]">{work.title}</h3>
-            <div className="text-[11px] tracking-[0.22em] text-fog/70">{work.year ?? "—"}</div>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {work.tags.slice(0, 3).map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70"
-              >
-                {t.toUpperCase()}
+          {/* Lens hardware: rotating rings + soft glare. */}
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 size-64"
+            style={{
+              x: lensX,
+              y: lensY,
+              translateX: "-50%", 
+              translateY: "-50%",
+              opacity: o 
+            }}
+          >
+            <div className="absolute inset-0 rounded-full border border-line/30 animate-ring" />
+            <div className="absolute inset-[18px] rounded-full border border-line/20 [border-style:dashed] animate-ring [animation-duration:3.6s]" />
+            <div aria-hidden="true" className="absolute inset-[30px] overflow-hidden rounded-full">
+              <div className="scanlines opacity-70" />
+            </div>
+            <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
+          </motion.div>
+
+          {pieces.length > 1 ? (
+            <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-2 border border-line/20 bg-void/75 px-2 py-1 text-[11px] tracking-[0.22em] text-ink">
+              <span aria-hidden="true" className="relative block size-2.5">
+                <span className="absolute inset-0 translate-x-[3px] -translate-y-[3px] border border-line/50" />
+                <span className="absolute inset-0 border border-line/90 bg-void" />
               </span>
-            ))}
+              {pieces.length} PIECES
+            </div>
+          ) : null}
+
+          {/* Bottom metadata (kept inside the strict card). */}
+          <div className="absolute inset-x-0 bottom-0 p-4">
+            <div className="flex items-baseline justify-between gap-4">
+              <h3 className="font-serif text-xl leading-none tracking-[-0.03em]">{work.title}</h3>
+              <div className="text-[11px] tracking-[0.22em] text-fog/70">{work.year ?? "—"}</div>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {work.tags.slice(0, 3).map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70"
+                >
+                  {t.toUpperCase()}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </Link>
+  );
+}
+
+/** A piece peeking out above the cover: higher, smaller and dimmer the deeper it sits. */
+function DeckLayer({ piece, depth, backdrop }: { piece: Media; depth: number; backdrop: string }) {
+  const src = piece.kind === "video" ? piece.poster || "" : optimizedImage(piece.src, 640);
+  const style = {
+    "--deck-y": `${-depth * 10}px`,
+    "--deck-z": `${-depth * 8}px`,
+    "--deck-s": 1 - depth * 0.045,
+    animationDelay: `${-depth * 1.4}s`,
+  } as React.CSSProperties;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="deck-layer absolute inset-0 overflow-hidden border border-white/25 bg-void"
+      style={style}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: src ? `url(${src}), ${backdrop}` : backdrop,
+          backgroundSize: "cover",
+          backgroundPosition: focusPosition(piece),
+        }}
+      />
+      <div className="absolute inset-0 bg-black" style={{ opacity: 0.1 + depth * 0.15 }} />
+    </div>
   );
 }
 

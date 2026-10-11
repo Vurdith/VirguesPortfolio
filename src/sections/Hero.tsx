@@ -13,7 +13,6 @@ import {
   useTransform,
 } from "framer-motion";
 
-import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
@@ -176,8 +175,6 @@ export function Hero({ className }: { className?: string }) {
                   ↗
                 </span>
               </Link>
-
-              <AvailabilityBadge />
             </div>
           </motion.div>
         </div>

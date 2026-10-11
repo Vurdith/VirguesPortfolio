@@ -8,7 +8,6 @@ import { MonoIcon } from "@/components/MonoIcon";
 import { QuoteForm } from "@/components/QuoteForm";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
-import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 import { SITE } from "@/lib/site";
 
 export function ContactFooter({ className }: { className?: string }) {
@@ -77,7 +76,6 @@ export function ContactFooter({ className }: { className?: string }) {
             <RevealHeading className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
               High contrast.
             </RevealHeading>
-            <AvailabilityBadge className="mt-6" />
             <p className="mt-6 max-w-prose text-pretty text-sm leading-relaxed text-fog/80">
               If the work feels right, we can build something sharp together. No fluff. Fast
               feedback loops. Clean handoff.

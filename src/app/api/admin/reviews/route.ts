@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb } from "@/lib/db";
+import { adminReview } from "@/lib/db/reviews";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,10 +13,7 @@ export async function GET(req: NextRequest) {
 
   const db = await readDb();
   return NextResponse.json(
-    { reviews: db.reviews },
+    { reviews: db.reviews.map(adminReview) },
     { headers: { "cache-control": "no-store" } },
   );
 }
-
-
-

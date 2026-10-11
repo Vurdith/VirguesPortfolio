@@ -1,176 +1,241 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-import type { Review, ReviewStatus } from "@/types/portfolio";
-import { Stars } from "@/components/Stars";
+import type { Review, ReviewAttachment, ReviewReply, ReviewStatus } from "@/types/portfolio";
+import { Lightbox } from "@/components/reviews/Lightbox";
 import { cn } from "@/lib/cn";
 
-type BusyAction = "approve" | "reject" | "delete";
-type RowBusy = { id: string; action: BusyAction } | null;
+import { ReviewCard, hasPendingReplies } from "./ReviewCard";
+
+type Filter = "pending" | "approved" | "rejected" | "all";
+type Viewer = { images: ReviewAttachment[]; index: number } | null;
+
+const TABS: { id: Filter; label: string }[] = [
+  { id: "pending", label: "PENDING" },
+  { id: "approved", label: "APPROVED" },
+  { id: "rejected", label: "REJECTED" },
+  { id: "all", label: "ALL" },
+];
+
+/** Needs a decision: the review itself, or a reply on it, is waiting. */
+const needsAttention = (review: Review) => review.status === "pending" || hasPendingReplies(review);
+
+const matches = (review: Review, filter: Filter) =>
+  filter === "all" ? true : filter === "pending" ? needsAttention(review) : review.status === filter;
 
 export function ReviewsModerationTable({ initialReviews }: { initialReviews: Review[] }) {
-  const router = useRouter();
-
+  const reduceMotion = useReducedMotion();
   const [reviews, setReviews] = React.useState<Review[]>(initialReviews);
-  const [busy, setBusy] = React.useState<RowBusy>(null);
+  const [filter, setFilter] = React.useState<Filter>(() =>
+    initialReviews.some(needsAttention) ? "pending" : "all",
+  );
   const [error, setError] = React.useState<string | null>(null);
+  const [viewer, setViewer] = React.useState<Viewer>(null);
+  const tabRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
-  React.useEffect(() => setReviews(initialReviews), [initialReviews]);
+  const counts = React.useMemo(
+    () => Object.fromEntries(TABS.map((tab) => [tab.id, reviews.filter((r) => matches(r, tab.id)).length])) as Record<Filter, number>,
+    [reviews],
+  );
 
-  const patch = async (id: string, status: ReviewStatus, action: BusyAction) => {
-    setBusy({ id, action });
-    setError(null);
-
-    const prev = reviews;
-    setReviews((r) => r.map((x) => (x.id === id ? { ...x, status } : x)));
-
-    try {
-      const res = await fetch(`/api/admin/reviews/${id}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) throw new Error("Failed to update.");
-      router.refresh();
-    } catch (e) {
-      setReviews(prev);
-      setError(e instanceof Error ? e.message : "Failed to update.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const del = async (id: string) => {
-    const ok = window.confirm("Delete this review? This cannot be undone.");
-    if (!ok) return;
-
-    setBusy({ id, action: "delete" });
-    setError(null);
-
-    const prev = reviews;
-    setReviews((r) => r.filter((x) => x.id !== id));
-
-    try {
-      const res = await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete.");
-      router.refresh();
-    } catch (e) {
-      setReviews(prev);
-      setError(e instanceof Error ? e.message : "Failed to delete.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const sorted = React.useMemo(() => {
+  const visible = React.useMemo(() => {
     const rank: Record<ReviewStatus, number> = { pending: 0, approved: 1, rejected: 2 };
-    return [...reviews].sort((a, b) => rank[a.status] - rank[b.status]);
-  }, [reviews]);
+    return reviews
+      .filter((review) => matches(review, filter))
+      .sort((a, b) => rank[a.status] - rank[b.status] || b.createdAt.localeCompare(a.createdAt));
+  }, [reviews, filter]);
+
+  /** Applies a change at once and puts the old list back if the server refuses it. */
+  const mutate = React.useCallback(
+    async (apply: (list: Review[]) => Review[], request: () => Promise<Response>, failure: string) => {
+      const previous = reviews;
+      setError(null);
+      setReviews(apply);
+      try {
+        const res = await request();
+        if (!res.ok) throw new Error(failure);
+        return true;
+      } catch (err) {
+        setReviews(previous);
+        setError(err instanceof Error ? err.message : failure);
+        return false;
+      }
+    },
+    [reviews],
+  );
+
+  const send = (url: string, method: string, body?: unknown) => () =>
+    fetch(url, {
+      method,
+      ...(body ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {}),
+    });
+
+  const patchReview = (id: string, change: (r: Review) => Review) => (list: Review[]) =>
+    list.map((r) => (r.id === id ? change(r) : r));
+
+  const patchReply = (reviewId: string, replyId: string, change: (r: ReviewReply) => ReviewReply | null) =>
+    patchReview(reviewId, (r) => ({
+      ...r,
+      replies: (r.replies ?? []).flatMap((reply) => (reply.id === replyId ? (change(reply) ?? []) : [reply])),
+    }));
+
+  const actions = {
+    setStatus: (id: string, status: ReviewStatus) =>
+      mutate(patchReview(id, (r) => ({ ...r, status })), send(`/api/admin/reviews/${id}`, "PATCH", { status }), "Could not update the review."),
+
+    remove: (id: string) =>
+      mutate((list) => list.filter((r) => r.id !== id), send(`/api/admin/reviews/${id}`, "DELETE"), "Could not delete the review."),
+
+    setReplyStatus: (id: string, replyId: string, status: ReviewStatus) =>
+      mutate(
+        patchReply(id, replyId, (reply) => ({ ...reply, status })),
+        send(`/api/admin/reviews/${id}/replies/${replyId}`, "PATCH", { status }),
+        "Could not update the reply.",
+      ),
+
+    removeReply: (id: string, replyId: string) =>
+      mutate(patchReply(id, replyId, () => null), send(`/api/admin/reviews/${id}/replies/${replyId}`, "DELETE"), "Could not delete the reply."),
+
+    removeImage: (id: string, replyId: string | undefined, attachmentId: string) => {
+      const strip = (items?: ReviewAttachment[]) => items?.filter((a) => a.id !== attachmentId);
+      const apply = replyId
+        ? patchReply(id, replyId, (reply) => ({ ...reply, attachments: strip(reply.attachments) }))
+        : patchReview(id, (r) => ({ ...r, attachments: strip(r.attachments) }));
+      const query = replyId ? `?replyId=${encodeURIComponent(replyId)}` : "";
+      return mutate(apply, send(`/api/admin/reviews/${id}/attachments/${attachmentId}${query}`, "DELETE"), "Could not remove the image.");
+    },
+
+    ownerReply: async (id: string, text: string) => {
+      setError(null);
+      try {
+        const res = await fetch(`/api/admin/reviews/${id}/replies`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = (await res.json().catch(() => null)) as { reply?: ReviewReply; error?: string } | null;
+        if (!res.ok || !data?.reply) throw new Error(data?.error || "Could not post the reply.");
+        const reply = data.reply;
+        setReviews(patchReview(id, (r) => ({ ...r, replies: [...(r.replies ?? []), reply] })));
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not post the reply.");
+        return false;
+      }
+    },
+  };
+
+  const onTabKeyDown = (event: React.KeyboardEvent, index: number) => {
+    const last = TABS.length - 1;
+    const next =
+      event.key === "ArrowRight" ? (index + 1) % TABS.length
+      : event.key === "ArrowLeft" ? (index + last) % TABS.length
+      : event.key === "Home" ? 0
+      : event.key === "End" ? last
+      : null;
+    if (next === null) return;
+    event.preventDefault();
+    setFilter(TABS[next].id);
+    tabRefs.current[next]?.focus();
+  };
 
   return (
-    <div className="overflow-hidden border border-line/12 bg-void/25">
-      <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[11px] tracking-[0.22em] text-fog/70 md:grid">
-        <div className="col-span-5">REVIEW</div>
-        <div className="col-span-2">RATING</div>
-        <div className="col-span-2">STATUS</div>
-        <div className="col-span-1 text-center">APPROVE</div>
-        <div className="col-span-1 text-center">REJECT</div>
-        <div className="col-span-1 text-center">DELETE</div>
+    <div>
+      <div
+        role="tablist"
+        aria-label="Filter reviews"
+        className="flex flex-wrap gap-2 border-b border-line/10 pb-4"
+      >
+        {TABS.map((tab, index) => {
+          const active = filter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              ref={(el) => {
+                tabRefs.current[index] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`reviews-tab-${tab.id}`}
+              aria-selected={active}
+              aria-controls="reviews-panel"
+              tabIndex={active ? 0 : -1}
+              onClick={() => setFilter(tab.id)}
+              onKeyDown={(event) => onTabKeyDown(event, index)}
+              className={cn(
+                "inline-flex items-center gap-3 border px-3.5 py-2.5 text-[11px] tracking-[0.22em] transition-[border-color,color,background-color] duration-200",
+                active
+                  ? "border-ink/70 bg-white/[0.06] text-ink"
+                  : "border-line/12 bg-void/35 text-fog/72 hover:border-line/30 hover:text-ink",
+              )}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={cn(
+                  "min-w-5 tabular-nums",
+                  tab.id === "pending" && counts.pending > 0 ? "text-ink" : "text-fog/70",
+                )}
+              >
+                {counts[tab.id]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {sorted.length ? (
-        <div className="divide-y divide-line/10">
-          {sorted.map((r) => (
-            <div
-              key={r.id}
-              className="grid gap-5 px-5 py-5 transition-colors duration-300 hover:bg-white/[0.025] md:grid-cols-12 md:items-start md:gap-3 md:py-4"
-            >
-              <div className="md:col-span-5">
-                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                  <div className="font-serif text-lg leading-none tracking-[-0.03em]">{r.name}</div>
-                  <div className="text-[11px] tracking-[0.22em] text-fog/70">
-                    {new Date(r.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-                <p className="mt-3 text-pretty text-sm leading-relaxed text-fog/80">“{r.text}”</p>
-              </div>
+      <p className="sr-only" role="status" aria-live="polite">
+        {visible.length} {visible.length === 1 ? "review" : "reviews"} shown
+      </p>
 
-              <div className="md:col-span-2">
-                <Stars rating={r.rating} glyph="★" />
-              </div>
-
-              <div className="md:col-span-2">
-                <StatusBadge status={r.status} />
-              </div>
-
-              <div className="flex gap-2 md:col-span-3 md:justify-end">
-                <ActionButton
-                  label="APPROVE"
-                  disabled={busy?.id === r.id || r.status === "approved"}
-                  onClick={() => void patch(r.id, "approved", "approve")}
-                />
-                <ActionButton
-                  label="REJECT"
-                  disabled={busy?.id === r.id || r.status === "rejected"}
-                  onClick={() => void patch(r.id, "rejected", "reject")}
-                />
-                <ActionButton
-                  label="DEL"
-                  disabled={busy?.id === r.id}
-                  danger
-                  onClick={() => void del(r.id)}
-                />
-              </div>
-            </div>
-          ))}
+      {error ? (
+        <div role="alert" className="mt-4 flex items-center justify-between gap-4 border border-red-300/30 bg-red-300/[0.06] px-4 py-3 text-sm text-red-200">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError(null)} className="text-[11px] tracking-[0.22em] hover:text-ink">
+            DISMISS
+          </button>
         </div>
-      ) : (
-        <div className="px-5 py-10 text-sm text-fog/70">No reviews yet.</div>
-      )}
+      ) : null}
 
-      {error ? <div className="border-t border-line/10 px-5 py-4 text-sm text-fog/80">{error}</div> : null}
+      <div id="reviews-panel" role="tabpanel" aria-labelledby={`reviews-tab-${filter}`} tabIndex={-1} className="mt-6 outline-none">
+        {visible.length ? (
+          <ul className="space-y-4">
+            <AnimatePresence initial={false}>
+              {visible.map((review, index) => (
+                <motion.li
+                  key={review.id}
+                  initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: reduceMotion ? 0 : Math.min(index, 8) * 0.04 }}
+                >
+                  <ReviewCard
+                    review={review}
+                    actions={actions}
+                    onOpenImages={(images, at) => setViewer({ images, index: at })}
+                  />
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+        ) : (
+          <div className="border border-line/12 bg-void/25 px-5 py-10 text-sm text-fog/70">
+            {filter === "all" ? "No reviews yet." : `Nothing ${filter === "pending" ? "waiting for approval" : filter}.`}
+          </div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {viewer ? (
+          <Lightbox
+            images={viewer.images}
+            index={viewer.index}
+            onIndex={(index) => setViewer({ ...viewer, index })}
+            onClose={() => setViewer(null)}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
-
-function StatusBadge({ status }: { status: ReviewStatus }) {
-  const label =
-    status === "pending" ? "PENDING" : status === "approved" ? "APPROVED" : "REJECTED";
-  return (
-    <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70">
-      {label}
-    </span>
-  );
-}
-
-
-function ActionButton({
-  label,
-  disabled,
-  danger,
-  onClick,
-}: {
-  label: string;
-  disabled?: boolean;
-  danger?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[11px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
-        "hover:-translate-y-px hover:border-line/25 hover:text-ink active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
-        danger && "hover:border-line/35",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
-

@@ -21,13 +21,15 @@ const SECTIONS = [
   {
     title: "Reviews",
     body: [
-      "If you leave a review, your name, rating and message are stored and shown on the site only after I approve them.",
+      "If you leave a review, your name, rating, message and any images you attach are stored and shown on the site only after I approve them. Images are re-saved without their metadata (such as location data) and limited to 4 per review.",
+      "You get a private key that stays in your browser, so only you can add replies to your review later. Only a scrambled copy of it is stored here. My replies and yours appear in the review's thread once approved.",
+      "To stop spam, a scrambled (hashed) version of your IP address is kept next to a review for a day or two, then deleted.",
     ],
   },
   {
     title: "On your device",
     body: [
-      "The site saves a few preferences in your browser: whether sound and motion are on, whether you have seen the intro, and an unsent quote draft so a refresh does not lose your message. They never leave your device, and the draft is removed once you send it.",
+      "The site saves a few preferences in your browser: whether sound and motion are on, whether you have seen the intro, an unsent quote draft so a refresh does not lose your message, and the private key for any review you wrote. They never leave your device (the key is only sent back to prove a reply is yours), and the draft is removed once you send it.",
     ],
   },
   {

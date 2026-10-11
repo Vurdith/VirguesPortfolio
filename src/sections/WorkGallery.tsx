@@ -265,13 +265,7 @@ function WorkCard({
               backgroundPosition: focusPosition(work.media),
             }}
           />
-          <div
-            className="pointer-events-none absolute inset-0 opacity-75 mix-blend-overlay animate-scanlines"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 1px, transparent 2px, transparent 7px)",
-            }}
-          />
+          <div aria-hidden="true" className="scanlines" />
         </motion.div>
 
         {/* Lens hardware: rotating rings + soft glare. */}
@@ -288,13 +282,9 @@ function WorkCard({
         >
           <div className="absolute inset-0 rounded-full border border-line/30 animate-ring" />
           <div className="absolute inset-[18px] rounded-full border border-line/20 [border-style:dashed] animate-ring [animation-duration:3.6s]" />
-          <div
-            className="absolute inset-[30px] rounded-full opacity-55 mix-blend-overlay animate-scanlines"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1px, transparent 2px, transparent 7px)",
-            }}
-          />
+          <div aria-hidden="true" className="absolute inset-[30px] overflow-hidden rounded-full">
+            <div className="scanlines opacity-70" />
+          </div>
           <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
         </motion.div>
 

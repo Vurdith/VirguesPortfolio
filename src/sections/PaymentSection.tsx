@@ -4,12 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 
+import { BrandLogo, type BrandName } from "@/components/BrandLogo";
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
 
 const STRIPE_URL = "https://buy.stripe.com/6oUaEZ9geg0p0Qm3X7aMU00";
+const WISE_URL = "https://wise.com/pay/me/reeceluisl";
 const PAYPAL_EMAIL = "reeceleneveubusiness@gmail.com";
 const PAYPAL_URL = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(
   PAYPAL_EMAIL
@@ -18,6 +20,7 @@ const PAYPAL_URL = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=$
 const PAYMENT_METHODS = [
   {
     title: "Stripe",
+    logo: "stripe",
     description:
       "Fast encrypted checkout for cards and supported wallets. Confirmation is handled immediately after payment.",
     cta: "Pay with Stripe",
@@ -25,12 +28,21 @@ const PAYMENT_METHODS = [
   },
   {
     title: "PayPal",
+    logo: "paypal",
     description:
       "Prefer PayPal? Pay through PayPal once the project scope and quote are confirmed.",
     cta: "Pay with PayPal",
     href: PAYPAL_URL,
   },
-] as const;
+  {
+    title: "Wise",
+    logo: "wise",
+    description:
+      "Pay in your own currency with a low-fee Wise transfer once the project scope and quote are confirmed.",
+    cta: "Pay with Wise",
+    href: WISE_URL,
+  },
+] as const satisfies readonly { title: string; logo: BrandName; description: string; cta: string; href: string }[];
 
 export function PaymentSection({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement>(null);
@@ -74,7 +86,7 @@ export function PaymentSection({ className }: { className?: string }) {
         </header>
 
         <div className="mt-10">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             {PAYMENT_METHODS.map((method) => (
               <PaymentMethodCard key={method.title} method={method} />
             ))}
@@ -101,8 +113,8 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
               {method.title}
             </h3>
           </div>
-          <div className="grid size-10 shrink-0 place-items-center border border-line/12 bg-black/25">
-            <MonoIcon name="card" className="size-4" />
+          <div className="grid size-12 shrink-0 place-items-center border border-line/12 bg-black/25">
+            <BrandLogo name={method.logo} className="size-6" />
           </div>
         </div>
 

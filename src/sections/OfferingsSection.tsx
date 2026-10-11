@@ -55,9 +55,15 @@ const OFFERINGS = [
     code: "05",
     title: "Full Game Package",
     description:
-      "A complete interface for a whole game in one package: every screen, the Studio imports and a final polish pass, scoped together.",
-    why: "Best for launching a game with one consistent look and one fixed price instead of quoting task by task.",
+      "A complete interface for a whole game in one package: every screen designed in one consistent style at a fixed price.",
+    why: "Best for launching a game with one consistent look instead of quoting task by task.",
     badge: "£1650 package",
+    extra: {
+      label: "Add importing + final polish pass",
+      description:
+        "A complete interface for a whole game in one package: every screen designed in one consistent style, imported into Studio and finished with a final polish pass.",
+      badge: "£2150 package",
+    },
   },
   {
     code: "06",
@@ -183,6 +189,11 @@ function OfferingCard({
   offering: (typeof OFFERINGS)[number];
   spanClass: string;
 }) {
+  const [extras, setExtras] = React.useState(false);
+  const extra = "extra" in offering ? offering.extra : null;
+  const description = extra && extras ? extra.description : offering.description;
+  const badge = extra && extras ? extra.badge : offering.badge;
+
   return (
     <article
       className={cn(
@@ -213,7 +224,7 @@ function OfferingCard({
         </div>
 
         <p className="mt-6 min-h-[4.6rem] text-sm leading-relaxed text-fog/82">
-          {offering.description}
+          {description}
         </p>
         <p className="mt-4 border-l border-line/16 pl-4 text-xs leading-relaxed text-fog/72">
           {offering.why}
@@ -254,9 +265,35 @@ function OfferingCard({
           </details>
         )}
 
+        {extra && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={extras}
+            onClick={() => setExtras((on) => !on)}
+            className="mt-5 grid w-full grid-cols-[1fr_auto] items-center gap-4 border border-line/10 bg-white/[0.025] px-3 py-3 text-left text-[11px] tracking-[0.2em] text-fog/75 transition-colors duration-200 hover:bg-white/[0.05]"
+          >
+            <span>{extra.label.toUpperCase()}</span>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "relative h-5 w-9 border transition-colors duration-200",
+                extras ? "border-line/50 bg-white/10" : "border-line/20",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-3.5 bg-ink transition-all duration-200",
+                  extras ? "left-[1.1rem]" : "left-0.5 opacity-50",
+                )}
+              />
+            </span>
+          </button>
+        )}
+
         <div className="mt-auto pt-6">
           <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
-            <CountUpText text={offering.badge.toUpperCase()} />
+            <CountUpText text={badge.toUpperCase()} />
           </span>
         </div>
       </div>

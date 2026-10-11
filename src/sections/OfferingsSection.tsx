@@ -191,7 +191,6 @@ function OfferingCard({
 }) {
   const [extras, setExtras] = React.useState(false);
   const extra = "extra" in offering ? offering.extra : null;
-  const description = extra && extras ? extra.description : offering.description;
   const badge = extra && extras ? extra.badge : offering.badge;
 
   return (
@@ -223,9 +222,23 @@ function OfferingCard({
           </div>
         </div>
 
-        <p className="mt-6 min-h-[4.6rem] text-sm leading-relaxed text-fog/82">
-          {description}
-        </p>
+        {/* Both versions share one grid cell so toggling never changes the card's height, and the
+            minimum keeps the "why" lines aligned across a row of cards. */}
+        <div
+          className={cn(
+            "mt-6 grid min-h-[4.6rem] text-sm leading-relaxed text-fog/82 md:min-h-[6.2rem]",
+            spanClass.includes("col-span-4") ? "lg:min-h-[8.6rem]" : "lg:min-h-[4.6rem]",
+          )}
+        >
+          <p className={cn("col-start-1 row-start-1", extra && extras && "invisible")} aria-hidden={extra && extras ? true : undefined}>
+            {offering.description}
+          </p>
+          {extra && (
+            <p className={cn("col-start-1 row-start-1", !extras && "invisible")} aria-hidden={!extras ? true : undefined}>
+              {extra.description}
+            </p>
+          )}
+        </div>
         <p className="mt-4 border-l border-line/16 pl-4 text-xs leading-relaxed text-fog/72">
           {offering.why}
         </p>

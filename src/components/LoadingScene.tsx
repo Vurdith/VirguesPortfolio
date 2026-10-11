@@ -3,24 +3,33 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
-const INTRO_VIDEO = "/intro-loader-v2.mp4";
+// Phones get a smaller file of the same film; everything else gets the full 1080p original.
+const INTRO_VIDEO = "/intro-loader-hq.mp4";
+const INTRO_VIDEO_SMALL = "/intro-loader-720.mp4";
+const INTRO_POSTER = "/intro-poster.webp";
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
 
+// The intro plays in full on every page load; this only stops it replaying when you navigate
+// back to the home page inside the same visit.
 let introSeenInRuntime = false;
 
+function markIntroSeen() {
+  introSeenInRuntime = true;
+}
+
 export function LoadingScene() {
-  const [visible, setVisible] = React.useState(!introSeenInRuntime);
+  const [visible, setVisible] = React.useState(true);
   const [videoDone, setVideoDone] = React.useState(false);
   const [showLoader, setShowLoader] = React.useState(false);
   const [percent, setPercent] = React.useState(0);
-  const musicStartedRef = React.useRef(false);
   const videoFinishedRef = React.useRef(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const canEnter = percent >= 100;
-  const { playHover, playClick, toggleMuted, muted } = useUiSounds();
+  const { enableByDefault, setMusicDucked } = useUiSounds();
 
   const finishVideo = React.useCallback(() => {
     if (videoFinishedRef.current) return;
@@ -28,11 +37,25 @@ export function LoadingScene() {
     videoFinishedRef.current = true;
     videoRef.current?.pause();
     setVideoDone(true);
-    if (!musicStartedRef.current && muted) {
-      musicStartedRef.current = true;
-      toggleMuted();
+    setMusicDucked(false);
+    enableByDefault();
+  }, [enableByDefault, setMusicDucked]);
+
+  // The intro has its own soundtrack, so keep the ambient bed out of its way.
+  React.useEffect(() => {
+    if (!visible || videoDone) return;
+    setMusicDucked(true);
+    return () => setMusicDucked(false);
+  }, [visible, videoDone, setMusicDucked]);
+
+  // Coming back to the home page within the same visit goes straight to the site.
+  React.useLayoutEffect(() => {
+    if (introSeenInRuntime) {
+      videoFinishedRef.current = true;
+      videoRef.current?.pause();
+      setVisible(false);
     }
-  }, [muted, toggleMuted]);
+  }, []);
 
   const playIntroVideo = React.useCallback(async () => {
     const video = videoRef.current;
@@ -52,6 +75,19 @@ export function LoadingScene() {
   React.useEffect(() => {
     playIntroVideo();
   }, [playIntroVideo]);
+
+  // If the film can't load (offline, blocked, unsupported), move on instead of hanging on the
+  // poster. Errors raised before React attached its listeners are missed, so poll the element too.
+  React.useEffect(() => {
+    if (videoDone) return;
+    const timer = window.setInterval(() => {
+      const video = videoRef.current;
+      if (video && (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
+        finishVideo();
+      }
+    }, 400);
+    return () => window.clearInterval(timer);
+  }, [videoDone, finishVideo]);
 
   React.useEffect(() => {
     const unmuteAfterGesture = () => {
@@ -74,10 +110,9 @@ export function LoadingScene() {
 
   const enterSite = React.useCallback(() => {
     if (!canEnter) return;
-    playClick();
-    introSeenInRuntime = true;
+    markIntroSeen();
     setVisible(false);
-  }, [canEnter, playClick]);
+  }, [canEnter]);
 
   React.useEffect(() => {
     if (!videoDone) return;
@@ -115,8 +150,10 @@ export function LoadingScene() {
         <motion.div
           className="fixed inset-0 z-[100] overflow-hidden bg-void"
           initial={{ opacity: 1 }}
+          // The fade-out must not swallow the first click on the page underneath.
           exit={{
             opacity: 0,
+            pointerEvents: "none",
             transition: { duration: 0.24, ease: EASE },
           }}
         >
@@ -126,7 +163,7 @@ export function LoadingScene() {
                 ref={videoRef}
                 key="intro-video"
                 className="h-full w-full object-cover"
-                src={INTRO_VIDEO}
+                poster={INTRO_POSTER}
                 autoPlay
                 playsInline
                 preload="auto"
@@ -143,7 +180,11 @@ export function LoadingScene() {
                   opacity: 0,
                   transition: { duration: 0.55, ease: EASE },
                 }}
-              />
+              >
+                {/* A failing <source> reports on itself, not on the <video>, so listen here too. */}
+                <source src={INTRO_VIDEO_SMALL} type="video/mp4" media="(max-width: 767px)" onError={finishVideo} />
+                <source src={INTRO_VIDEO} type="video/mp4" onError={finishVideo} />
+              </motion.video>
             ) : null}
           </AnimatePresence>
 
@@ -184,11 +225,11 @@ export function LoadingScene() {
               >
                 <div className="mb-3 flex items-baseline justify-between px-1">
                   <div className="flex items-center gap-3">
-                    <span className="text-[9px] font-bold tracking-[0.4em] text-fog/45">
+                    <span className="text-[10px] font-bold tracking-[0.4em] text-fog/45">
                       {canEnter ? "READY" : "INITIALIZING"}
                     </span>
                     {!canEnter ? (
-                      <span className="text-[9px] tabular-nums tracking-[0.2em] text-ink/45">
+                      <span className="text-[10px] tabular-nums tracking-[0.2em] text-ink/45">
                         {percent}%
                       </span>
                     ) : null}
@@ -227,17 +268,15 @@ export function LoadingScene() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.42, ease: EASE }}
-                        onMouseEnter={playHover}
                         onClick={enterSite}
-                        className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[10px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
+                        className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[11px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
                       >
                         ENTER SITE
-                        <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="absolute left-0 top-0 h-2 w-2 border-l border-t border-line/40" />
-                          <span className="absolute right-0 top-0 h-2 w-2 border-r border-t border-line/40" />
-                          <span className="absolute bottom-0 left-0 h-2 w-2 border-b border-l border-line/40" />
-                          <span className="absolute bottom-0 right-0 h-2 w-2 border-b border-r border-line/40" />
-                        </span>
+                        <CornerMarks
+                          size={2}
+                          tone="border-line/40"
+                          className="opacity-0 transition-opacity group-hover:opacity-100"
+                        />
                       </motion.button>
                     ) : (
                       <motion.div

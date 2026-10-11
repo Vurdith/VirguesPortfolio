@@ -3,13 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
+import { QuoteForm } from "@/components/QuoteForm";
+import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 export function ContactFooter({ className }: { className?: string }) {
-  const { playHover, playClick } = useUiSounds();
   const [copied, setCopied] = React.useState(false);
   const resetTimer = React.useRef<number | null>(null);
 
@@ -66,83 +67,66 @@ export function ContactFooter({ className }: { className?: string }) {
     >
       <div aria-hidden="true" className="section-grid-bg" />
       <div className="relative mx-auto max-w-6xl px-6 md:px-10">
-        <div className="grid gap-10 md:grid-cols-12 md:gap-12">
-          <div className="md:col-span-7">
+        <div className="grid gap-12 md:grid-cols-12 md:gap-12">
+          <div className="min-w-0 md:col-span-5">
             <div className="flex items-center gap-3 text-xs tracking-[0.22em] text-fog/70">
               <MonoIcon name="mail" className="size-4" />
               <span>CONTACT</span>
             </div>
-            <h2 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
+            <RevealHeading className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
               High contrast.
-            </h2>
+            </RevealHeading>
             <p className="mt-6 max-w-prose text-pretty text-sm leading-relaxed text-fog/80">
               If the work feels right, we can build something sharp together. No fluff. Fast
               feedback loops. Clean handoff.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onMouseEnter={playHover}
-                onClick={() => {
-                  playClick();
-                  void copyEmail();
-                }}
-                className={cn(
-                  "group relative inline-flex items-center gap-3 border border-line/18 bg-void/30 px-5 py-3 text-xs tracking-[0.22em] text-ink backdrop-blur-md",
-                  "hover:border-line/35",
-                )}
-                aria-label={`Copy email address ${SITE.email}`}
+            <button
+              type="button"
+              onClick={() => void copyEmail()}
+              className={cn(
+                "group relative mt-8 flex w-full items-center justify-between gap-3 border border-line/18 bg-void/30 px-4 py-3 text-xs tracking-[0.22em] text-ink backdrop-blur-md",
+                "hover:border-line/35",
+              )}
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <MonoIcon name="mail" className="size-4 shrink-0" />
+                <span className="truncate font-medium tracking-normal sm:tracking-[0.22em]">{SITE.email}</span>
+              </span>
+              <span className="shrink-0 text-fog/70" aria-live="polite">
+                {copied ? "COPIED" : "COPY"}
+              </span>
+              <CornerMarks className="opacity-80" />
+            </button>
+
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Link
+                href={SITE.socials.discord}
+                className="group flex items-center justify-between border border-line/12 bg-void/35 px-4 py-3 text-xs tracking-[0.22em] text-fog/80 hover:border-line/25 hover:text-ink"
               >
-                <span className="text-fog/70">EMAIL</span>
-                <MonoIcon name="mail" className="size-4" />
-                <span className="font-medium">{SITE.email}</span>
-                <span className="min-w-14 text-left text-fog/70" aria-live="polite">
-                  {copied ? "COPIED" : "COPY"}
-                </span>
-                <span className="pointer-events-none absolute inset-0 opacity-80">
-                  <span className="absolute left-0 top-0 h-3 w-3 border-l border-t border-line/30" />
-                  <span className="absolute right-0 top-0 h-3 w-3 border-r border-t border-line/30" />
-                  <span className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-line/30" />
-                  <span className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-line/30" />
-                </span>
-              </button>
-
-              <div className="text-xs tracking-[0.18em] text-fog/60">
-                Prefer DM? Use the links.
-              </div>
+                <span>DISCORD</span>
+                <span className="text-fog/72 transition-colors group-hover:text-ink">↗</span>
+              </Link>
+              <Link
+                href={SITE.socials.x}
+                className="group flex items-center justify-between border border-line/12 bg-void/35 px-4 py-3 text-xs tracking-[0.22em] text-fog/80 hover:border-line/25 hover:text-ink"
+              >
+                <span>X</span>
+                <span className="text-fog/72 transition-colors group-hover:text-ink">↗</span>
+              </Link>
             </div>
           </div>
 
-          <div className="md:col-span-5">
-            <div className="border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                <div className="text-xs tracking-[0.22em] text-fog/70">LINKS</div>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <Link
-                  href={SITE.socials.discord}
-                  onMouseEnter={playHover}
-                  onClick={playClick}
-                  className="group flex items-center justify-between border border-line/12 bg-void/35 px-4 py-3 text-xs tracking-[0.22em] text-fog/80 hover:border-line/25 hover:text-ink"
-                >
-                  <span>DISCORD</span>
-                  <span className="text-fog/50 transition-colors group-hover:text-fog/70">↗</span>
-                </Link>
-                <Link
-                  href={SITE.socials.x}
-                  onMouseEnter={playHover}
-                  onClick={playClick}
-                  className="group flex items-center justify-between border border-line/12 bg-void/35 px-4 py-3 text-xs tracking-[0.22em] text-fog/80 hover:border-line/25 hover:text-ink"
-                >
-                  <span>X</span>
-                  <span className="text-fog/50 transition-colors group-hover:text-fog/70">↗</span>
-                </Link>
-              </div>
-
-            </div>
+          <div id="quote" className="relative z-[41] min-w-0 scroll-mt-24 md:col-span-7">
+            <QuoteForm />
           </div>
+        </div>
+
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line/10 pt-6 text-[11px] tracking-[0.22em] text-fog/72">
+          <span>© {new Date().getFullYear()} {SITE.name.toUpperCase()}</span>
+          <Link href="/privacy" className="hover:text-ink">
+            PRIVACY
+          </Link>
         </div>
       </div>
     </footer>

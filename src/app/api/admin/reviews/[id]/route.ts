@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -34,6 +35,7 @@ export async function PATCH(
     review.status = parsed.data.status;
   });
 
+  revalidatePath("/");
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }
 
@@ -54,6 +56,7 @@ export async function DELETE(
     next.reviews = next.reviews.filter((r) => r.id !== id);
   });
 
+  revalidatePath("/");
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }
 

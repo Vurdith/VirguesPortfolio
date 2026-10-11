@@ -9,6 +9,7 @@ type IconName =
   | "process"
   | "review"
   | "services"
+  | "trophy"
   | "work";
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -48,6 +49,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M6 7h12M6 12h12M6 17h12" />
       <path d="M9 5v4M15 10v4M11 15v4" />
+    </>
+  ),
+  trophy: (
+    <>
+      <path d="M8 5h8v5a4 4 0 0 1-8 0V5Z" />
+      <path d="M8 7H5v1a3 3 0 0 0 3 3M16 7h3v1a3 3 0 0 1-3 3M12 14v3M9 19h6" />
     </>
   ),
   work: (

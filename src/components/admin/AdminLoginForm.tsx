@@ -4,13 +4,12 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/cn";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
   const router = useRouter();
-  const { playHover, playClick } = useUiSounds();
 
   const [password, setPassword] = React.useState("");
+  const [setupToken, setSetupToken] = React.useState("");
   const [status, setStatus] = React.useState<"idle" | "submitting" | "error">("idle");
   const [error, setError] = React.useState<string | null>(null);
 
@@ -22,9 +21,12 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(mode === "setup" ? { password, setupToken } : { password }),
       });
-      if (!res.ok) throw new Error("Auth failed.");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Auth failed.");
+      }
       router.push("/admin");
       router.refresh();
     } catch (e) {
@@ -47,7 +49,7 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
           <CornerLines />
           <div className="flex items-center justify-between">
             <div className="text-xs tracking-[0.22em] text-fog/70">ADMIN</div>
-            <div className="text-[10px] tracking-[0.22em] text-fog/50">
+            <div className="text-[11px] tracking-[0.22em] text-fog/70">
               {mode === "setup" ? "INITIAL SETUP" : "LOGIN"}
             </div>
           </div>
@@ -63,7 +65,7 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
 
           <div className="mt-8">
             <label className="block">
-              <span className="text-[10px] tracking-[0.22em] text-fog/70">PASSWORD</span>
+              <span className="text-[11px] tracking-[0.22em] text-fog/70">PASSWORD</span>
               <input
                 type="password"
                 value={password}
@@ -74,16 +76,25 @@ export function AdminLoginForm({ mode }: { mode: "setup" | "login" }) {
               />
             </label>
 
+            {mode === "setup" ? (
+              <label className="mt-5 block">
+                <span className="text-[11px] tracking-[0.22em] text-fog/70">SETUP TOKEN</span>
+                <input
+                  type="password"
+                  value={setupToken}
+                  onChange={(e) => setSetupToken(e.target.value)}
+                  className="mt-2 w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
+                  placeholder="ADMIN_SETUP_TOKEN (required in production)"
+                />
+              </label>
+            ) : null}
+
             {error ? <div className="mt-3 text-xs text-fog/80">{error}</div> : null}
 
             <div className="mt-6 flex items-center justify-end gap-4">
               <button
                 type="button"
-                onMouseEnter={playHover}
-                onClick={() => {
-                  playClick();
-                  void submit();
-                }}
+                onClick={() => void submit()}
                 disabled={status === "submitting" || password.length < (mode === "setup" ? 10 : 1)}
                 className={cn(
                   "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",

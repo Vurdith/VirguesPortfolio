@@ -31,3 +31,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local file database (contains admin password hash)
+/data/db.json
+/.next-build
+
+# e2e
+/.next-test
+/.e2e
+/test-results
+/playwright-report

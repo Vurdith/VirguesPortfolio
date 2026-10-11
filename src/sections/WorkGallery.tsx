@@ -3,6 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  AnimatePresence,
+  LayoutGroup,
   motion,
   useMotionTemplate,
   useMotionValue,
@@ -13,8 +15,18 @@ import {
 
 import type { Work } from "@/types/portfolio";
 import { MonoIcon } from "@/components/MonoIcon";
+import { RevealHeading } from "@/components/RevealHeading";
+import { WorkOverlay, workLayoutId } from "@/components/work/WorkOverlay";
+import { optimizedImage } from "@/lib/images";
 import { cn } from "@/lib/cn";
+import { focusPosition } from "@/lib/focus";
+import { SITE } from "@/lib/site";
+import { usePointerTracking } from "@/hooks/usePointerTracking";
 import { useUiSounds } from "@/hooks/useUiSounds";
+
+const MAX_TILT_DEG = 15;
+
+const viewHash = (work: Work) => `#view-${work.slug}`;
 
 const BACKDROPS = [
   "radial-gradient(900px 700px at 20% 10%, rgba(255,255,255,0.12), transparent 60%), radial-gradient(700px 600px at 80% 30%, rgba(255,255,255,0.07), transparent 55%), linear-gradient(180deg, rgba(255,255,255,0.06), transparent 42%), linear-gradient(135deg, rgba(255,255,255,0.04), rgba(0,0,0,0.0))",
@@ -22,10 +34,6 @@ const BACKDROPS = [
   "radial-gradient(900px 700px at 35% 20%, rgba(255,255,255,0.10), transparent 62%), radial-gradient(800px 600px at 78% 80%, rgba(255,255,255,0.06), transparent 58%), linear-gradient(180deg, rgba(255,255,255,0.06), transparent 45%), linear-gradient(225deg, rgba(255,255,255,0.04), rgba(0,0,0,0.0))",
   "radial-gradient(900px 700px at 70% 12%, rgba(255,255,255,0.12), transparent 62%), radial-gradient(800px 600px at 20% 85%, rgba(255,255,255,0.06), transparent 58%), linear-gradient(180deg, rgba(255,255,255,0.06), transparent 45%), linear-gradient(315deg, rgba(255,255,255,0.04), rgba(0,0,0,0.0))",
 ] as const;
-
-import { SITE } from "@/lib/site";
-
-// ... constants ...
 
 export function WorkGallery({
   works,
@@ -40,8 +48,6 @@ export function WorkGallery({
     offset: ["start end", "end start"],
   });
 
-  const skewX = useTransform(scrollYProgress, [0, 1], [5, -5]);
-  const skewY = useTransform(scrollYProgress, [0, 1], [1, -1]);
 
   const bgY = useSpring(useTransform(scrollYProgress, [0, 1], [-100, 100]), {
     stiffness: 100,
@@ -55,6 +61,35 @@ export function WorkGallery({
   });
 
   const bgOpacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 0.6, 0.6, 0]);
+
+  const { playClose } = useUiSounds();
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+  const active = works.find((work) => work.id === activeId) ?? null;
+
+  const open = React.useCallback((work: Work) => {
+    setActiveId(work.id);
+    window.history.pushState(null, "", viewHash(work));
+  }, []);
+
+  const close = React.useCallback(() => {
+    playClose();
+    if (window.location.hash.startsWith("#view-")) {
+      // The popstate listener below clears the overlay.
+      window.history.back();
+    } else {
+      setActiveId(null);
+    }
+  }, [playClose]);
+
+  // Browser back/forward should close (or reopen) the screening.
+  React.useEffect(() => {
+    const sync = () => {
+      const match = works.find((work) => window.location.hash === viewHash(work));
+      setActiveId(match?.id ?? null);
+    };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, [works]);
   
   return (
     <section
@@ -90,36 +125,49 @@ export function WorkGallery({
               <MonoIcon name="work" className="size-4" />
               <span>SELECTED</span>
             </div>
-            <motion.h2
-              style={{ skewX, skewY }}
-              className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl origin-left"
-            >
-              Work.
-            </motion.h2>
+            <RevealHeading className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl origin-left">Work.</RevealHeading>
           </div>
 
           <p className="max-w-lg text-pretty text-sm leading-relaxed text-fog/80">
-            A strict grid, but not a safe one. Hover is a lens: rings, scanlines, and a controlled
-            reveal field. Click to enter a full-screen screening.
+            Recent interface and design projects. Click any piece to view it full screen.
           </p>
         </header>
 
-        <div className="mt-10 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
-          {works.map((work, idx) => (
-            <WorkCard key={work.id} work={work} backdrop={BACKDROPS[idx % BACKDROPS.length]} />
-          ))}
-        </div>
+        {works.length ? (
+          <LayoutGroup>
+            <div className="mt-10 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+              {works.map((work, idx) => (
+                <WorkCard
+                  key={work.id}
+                  work={work}
+                  backdrop={BACKDROPS[idx % BACKDROPS.length]}
+                  onOpen={open}
+                />
+              ))}
+            </div>
+            <AnimatePresence>
+              {active ? <WorkOverlay key={active.id} work={active} onClose={close} /> : null}
+            </AnimatePresence>
+          </LayoutGroup>
+        ) : (
+          <p className="mt-10 border border-line/12 bg-void/25 p-6 text-sm text-fog/78">
+            New work is on the way. Get in touch to see more.
+          </p>
+        )}
       </div>
     </section>
   );
 }
 
-function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
-  const { playHover, playClick } = useUiSounds();
-  const rectRef = React.useRef<DOMRect | null>(null);
-  const frameRef = React.useRef<number | null>(null);
-  const pointerRef = React.useRef<{ clientX: number; clientY: number } | null>(null);
-
+function WorkCard({
+  work,
+  backdrop,
+  onOpen,
+}: {
+  work: Work;
+  backdrop: string;
+  onOpen: (work: Work) => void;
+}) {
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
   const rX = useMotionValue(0);
@@ -138,82 +186,46 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
   const tiltShadow = useTransform(o, [0, 1], ["0px", "4px"]);
   const shadow = useMotionTemplate`0 ${tiltShadow} 12px rgba(0,0,0,0.8)`;
 
-  const updatePointer = React.useCallback(() => {
-    frameRef.current = null;
-    const rect = rectRef.current;
-    const pointer = pointerRef.current;
-    if (!rect || !pointer) return;
-
-    const px = pointer.clientX - rect.left;
-    const py = pointer.clientY - rect.top;
-
-    mx.set(px);
-    my.set(py);
-
-    const dx = (px - rect.width / 2) / (rect.width / 2);
-    const dy = (py - rect.height / 2) / (rect.height / 2);
-    rY.set(dx * 15);
-    rX.set(-dy * 15);
-  }, [mx, my, rX, rY]);
-
-  const queuePointerUpdate = React.useCallback(
-    (clientX: number, clientY: number) => {
-      pointerRef.current = { clientX, clientY };
-      if (frameRef.current === null) {
-        frameRef.current = window.requestAnimationFrame(updatePointer);
-      }
+  // The lens follows the pointer; the card tilts toward it.
+  const pointer = usePointerTracking<HTMLDivElement>({
+    onFrame: (point, size) => {
+      mx.set(point.x);
+      my.set(point.y);
+      rY.set(((point.x - size.width / 2) / (size.width / 2)) * MAX_TILT_DEG);
+      rX.set((-(point.y - size.height / 2) / (size.height / 2)) * MAX_TILT_DEG);
     },
-    [updatePointer],
-  );
-
-  React.useEffect(() => {
-    return () => {
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, []);
-
-  const onEnter = React.useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    rectRef.current = e.currentTarget.getBoundingClientRect();
-    queuePointerUpdate(e.clientX, e.clientY);
-    hover.set(1);
-  }, [hover, queuePointerUpdate]);
-
-  const onLeave = React.useCallback(() => {
-    if (frameRef.current !== null) {
-      window.cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
-    rectRef.current = null;
-    pointerRef.current = null;
-    hover.set(0);
-    rX.set(0);
-    rY.set(0);
-  }, [hover, rX, rY]);
-
-  const onMove = React.useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!rectRef.current) {
-        rectRef.current = e.currentTarget.getBoundingClientRect();
-      }
-      queuePointerUpdate(e.clientX, e.clientY);
+    onLeave: () => {
+      hover.set(0);
+      rX.set(0);
+      rY.set(0);
     },
-    [queuePointerUpdate],
-  );
+  });
+
+  // Cards are a few hundred pixels wide; don't download the full-size original for them.
+  const isVideo = work.media.kind === "video";
+  const cardSrc = isVideo ? work.media.poster || "" : optimizedImage(work.media.src);
 
   return (
     <Link
       href={`/work/${work.slug}`}
       className="group block"
-      onMouseEnter={playHover}
-      onClick={playClick}
-      aria-label={`Open ${work.title}`}
+      data-cursor="view"
+      onClick={(event) => {
+        // Let modified clicks (new tab, etc.) use the real /work/[slug] page.
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+          return;
+        }
+        event.preventDefault();
+        onOpen(work);
+      }}
     >
       <motion.div
-        onPointerEnter={onEnter}
-        onPointerLeave={onLeave}
-        onPointerMove={onMove}
+        onPointerEnter={(event) => {
+          hover.set(1);
+          pointer.onPointerEnter(event);
+        }}
+        onPointerMove={pointer.onPointerMove}
+        onPointerLeave={pointer.onPointerLeave}
         style={{
           rotateX: rotX,
           rotateY: rotY,
@@ -225,16 +237,25 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
           "perf-card transform-gpu will-change-transform [transform-style:preserve-3d]",
         )}
       >
-        <div
-          className="absolute inset-0 scale-[1.025] blur-[2px]"
-          style={{ 
-            backgroundImage: work.media.src 
-              ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${work.media.src}), ${backdrop}` 
+        <motion.div
+          layoutId={workLayoutId(work.id)}
+          className="absolute inset-0 blur-[2px]"
+          style={{
+            scale: 1.025,
+            backgroundImage: cardSrc
+              ? `linear-gradient(180deg, rgb(0 0 0 / 0.10), rgb(0 0 0 / 0.78)), url(${cardSrc}), ${backdrop}`
               : `${backdrop}, linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.8) 100%)`,
             backgroundSize: "cover",
-            backgroundPosition: "center"
+            backgroundPosition: focusPosition(work.media),
           }}
-        />
+        >
+          {isVideo && work.media.src ? (
+            <>
+              <CardVideo src={work.media.src} poster={work.media.poster} position={focusPosition(work.media)} />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80" />
+            </>
+          ) : null}
+        </motion.div>
 
         {/* Sharp-field revealed only under the moving lens (mask). */}
         <motion.div
@@ -249,20 +270,12 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
           <div
             className="absolute inset-0 scale-[1.01]"
             style={{ 
-              backgroundImage: work.media.src 
-                ? `url(${work.media.src})` 
-                : `${backdrop}`,
+              backgroundImage: cardSrc ? `url(${cardSrc})` : `${backdrop}`,
               backgroundSize: "cover",
-              backgroundPosition: "center"
+              backgroundPosition: focusPosition(work.media),
             }}
           />
-          <div
-            className="pointer-events-none absolute inset-0 opacity-75 mix-blend-overlay animate-scanlines"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 1px, transparent 2px, transparent 7px)",
-            }}
-          />
+          <div aria-hidden="true" className="scanlines" />
         </motion.div>
 
         {/* Lens hardware: rotating rings + soft glare. */}
@@ -279,13 +292,9 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         >
           <div className="absolute inset-0 rounded-full border border-line/30 animate-ring" />
           <div className="absolute inset-[18px] rounded-full border border-line/20 [border-style:dashed] animate-ring [animation-duration:3.6s]" />
-          <div
-            className="absolute inset-[30px] rounded-full opacity-55 mix-blend-overlay animate-scanlines"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1px, transparent 2px, transparent 7px)",
-            }}
-          />
+          <div aria-hidden="true" className="absolute inset-[30px] overflow-hidden rounded-full">
+            <div className="scanlines opacity-70" />
+          </div>
           <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
         </motion.div>
 
@@ -293,13 +302,13 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
         <div className="absolute inset-x-0 bottom-0 p-4">
           <div className="flex items-baseline justify-between gap-4">
             <h3 className="font-serif text-xl leading-none tracking-[-0.03em]">{work.title}</h3>
-            <div className="text-[10px] tracking-[0.22em] text-fog/70">{work.year ?? "—"}</div>
+            <div className="text-[11px] tracking-[0.22em] text-fog/70">{work.year ?? "—"}</div>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {work.tags.slice(0, 3).map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70"
+                className="inline-flex items-center border border-line/12 bg-void/70 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70"
               >
                 {t.toUpperCase()}
               </span>
@@ -312,3 +321,38 @@ function WorkCard({ work, backdrop }: { work: Work; backdrop: string }) {
 }
 
 
+
+/** Muted looping preview for video works; only plays while the card is on screen. */
+function CardVideo({ src, poster, position }: { src: string; poster?: string; position: string }) {
+  const ref = React.useRef<HTMLVideoElement>(null);
+
+  React.useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) void video.play().catch(() => {});
+        else video.pause();
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      aria-hidden="true"
+      className="absolute inset-0 h-full w-full object-cover"
+      style={{ objectPosition: position }}
+      src={src}
+      poster={poster || undefined}
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      tabIndex={-1}
+    />
+  );
+}

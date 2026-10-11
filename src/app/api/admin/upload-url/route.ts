@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
+import { extensionForMime, mimeMatchesKind } from "@/lib/uploads";
 import { getR2BucketName, getR2Client, getR2PublicUrl, hasR2Config } from "@/lib/r2/client";
 
 export const runtime = "nodejs";
@@ -18,16 +19,6 @@ const UploadUrlSchema = z.object({
   contentType: z.string().min(1),
   size: z.number().int().positive().max(MAX_BYTES),
 });
-
-function extFromMime(mime: string) {
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  if (mime === "image/gif") return "gif";
-  if (mime === "video/mp4") return "mp4";
-  if (mime === "video/webm") return "webm";
-  return null;
-}
 
 export async function POST(req: NextRequest) {
   const session = await requireAdmin(req);
@@ -43,16 +34,16 @@ export async function POST(req: NextRequest) {
   }
 
   const { kind, contentType, size } = parsed.data;
-  const ext = extFromMime(contentType);
+  const ext = extensionForMime(contentType);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported file type." }, { status: 415 });
   }
 
-  if (kind !== "video" && !contentType.startsWith("image/")) {
-    return NextResponse.json({ error: "Expected an image." }, { status: 415 });
-  }
-  if (kind === "video" && !contentType.startsWith("video/")) {
-    return NextResponse.json({ error: "Expected a video." }, { status: 415 });
+  if (!mimeMatchesKind(contentType, kind)) {
+    return NextResponse.json(
+      { error: kind === "video" ? "Expected a video." : "Expected an image." },
+      { status: 415 },
+    );
   }
 
   const key = `portfolio/${kind}/${kind}_${crypto.randomUUID()}.${ext}`;

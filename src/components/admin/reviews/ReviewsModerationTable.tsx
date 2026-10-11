@@ -3,16 +3,15 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import type { Rating, Review, ReviewStatus } from "@/types/portfolio";
+import type { Review, ReviewStatus } from "@/types/portfolio";
+import { Stars } from "@/components/Stars";
 import { cn } from "@/lib/cn";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 type BusyAction = "approve" | "reject" | "delete";
 type RowBusy = { id: string; action: BusyAction } | null;
 
 export function ReviewsModerationTable({ initialReviews }: { initialReviews: Review[] }) {
   const router = useRouter();
-  const { playHover, playClick } = useUiSounds();
 
   const [reviews, setReviews] = React.useState<Review[]>(initialReviews);
   const [busy, setBusy] = React.useState<RowBusy>(null);
@@ -71,8 +70,8 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
   }, [reviews]);
 
   return (
-    <div className="overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm">
-      <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[10px] tracking-[0.22em] text-fog/70 md:grid">
+    <div className="overflow-hidden border border-line/12 bg-void/25">
+      <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[11px] tracking-[0.22em] text-fog/70 md:grid">
         <div className="col-span-5">REVIEW</div>
         <div className="col-span-2">RATING</div>
         <div className="col-span-2">STATUS</div>
@@ -91,7 +90,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
               <div className="md:col-span-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <div className="font-serif text-lg leading-none tracking-[-0.03em]">{r.name}</div>
-                  <div className="text-[10px] tracking-[0.22em] text-fog/55">
+                  <div className="text-[11px] tracking-[0.22em] text-fog/70">
                     {new Date(r.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -99,7 +98,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
               </div>
 
               <div className="md:col-span-2">
-                <Stars rating={r.rating} />
+                <Stars rating={r.rating} glyph="★" />
               </div>
 
               <div className="md:col-span-2">
@@ -110,30 +109,18 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
                 <ActionButton
                   label="APPROVE"
                   disabled={busy?.id === r.id || r.status === "approved"}
-                  onHover={playHover}
-                  onClick={() => {
-                    playClick();
-                    void patch(r.id, "approved", "approve");
-                  }}
+                  onClick={() => void patch(r.id, "approved", "approve")}
                 />
                 <ActionButton
                   label="REJECT"
                   disabled={busy?.id === r.id || r.status === "rejected"}
-                  onHover={playHover}
-                  onClick={() => {
-                    playClick();
-                    void patch(r.id, "rejected", "reject");
-                  }}
+                  onClick={() => void patch(r.id, "rejected", "reject")}
                 />
                 <ActionButton
                   label="DEL"
                   disabled={busy?.id === r.id}
-                  onHover={playHover}
                   danger
-                  onClick={() => {
-                    playClick();
-                    void del(r.id);
-                  }}
+                  onClick={() => void del(r.id)}
                 />
               </div>
             </div>
@@ -152,49 +139,31 @@ function StatusBadge({ status }: { status: ReviewStatus }) {
   const label =
     status === "pending" ? "PENDING" : status === "approved" ? "APPROVED" : "REJECTED";
   return (
-    <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[10px] tracking-[0.22em] text-fog/70">
+    <span className="inline-flex items-center border border-line/12 bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em] text-fog/70">
       {label}
     </span>
   );
 }
 
-function Stars({ rating }: { rating: Rating }) {
-  return (
-    <div className="flex items-center gap-1" aria-label={`${rating} out of 5 stars`}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span
-          key={i}
-          aria-hidden="true"
-          className={cn("text-xs", i < rating ? "text-ink/90" : "text-fog/35")}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function ActionButton({
   label,
   disabled,
   danger,
-  onHover,
   onClick,
 }: {
   label: string;
   disabled?: boolean;
   danger?: boolean;
-  onHover: () => void;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
-      onMouseEnter={onHover}
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
+        "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[11px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",
         "hover:-translate-y-px hover:border-line/25 hover:text-ink active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         danger && "hover:border-line/35",
       )}

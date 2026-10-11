@@ -1,30 +1,33 @@
 import { Hero } from "@/sections/Hero";
 import { WorkGallery } from "@/sections/WorkGallery";
+import { ContributionsSection } from "@/sections/ContributionsSection";
 import { OfferingsSection } from "@/sections/OfferingsSection";
 import { ProcessBlueprint } from "@/sections/ProcessBlueprint";
 import { ReviewsSection } from "@/sections/ReviewsSection";
 import { PaymentSection } from "@/sections/PaymentSection";
 import { ContactFooter } from "@/sections/ContactFooter";
 
-import { mockWorks } from "@/content/mockWorks";
-import { mockReviews } from "@/content/mockReviews";
+import { getContributions } from "@/lib/contributions";
 import { getPublicPortfolioData } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+// Served from the cache and refreshed at most once a minute; admin edits refresh it at once.
+export const revalidate = 60;
 
 export default async function Home() {
-  const { works, reviews } = await getPublicPortfolioData();
-  const worksForUi = works.length ? works : mockWorks;
-  const reviewsForUi = reviews.length ? reviews : mockReviews;
+  const [{ works, reviews }, contributions] = await Promise.all([
+    getPublicPortfolioData(),
+    getContributions(),
+  ]);
 
   return (
-    <main className="film-grain vignette">
+    <main id="main" tabIndex={-1} className="film-grain vignette outline-none">
       <Hero />
-      <WorkGallery works={worksForUi} />
+      <WorkGallery works={works} />
+      <ContributionsSection items={contributions} />
       <OfferingsSection />
       <ProcessBlueprint />
-      <ReviewsSection reviews={reviewsForUi} />
       <PaymentSection />
+      <ReviewsSection reviews={reviews} />
       <ContactFooter />
     </main>
   );

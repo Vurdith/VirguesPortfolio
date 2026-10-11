@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-const PARTICLE_COUNT = 14;
+const PARTICLE_COUNT = 8;
 
 type ParticleStyle = React.CSSProperties & {
   "--x0": string;
@@ -66,7 +66,6 @@ export const ParticleField = React.memo(function ParticleField() {
           border-radius: 999px;
           background: rgb(255 255 255 / 0.9);
           box-shadow: 0 0 14px 4px rgb(255 255 255 / 0.34);
-          filter: blur(0.25px);
           transform: translate3d(var(--x0), var(--y0), 0);
           animation:
             particleDrift var(--drift) linear var(--delay) infinite alternate,

@@ -6,23 +6,15 @@ import sharp from "sharp";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
+import { extensionForMime, mimeMatchesKind } from "@/lib/uploads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const KindSchema = z.enum(["image", "video", "poster"]);
 
-const MAX_BYTES = 25 * 1024 * 1024; // 25MB
+const MAX_BYTES = 100 * 1024 * 1024; // 100MB
 const MAX_IMAGE_WIDTH = 2560;
-
-function extFromMime(mime: string) {
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  if (mime === "video/mp4") return "mp4";
-  if (mime === "video/webm") return "webm";
-  return null;
-}
 
 export async function POST(req: NextRequest) {
   const session = await requireAdmin(req);
@@ -44,21 +36,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "File too large." }, { status: 413 });
   }
 
-  const ext = extFromMime(file.type);
+  const ext = extensionForMime(file.type);
   if (!ext) {
     return NextResponse.json({ error: "Unsupported file type." }, { status: 415 });
   }
 
-  if (kindParsed.data !== "video" && !file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Expected an image." }, { status: 415 });
-  }
-  if (kindParsed.data === "video" && !file.type.startsWith("video/")) {
-    return NextResponse.json({ error: "Expected a video." }, { status: 415 });
+  if (!mimeMatchesKind(file.type, kindParsed.data)) {
+    return NextResponse.json(
+      { error: kindParsed.data === "video" ? "Expected a video." : "Expected an image." },
+      { status: 415 },
+    );
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const isVideo = kindParsed.data === "video";
-  const output = isVideo
+  // Animated GIFs would be flattened by the image pipeline, so they are stored as uploaded.
+  const isGif = file.type === "image/gif";
+  const passthrough = isVideo || isGif;
+  const output = passthrough
     ? bytes
     : await sharp(bytes)
         .rotate()
@@ -70,7 +65,7 @@ export async function POST(req: NextRequest) {
         })
         .webp({ quality: 88, effort: 6, smartSubsample: true })
         .toBuffer();
-  const filename = `${kindParsed.data}_${crypto.randomUUID()}.${isVideo ? ext : "webp"}`;
+  const filename = `${kindParsed.data}_${crypto.randomUUID()}.${passthrough ? ext : "webp"}`;
   const outDir = path.join(process.cwd(), "public", "uploads");
   const outPath = path.join(outDir, filename);
 

@@ -2,29 +2,29 @@
 
 import { usePathname } from "next/navigation";
 
+import { CursorSpotlight } from "@/components/CursorSpotlight";
+import { CustomCursor } from "@/components/CustomCursor";
 import { FloatingHeader } from "@/components/FloatingHeader";
 import { LoadingScene } from "@/components/LoadingScene";
 import { ParticleField } from "@/components/ParticleField";
-import { ScrollCathedralVideo } from "@/components/ScrollCathedralVideo";
-import { SignalCathedral } from "@/components/SignalCathedral";
-import { SoundToggle } from "@/components/SoundToggle";
+import { ScrollProgress } from "@/components/ScrollProgress";
+import { TapRipple } from "@/components/TapRipple";
 
 export function ClientChrome() {
   const pathname = usePathname() ?? "/";
 
   if (pathname.startsWith("/admin")) return null;
-  if (pathname.startsWith("/work/")) return null;
+  if (pathname.startsWith("/work/")) return <CustomCursor />;
 
   return (
     <>
+      <CustomCursor />
+      <CursorSpotlight />
+      <TapRipple />
       {pathname === "/" ? <LoadingScene /> : null}
-      <ScrollCathedralVideo />
-      <SignalCathedral />
       <ParticleField />
       <FloatingHeader />
-      <div className="fixed bottom-5 right-5 z-50">
-        <SoundToggle />
-      </div>
+      {pathname === "/" ? <ScrollProgress /> : null}
     </>
   );
 }

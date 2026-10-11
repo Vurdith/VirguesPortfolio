@@ -37,7 +37,7 @@ export default async function AdminReviewsPage() {
 
 function Badge({ label, value }: { label: string; value: number }) {
   return (
-    <div className="inline-flex items-center gap-3 border border-line/12 bg-void/35 px-3 py-2 text-[10px] tracking-[0.22em] text-fog/70 backdrop-blur-sm">
+    <div className="inline-flex items-center gap-3 border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70">
       <span>{label}</span>
       <span className="h-px w-6 bg-line/10" />
       <span className="text-ink/85">{value}</span>

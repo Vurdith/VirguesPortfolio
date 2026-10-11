@@ -1,12 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import type { Rating, Review } from "@/types/portfolio";
+import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
+import { RevealHeading } from "@/components/RevealHeading";
+import { Stars } from "@/components/Stars";
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
+import { REVIEW_LIMITS } from "@/lib/reviewLimits";
 
 type SubmitState = "idle" | "submitting" | "sent" | "error";
 
@@ -26,13 +30,6 @@ export function ReviewsSection({
   const shouldReduceMotion = useReducedMotion();
 
   const ref = React.useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-
-  const skewX = useTransform(scrollYProgress, [0, 1], [5, -5]);
-  const skewY = useTransform(scrollYProgress, [0, 1], [1, -1]);
 
   return (
     <section
@@ -49,16 +46,10 @@ export function ReviewsSection({
               <MonoIcon name="review" className="size-4" />
               <span>REVIEWS</span>
             </div>
-            <motion.h2
-              style={{ skewX, skewY }}
-              className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl"
-            >
-              Signals.
-            </motion.h2>
+            <RevealHeading className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">Signals.</RevealHeading>
           </div>
           <p className="max-w-lg text-pretty text-sm leading-relaxed text-fog/80">
-            Feedback only appears after approval, so the public loop stays clean and the form can
-            accept new submissions without turning the page noisy.
+            Feedback from past clients. Every review is checked before it goes live.
           </p>
         </header>
 
@@ -95,7 +86,7 @@ function ReviewRail({
 }) {
   return (
     <div
-      className="review-rail perf-card mt-10 overflow-hidden border border-line/12 bg-void/25 backdrop-blur-sm"
+      className="review-rail perf-card mt-10 overflow-hidden border border-line/12 bg-void/25"
       style={{ "--review-duration": `${duration}s` } as React.CSSProperties}
     >
       <div
@@ -150,12 +141,12 @@ function ReviewRail({
 
 function EmptyReviews() {
   return (
-    <div className="perf-card mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+    <div className="perf-card mt-10 border border-line/12 bg-void/25 p-6">
       <div className="max-w-2xl">
-        <p className="text-[10px] tracking-[0.28em] text-fog/60">NO APPROVED REVIEWS YET</p>
+        <p className="text-[11px] tracking-[0.28em] text-fog/72">NO APPROVED REVIEWS YET</p>
         <p className="mt-3 text-sm leading-relaxed text-fog/78">
-          The review loop will appear once a submission is approved in admin. New reviews can still
-          be submitted below.
+          Reviews from clients will show up here. If we have worked together, you can leave one
+          below.
         </p>
       </div>
     </div>
@@ -167,7 +158,7 @@ function ReviewChip({ review }: { review: Review }) {
     <article className="perf-card w-[min(420px,80vw)] border border-line/12 bg-void/35 px-6 py-5">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="truncate text-[10px] font-bold uppercase tracking-[0.3em] text-ink/90">
+          <div className="truncate text-[11px] font-bold uppercase tracking-[0.3em] text-ink/90">
             {review.name || "Anonymous"}
           </div>
           <Stars rating={review.rating} />
@@ -180,24 +171,9 @@ function ReviewChip({ review }: { review: Review }) {
   );
 }
 
-function Stars({ rating }: { rating: Rating }) {
-  return (
-    <div className="flex shrink-0 items-center gap-1" aria-label={`${rating} out of 5 stars`}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span
-          key={i}
-          aria-hidden="true"
-          className={cn("text-xs", i < rating ? "text-ink/90" : "text-fog/35")}
-        >
-          *
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function ReviewCta() {
-  const { playHover, playClick, playClose } = useUiSounds();
+  const { playClose } = useUiSounds();
   const [open, setOpen] = React.useState(false);
 
   const close = React.useCallback(() => {
@@ -219,11 +195,7 @@ function ReviewCta() {
       <div className="mt-10 flex items-center justify-end">
         <button
           type="button"
-          onMouseEnter={playHover}
-          onClick={() => {
-            setOpen(true);
-            playClick();
-          }}
+          onClick={() => setOpen(true)}
           className={cn(
             "group relative inline-flex items-center gap-3 rounded-none border border-line/18 bg-void/30 px-5 py-3 text-xs tracking-[0.22em] text-ink backdrop-blur-md",
             "hover:border-line/35",
@@ -232,7 +204,7 @@ function ReviewCta() {
           <span>LEAVE A REVIEW</span>
           <span className="h-px w-10 bg-line/20 transition-all duration-300 group-hover:w-14 group-hover:bg-line/40" />
           <span className="text-fog/70">+</span>
-          <CornerLines />
+          <CornerMarks className="opacity-80" />
         </button>
       </div>
 
@@ -244,8 +216,6 @@ function ReviewCta() {
 }
 
 function ReviewDrawer({ onClose }: { onClose: () => void }) {
-  const { playHover, playClick } = useUiSounds();
-
   const [name, setName] = React.useState("");
   const [rating, setRating] = React.useState<Rating>(5);
   const [text, setText] = React.useState("");
@@ -254,7 +224,8 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
 
   const trimmedName = name.trim();
   const trimmedText = text.trim();
-  const isValid = trimmedName.length >= 2 && trimmedText.length >= 8;
+  const isValid =
+    trimmedName.length >= REVIEW_LIMITS.name.min && trimmedText.length >= REVIEW_LIMITS.text.min;
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -268,9 +239,9 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          name: trimmedName.slice(0, 80),
+          name: trimmedName,
           rating,
-          text: trimmedText.slice(0, 600),
+          text: trimmedText,
         }),
       });
 
@@ -297,11 +268,8 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
         type="button"
         aria-label="Close review form"
         className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-[2px]"
-        onMouseEnter={playHover}
-        onClick={() => {
-          onClose();
-          playClick();
-        }}
+        data-sound="off"
+        onClick={onClose}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -327,25 +295,22 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
           </div>
           <button
             type="button"
-            onMouseEnter={playHover}
-            onClick={() => {
-              onClose();
-              playClick();
-            }}
+            data-sound="off"
+            onClick={onClose}
             className="group relative inline-flex h-10 w-10 items-center justify-center border border-line/18 bg-void/40 text-fog/70 hover:border-line/35 hover:text-ink"
             aria-label="Close"
           >
             <span className="text-lg leading-none">x</span>
-            <CornerLines />
+            <CornerMarks className="opacity-80" />
           </button>
         </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <label className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-fog/50">NAME</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-fog/72">NAME</span>
             <input
               value={name}
-              maxLength={80}
+              maxLength={REVIEW_LIMITS.name.max}
               onChange={(e) => setName(e.target.value)}
               className="mt-3 w-full border border-line/12 bg-void/35 px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-fog/30 focus:border-line/30"
               placeholder="Your name"
@@ -354,7 +319,7 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
           </label>
 
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-fog/50">RATING</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-fog/72">RATING</span>
             <div className="mt-3 flex h-[46px] items-center gap-2" role="radiogroup" aria-label="Rating">
               {([1, 2, 3, 4, 5] as const).map((n) => (
                 <button
@@ -362,15 +327,11 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
                   type="button"
                   role="radio"
                   aria-checked={n === rating}
-                  onMouseEnter={playHover}
-                  onClick={() => {
-                    setRating(n);
-                    playClick();
-                  }}
+                  onClick={() => setRating(n)}
                   className={cn(
                     "aspect-square h-full border border-line/12 bg-void/35 text-sm transition-all",
                     n <= rating ? "border-line/30 bg-void/50 text-ink" : "text-fog/30",
-                    "hover:border-line/25 hover:text-fog/60",
+                    "hover:border-line/25 hover:text-fog/72",
                   )}
                   aria-label={`${n} star${n === 1 ? "" : "s"}`}
                 >
@@ -382,10 +343,10 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
         </div>
 
         <label className="mt-4 block">
-          <span className="text-[10px] tracking-[0.22em] text-fog/70">MESSAGE</span>
+          <span className="text-[11px] tracking-[0.22em] text-fog/70">MESSAGE</span>
           <textarea
             value={text}
-            maxLength={600}
+            maxLength={REVIEW_LIMITS.text.max}
             onChange={(e) => setText(e.target.value)}
             className="mt-2 h-28 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40"
             placeholder="Keep it short. Keep it real."
@@ -399,7 +360,9 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
             ) : status === "error" ? (
               <span className="text-fog/80">{error ?? "Failed to submit."}</span>
             ) : !isValid ? (
-              <span>Name needs 2 characters. Message needs 8.</span>
+              <span>
+                Name needs {REVIEW_LIMITS.name.min} characters. Message needs {REVIEW_LIMITS.text.min}.
+              </span>
             ) : (
               <span>Visible only after approval.</span>
             )}
@@ -408,8 +371,6 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={status === "submitting" || status === "sent" || !isValid}
-            onMouseEnter={playHover}
-            onClick={playClick}
             className={cn(
               "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink",
               "hover:border-line/35 disabled:cursor-not-allowed disabled:opacity-50",
@@ -424,13 +385,3 @@ function ReviewDrawer({ onClose }: { onClose: () => void }) {
   );
 }
 
-function CornerLines() {
-  return (
-    <span className="pointer-events-none absolute inset-0 opacity-80">
-      <span className="absolute left-0 top-0 h-3 w-3 border-l border-t border-line/30" />
-      <span className="absolute right-0 top-0 h-3 w-3 border-r border-t border-line/30" />
-      <span className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-line/30" />
-      <span className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-line/30" />
-    </span>
-  );
-}

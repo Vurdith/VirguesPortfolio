@@ -7,16 +7,19 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "migrate:firestore": "node scripts/migrate-firestore.mjs"
+    "migrate:firestore": "node scripts/migrate-firestore.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
     "@aws-sdk/s3-request-presigner": "^3.1053.0",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "firebase-admin": "^13.10.0",
     "framer-motion": "^12.23.26",
     "next": "16.1.0",
+    "ogl": "^1.0.11",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sharp": "^0.34.5",
@@ -24,6 +27,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

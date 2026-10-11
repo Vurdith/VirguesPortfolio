@@ -3,8 +3,11 @@
 import * as React from "react";
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
+import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
+import { usePointerTracking } from "@/hooks/usePointerTracking";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 const STEPS = [
@@ -34,7 +37,7 @@ const STEPS = [
   },
   {
     n: "04",
-    title: "Rating",
+    title: "Review",
     summary:
       "After delivery, a quick review or recommendation helps future clients judge the work from real project experience.",
     detail:
@@ -49,8 +52,6 @@ export function ProcessBlueprint({ className }: { className?: string }) {
     offset: ["start end", "end start"],
   });
 
-  const skewX = useTransform(scrollYProgress, [0, 1], [4, -4]);
-  const skewY = useTransform(scrollYProgress, [0, 1], [1, -1]);
   const progress = useSpring(useTransform(scrollYProgress, [0.12, 0.82], [0, 1]), {
     stiffness: 120,
     damping: 30,
@@ -71,16 +72,11 @@ export function ProcessBlueprint({ className }: { className?: string }) {
               <MonoIcon name="process" className="size-4" />
               <span>PROCESS</span>
             </div>
-            <motion.h2
-              style={{ skewX, skewY }}
-              className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl"
-            >
-              From brief to handoff.
-            </motion.h2>
+            <RevealHeading className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">From brief to handoff.</RevealHeading>
           </div>
           <p className="max-w-xl text-pretty text-sm leading-relaxed text-fog/80 md:col-span-7 md:justify-self-end">
-            A cleaner version of the original flow: reach out, design, receive, then close the loop.
-            Each stage has a visible checkpoint so the project does not drift.
+            Four stages: reach out, design, receive, then close the loop. Each stage has a clear
+            checkpoint so the project does not drift.
           </p>
         </header>
 
@@ -104,11 +100,7 @@ export function ProcessBlueprint({ className }: { className?: string }) {
 }
 
 function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: number }) {
-  const { playHover, playClick } = useUiSounds();
-  const cardRef = React.useRef<HTMLElement>(null);
-  const rectRef = React.useRef<DOMRect | null>(null);
-  const frameRef = React.useRef<number | null>(null);
-  const pointerRef = React.useRef<{ clientX: number; clientY: number } | null>(null);
+  const { playClick } = useUiSounds();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const dx = useSpring(useTransform(mouseX, [-260, 260], [-14, 14]), {
@@ -128,64 +120,21 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
   const detailX = useTransform(dx, (v) => v * -0.18);
   const detailY = useTransform(dy, (v) => v * -0.18);
 
-  const updateMouse = React.useCallback(() => {
-    frameRef.current = null;
-    const rect = rectRef.current;
-    const pointer = pointerRef.current;
-    if (!rect || !pointer) return;
-
-    mouseX.set(pointer.clientX - (rect.left + rect.width / 2));
-    mouseY.set(pointer.clientY - (rect.top + rect.height / 2));
-  }, [mouseX, mouseY]);
-
-  const queueMouseUpdate = React.useCallback(
-    (clientX: number, clientY: number) => {
-      pointerRef.current = { clientX, clientY };
-      if (frameRef.current === null) {
-        frameRef.current = window.requestAnimationFrame(updateMouse);
-      }
+  // Distance of the pointer from the card centre drives the depth parallax.
+  const pointerHandlers = usePointerTracking<HTMLElement>({
+    onFrame: (point, size) => {
+      mouseX.set(point.x - size.width / 2);
+      mouseY.set(point.y - size.height / 2);
     },
-    [updateMouse],
-  );
-
-  React.useEffect(() => {
-    return () => {
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, []);
-
-  const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
-    rectRef.current = e.currentTarget.getBoundingClientRect();
-    queueMouseUpdate(e.clientX, e.clientY);
-    playHover();
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (!rectRef.current) {
-      rectRef.current = e.currentTarget.getBoundingClientRect();
-    }
-    queueMouseUpdate(e.clientX, e.clientY);
-  };
-
-  const handleMouseLeave = () => {
-    if (frameRef.current !== null) {
-      window.cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
-    rectRef.current = null;
-    pointerRef.current = null;
-    mouseX.set(0);
-    mouseY.set(0);
-  };
+    onLeave: () => {
+      mouseX.set(0);
+      mouseY.set(0);
+    },
+  });
 
   return (
     <motion.article
-      ref={cardRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      {...pointerHandlers}
       onDragStart={playClick}
       drag
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
@@ -195,17 +144,12 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: index * 0.06, ease: [0.2, 0.85, 0.2, 1] }}
-      className="perf-card group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
+      className="perf-card group relative grid cursor-grab gap-5 overflow-hidden border border-line/12 bg-void/30 p-5 transition-colors duration-300 hover:border-line/30 active:cursor-grabbing md:ml-12 md:grid-cols-[120px_1fr]"
     >
-      <div className="pointer-events-none absolute inset-0 opacity-70">
-        <div className="absolute left-0 top-0 h-4 w-4 border-l border-t border-line/30" />
-        <div className="absolute right-0 top-0 h-4 w-4 border-r border-t border-line/30" />
-        <div className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-line/30" />
-        <div className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-line/30" />
-      </div>
+      <CornerMarks size={4} className="opacity-70" />
 
       <div className="relative flex items-start justify-between gap-4 md:block">
-        <motion.div style={{ x: dx, y: dy }} className="text-[10px] tracking-[0.3em] text-fog/60">
+        <motion.div style={{ x: dx, y: dy }} className="text-[11px] tracking-[0.3em] text-fog/72">
           {step.n}
         </motion.div>
         <motion.div
@@ -231,7 +175,7 @@ function ProcessCard({ step, index }: { step: (typeof STEPS)[number]; index: num
         </motion.p>
         <motion.p
           style={{ x: detailX, y: detailY }}
-          className="mt-4 max-w-3xl border-l border-line/18 pl-4 text-xs leading-relaxed text-fog/65"
+          className="mt-4 max-w-3xl border-l border-line/18 pl-4 text-xs leading-relaxed text-fog/72"
         >
           {step.detail}
         </motion.p>

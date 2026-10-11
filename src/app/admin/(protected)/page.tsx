@@ -1,3 +1,4 @@
+import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 import { readDb } from "@/lib/db";
 import type { ReactNode } from "react";
 
@@ -7,6 +8,7 @@ export default async function AdminDashboardPage() {
   const db = await readDb();
   const worksCount = db.works.length;
   const reviewsPending = db.reviews.filter((r) => r.status === "pending").length;
+  const quotesNew = db.quotes.filter((q) => q.status === "new").length;
   const reviewsApproved = db.reviews.filter((r) => r.status === "approved").length;
   const latestWork = [...db.works].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0];
 
@@ -19,11 +21,12 @@ export default async function AdminDashboardPage() {
             Control room.
           </h1>
         </div>
-        <div className="hidden text-xs tracking-[0.22em] text-fog/60 md:block">/admin</div>
+        <div className="hidden text-xs tracking-[0.22em] text-fog/70 md:block">/admin</div>
       </div>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
+      <div className="mt-10 grid gap-4 md:grid-cols-4">
         <Stat label="WORKS" value={worksCount} />
+        <Stat label="QUOTES (NEW)" value={quotesNew} />
         <Stat label="REVIEWS (PENDING)" value={reviewsPending} />
         <Stat label="REVIEWS (APPROVED)" value={reviewsApproved} />
       </div>
@@ -32,8 +35,11 @@ export default async function AdminDashboardPage() {
         <Panel title="Queue">
           <div className="grid gap-3 text-sm leading-relaxed text-fog/78">
             <p>Pending reviews sit first in moderation. Published work stays public immediately.</p>
+            <p className="text-xs tracking-[0.18em] text-fog/70">
+              {quotesNew ? `${quotesNew} NEW QUOTE REQUEST${quotesNew === 1 ? "" : "S"}` : "NO NEW QUOTE REQUESTS"}
+            </p>
             <div className="h-px bg-line/10" />
-            <p className="text-xs tracking-[0.18em] text-fog/60">
+            <p className="text-xs tracking-[0.18em] text-fog/70">
               {reviewsPending ? `${reviewsPending} REVIEW${reviewsPending === 1 ? "" : "S"} WAITING` : "NO PENDING REVIEWS"}
             </p>
           </div>
@@ -44,7 +50,7 @@ export default async function AdminDashboardPage() {
               <div className="font-serif text-2xl leading-none tracking-[-0.04em]">
                 {latestWork.title}
               </div>
-              <p className="mt-3 text-xs tracking-[0.18em] text-fog/60">
+              <p className="mt-3 text-xs tracking-[0.18em] text-fog/70">
                 UPDATED {new Date(latestWork.updatedAt).toLocaleDateString()}
               </p>
             </div>
@@ -53,27 +59,35 @@ export default async function AdminDashboardPage() {
           )}
         </Panel>
       </div>
+
+      <div className="mt-4">
+        <Panel title="Security">
+          <div className="max-w-md">
+            <ChangePasswordForm />
+          </div>
+        </Panel>
+      </div>
     </div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="relative overflow-hidden border border-line/12 bg-void/35 p-6 backdrop-blur-sm transition-[border-color,background-color,transform] duration-300 hover:-translate-y-1 hover:border-line/25 hover:bg-void/50">
+    <div className="relative overflow-hidden border border-line/12 bg-void/35 p-6 transition-[border-color,background-color,transform] duration-300 hover:-translate-y-1 hover:border-line/25 hover:bg-void/50">
       <CornerLines />
-      <div className="text-[10px] tracking-[0.22em] text-fog/70">{label}</div>
+      <div className="text-[11px] tracking-[0.22em] text-fog/70">{label}</div>
       <div className="mt-4 font-serif text-4xl leading-none tracking-[-0.05em]">{value}</div>
       <div className="mt-3 h-px w-full bg-line/10" />
-      <div className="mt-3 text-[10px] tracking-[0.22em] text-fog/55">LOCAL DB</div>
+      <div className="mt-3 text-[11px] tracking-[0.22em] text-fog/70">LOCAL DB</div>
     </div>
   );
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="relative min-h-44 overflow-hidden border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+    <section className="relative min-h-44 overflow-hidden border border-line/12 bg-void/25 p-6">
       <CornerLines />
-      <p className="text-[10px] tracking-[0.28em] text-fog/55">{title.toUpperCase()}</p>
+      <p className="text-[11px] tracking-[0.28em] text-fog/70">{title.toUpperCase()}</p>
       <div className="mt-5">{children}</div>
     </section>
   );

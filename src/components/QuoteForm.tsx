@@ -108,7 +108,8 @@ export function QuoteForm({ className }: { className?: string }) {
   const stepErrors = current.fields.filter((key) => errors[key]);
   const isLast = step === STEPS.length - 1;
 
-  // Restore an unsent draft and resume at the first step that still needs something.
+  // Restore an unsent draft into the fields. The form always opens on the first step: resuming
+  // mid-form made it look like it skipped the start.
   React.useEffect(() => {
     try {
       const saved = window.localStorage.getItem(DRAFT_KEY);
@@ -119,8 +120,6 @@ export function QuoteForm({ className }: { className?: string }) {
         : EMPTY.methods;
       const restored = { ...EMPTY, ...parsed, methods, company: "" };
       setFields(restored);
-      const resume = firstStepWithError(validate(restored));
-      if (resume > 0) setStep(resume);
     } catch {
       // Storage can be blocked or hold bad data; start empty.
     }

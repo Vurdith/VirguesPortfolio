@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring, useTransform } from "framer-motion";
 
 import { CornerMarks } from "@/components/CornerMarks";
 import { CountUpText } from "@/components/CountUpText";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
+import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 const TASK_DISCOUNTS = [
   { label: "5 tasks", off: "5% off" },
@@ -96,10 +97,7 @@ const PERKS = [
 
 export function OfferingsSection({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+  const scrollYProgress = useSectionProgress(ref, "enter-exit");
 
   const lineScale = useSpring(useTransform(scrollYProgress, [0.12, 0.8], [0, 1]), {
     stiffness: 120,

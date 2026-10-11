@@ -8,7 +8,6 @@ import {
   motion,
   useMotionValue,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
 } from "framer-motion";
@@ -16,6 +15,7 @@ import {
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
+import { useSectionProgress } from "@/hooks/useSectionProgress";
 import { SITE } from "@/lib/site";
 import { useDeviceTilt } from "@/hooks/useDeviceTilt";
 import { useAmbientPointer, useFinePointer } from "@/hooks/useFinePointer";
@@ -26,10 +26,7 @@ const HeroShader = dynamic(() => import("@/components/HeroShader"), { ssr: false
 
 export function Hero({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
+  const scrollYProgress = useSectionProgress(ref, "top-exit");
 
   const bgY = useSpring(useTransform(scrollYProgress, [0, 1], [0, 160]), {
     stiffness: 120,

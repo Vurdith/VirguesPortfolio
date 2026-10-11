@@ -306,6 +306,9 @@ function PieceView({
   inStage?: boolean;
 }) {
   const description = piece.alt || (count > 1 ? `${work.title}, piece ${index + 1} of ${count}` : work.title);
+  // A dropped connection shouldn't leave the piece blank: ask for it again, a couple of times.
+  const [retries, setRetries] = React.useState(0);
+  React.useEffect(() => setRetries(0), [piece.src]);
 
   if (piece.kind === "video") {
     return piece.src ? (
@@ -327,7 +330,10 @@ function PieceView({
   return piece.src ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={piece.src}
+      src={retries ? `${piece.src}${piece.src.includes("?") ? "&" : "?"}retry=${retries}` : piece.src}
+      onError={() => {
+        if (retries < 2) window.setTimeout(() => setRetries((n) => n + 1), 1200);
+      }}
       alt={description}
       className={cn(
         "select-none object-contain",

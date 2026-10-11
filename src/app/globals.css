@@ -64,7 +64,7 @@
   .film-grain::before {
     content: "";
     position: fixed;
-    inset: -20%;
+    inset: 0;
     pointer-events: none;
     z-index: 50;
     background-image: url("/noise.svg");
@@ -90,6 +90,17 @@
     transform: translateZ(0);
     backface-visibility: hidden;
   }
+}
+
+/* Looping CSS animations only run where they can be seen: not behind the intro film (the page
+   is covered until it ends) and not in sections scrolled far out of view (see AnimationGate). */
+html[data-intro] body *,
+html[data-intro] body *::before,
+html[data-intro] body *::after,
+section[data-offscreen] *,
+section[data-offscreen] *::before,
+section[data-offscreen] *::after {
+  animation-play-state: paused !important;
 }
 
 /* Floating header: frame and profile "visualizer" ring. */

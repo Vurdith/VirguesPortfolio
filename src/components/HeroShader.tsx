@@ -3,6 +3,8 @@
 import * as React from "react";
 import { Mesh, Program, Renderer, Texture, Triangle } from "ogl";
 
+import { getIntroPhase, subscribeIntroPhase, useIntroPhase } from "@/lib/introPhase";
+
 const VERTEX = /* glsl */ `
   attribute vec2 position;
   attribute vec2 uv;
@@ -71,6 +73,17 @@ function canRunShader() {
   return true;
 }
 
+// The ambient warp is slow, so while the pointer rests it only needs half the frames. Any pointer
+// movement goes back to the display's full rate.
+const IDLE_FRAME_MS = 1000 / 30;
+// Frames are tuned at 60fps; the pointer easing and decay are scaled by the real frame time.
+const FRAME_MS = 1000 / 60;
+// If most recent frames come in well over budget, render fewer pixels. Machines that keep up
+// never trigger this, so they keep the full-resolution image.
+const SLOW_WINDOW = 40;
+const SLOW_SHARE = 0.6;
+const MIN_DPR = 0.5;
+
 /**
  * WebGL layer that renders `src` with a distortion that reacts to the pointer. It sits on top of a
  * static <Image>, fades in once the first frame is drawn, and never mounts where WebGL is
@@ -80,10 +93,20 @@ export default function HeroShader({ src }: { src: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [ready, setReady] = React.useState(false);
   const [attempt, setAttempt] = React.useState(0);
+  // Under the intro film the shader is hidden, so it only warms up (loads the texture and draws
+  // one frame) once the film is over, and starts animating when the site opens.
+  const canInit = useIntroPhase() !== "video";
 
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container || !canRunShader()) return;
+
+    if (!canInit) {
+      const warm = new Image();
+      warm.decoding = "async";
+      warm.src = src;
+      return;
+    }
 
     let renderer: Renderer;
     try {
@@ -115,8 +138,11 @@ export default function HeroShader({ src }: { src: string }) {
     let disposed = false;
     let inView = true;
     let frame = 0;
+    let timer = 0;
     let loaded = false;
-    const pointer = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5, strength: 0, targetStrength: 0 };
+    let lastNow = 0;
+    let slowFrames: boolean[] = [];
+    const pointer = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5, strength: 0 };
 
     const image = new Image();
     image.decoding = "async";
@@ -164,9 +190,12 @@ export default function HeroShader({ src }: { src: string }) {
     canvas.addEventListener("webglcontextlost", onContextLost);
 
     function draw(now: number) {
-      pointer.x += (pointer.targetX - pointer.x) * 0.08;
-      pointer.y += (pointer.targetY - pointer.y) * 0.08;
-      pointer.strength *= 0.965; // decays when the pointer rests
+      // Normalise to 60fps steps so the easing feels the same at 30, 60 or 144 frames a second.
+      const steps = lastNow ? Math.min((now - lastNow) / FRAME_MS, 6) : 1;
+      lastNow = now;
+      pointer.x += (pointer.targetX - pointer.x) * (1 - Math.pow(1 - 0.08, steps));
+      pointer.y += (pointer.targetY - pointer.y) * (1 - Math.pow(1 - 0.08, steps));
+      pointer.strength *= Math.pow(0.965, steps); // decays when the pointer rests
 
       program.uniforms.uTime.value = now / 1000;
       program.uniforms.uMouse.value = [pointer.x, pointer.y];
@@ -174,15 +203,51 @@ export default function HeroShader({ src }: { src: string }) {
       renderer.render({ scene: mesh });
     }
 
+    const isIdle = () =>
+      pointer.strength < 0.02 &&
+      Math.abs(pointer.targetX - pointer.x) < 0.002 &&
+      Math.abs(pointer.targetY - pointer.y) < 0.002;
+
+    // Counts frames that took far longer than their budget and, if most do, drops the resolution.
+    const govern = (interval: number, budget: number) => {
+      slowFrames.push(interval > budget * 1.6);
+      if (slowFrames.length < SLOW_WINDOW) return;
+      const share = slowFrames.filter(Boolean).length / slowFrames.length;
+      slowFrames = [];
+      if (share >= SLOW_SHARE && renderer.dpr > MIN_DPR) {
+        renderer.dpr = Math.max(MIN_DPR, renderer.dpr * 0.8);
+        resize();
+      }
+    };
+
     const loop = (now: number) => {
       frame = 0;
       if (disposed || !inView || document.hidden || !loaded) return;
+      // Behind the intro there is nothing to see, so the first frame is all it needs.
+      if (getIntroPhase() !== "done") return;
+
+      const interval = lastNow ? now - lastNow : 0;
+      const idle = isIdle();
       draw(now);
-      frame = requestAnimationFrame(loop);
+      if (interval) govern(interval, idle ? IDLE_FRAME_MS : FRAME_MS);
+
+      if (idle) {
+        timer = window.setTimeout(() => {
+          timer = 0;
+          if (!disposed) frame = requestAnimationFrame(loop);
+        }, IDLE_FRAME_MS - 6);
+      } else {
+        frame = requestAnimationFrame(loop);
+      }
     };
-    const start = () => {
-      if (!frame && !disposed) frame = requestAnimationFrame(loop);
-    };
+    function start() {
+      if (disposed) return;
+      if (timer) {
+        window.clearTimeout(timer);
+        timer = 0;
+      }
+      if (!frame) frame = requestAnimationFrame(loop);
+    }
 
     // Stop rendering once the hero scrolls away or the tab is hidden.
     const visibility = new IntersectionObserver(([entry]) => {
@@ -192,11 +257,14 @@ export default function HeroShader({ src }: { src: string }) {
     visibility.observe(container);
     const onVisibility = () => !document.hidden && start();
     document.addEventListener("visibilitychange", onVisibility);
+    const unsubscribePhase = subscribeIntroPhase(start);
     start();
 
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+      unsubscribePhase();
       resizeObserver.disconnect();
       visibility.disconnect();
       window.removeEventListener("pointermove", onMove);
@@ -205,7 +273,7 @@ export default function HeroShader({ src }: { src: string }) {
       canvas.remove();
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [src, attempt]);
+  }, [src, attempt, canInit]);
 
   return (
     <div

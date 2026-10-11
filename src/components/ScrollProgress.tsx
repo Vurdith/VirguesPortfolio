@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { motion, useScroll, useSpring } from "framer-motion";
+import { motion, useSpring } from "framer-motion";
 
 import { cn } from "@/lib/cn";
+import { usePageScroll } from "@/hooks/usePageScroll";
 import { useCurrentSection } from "@/hooks/useCurrentSection";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
@@ -33,7 +34,7 @@ function useActiveSection() {
 export function ScrollProgress() {
   const active = useActiveSection();
   const { playSwell } = useUiSounds();
-  const { scrollYProgress } = useScroll();
+  const { scrollYProgress } = usePageScroll();
   const lineScale = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.6 });
 
   // A low swell marks each new section; skip the initial render.

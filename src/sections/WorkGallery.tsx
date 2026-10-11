@@ -8,7 +8,6 @@ import {
   motion,
   useMotionTemplate,
   useMotionValue,
-  useScroll,
   useSpring,
   useTransform,
 } from "framer-motion";
@@ -19,10 +18,12 @@ import { RevealHeading } from "@/components/RevealHeading";
 import { WorkOverlay, workLayoutId } from "@/components/work/WorkOverlay";
 import { optimizedImage } from "@/lib/images";
 import { cn } from "@/lib/cn";
+import { useSectionProgress } from "@/hooks/useSectionProgress";
 import { focusPosition } from "@/lib/focus";
 import { workPieces } from "@/lib/work";
 import { SITE } from "@/lib/site";
 import { usePointerTracking } from "@/hooks/usePointerTracking";
+import { useResilientImage } from "@/hooks/useResilientImage";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 const MAX_TILT_DEG = 15;
@@ -45,10 +46,7 @@ export function WorkGallery({
   className?: string;
 }) {
   const ref = React.useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+  const scrollYProgress = useSectionProgress(ref, "enter-exit");
 
 
   const bgY = useSpring(useTransform(scrollYProgress, [0, 1], [-100, 100]), {
@@ -205,7 +203,8 @@ function WorkCard({
 
   // Cards are a few hundred pixels wide; don't download the full-size original for them.
   const isVideo = work.media.kind === "video";
-  const cardSrc = isVideo ? work.media.poster || "" : optimizedImage(work.media.src);
+  const rawSrc = isVideo ? work.media.poster || "" : work.media.src;
+  const cardSrc = useResilientImage(isVideo ? rawSrc : optimizedImage(work.media.src), rawSrc);
 
   // Collections show the next few pieces stacked behind the cover.
   const pieces = workPieces(work);
@@ -214,6 +213,8 @@ function WorkCard({
   return (
     <Link
       href={`/work/${work.slug}`}
+      // Cards open the overlay; the full page is only needed for modified clicks and direct visits.
+      prefetch={false}
       className="group block"
       data-cursor="view"
       data-pieces={pieces.length > 1 ? pieces.length : undefined}
@@ -344,7 +345,10 @@ function WorkCard({
 
 /** A piece peeking out above the cover: higher, smaller and dimmer the deeper it sits. */
 function DeckLayer({ piece, depth, backdrop }: { piece: Media; depth: number; backdrop: string }) {
-  const src = piece.kind === "video" ? piece.poster || "" : optimizedImage(piece.src, 640);
+  const src = useResilientImage(
+    piece.kind === "video" ? piece.poster || "" : optimizedImage(piece.src, 640),
+    piece.kind === "video" ? "" : piece.src,
+  );
   const style = {
     "--deck-y": `${-depth * 10}px`,
     "--deck-z": `${-depth * 8}px`,
@@ -401,7 +405,8 @@ function CardVideo({ src, poster, position }: { src: string; poster?: string; po
       aria-hidden="true"
       className="absolute inset-0 h-full w-full object-cover"
       style={{ objectPosition: position }}
-      src={src}
+      // The time fragment makes browsers paint the first frame when there is no poster.
+      src={`${src}#t=0.001`}
       poster={poster || undefined}
       muted
       loop

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { CornerMarks } from "@/components/CornerMarks";
 import { useUiSounds } from "@/hooks/useUiSounds";
+import { setIntroPhase } from "@/lib/introPhase";
 
 // Phones get a smaller file of the same film; everything else gets the full 1080p original.
 const INTRO_VIDEO = "/intro-loader-hq.mp4";
@@ -21,12 +22,33 @@ function markIntroSeen() {
   introSeenInRuntime = true;
 }
 
+/** Phones, data-saver, slow links and small machines get the 720p film so it can start and keep up. */
+function prefersSmallVideo() {
+  const nav = navigator as Navigator & {
+    connection?: { saveData?: boolean; effectiveType?: string; downlink?: number };
+    deviceMemory?: number;
+  };
+  const connection = nav.connection;
+  if (connection?.saveData) return true;
+  if (connection?.effectiveType && connection.effectiveType !== "4g") return true;
+  if (typeof connection?.downlink === "number" && connection.downlink > 0 && connection.downlink < 4) return true;
+  if (nav.deviceMemory && nav.deviceMemory <= 4) return true;
+  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) return true;
+  return false;
+}
+
+// How long the film gets to start, and to stall mid-play, before the intro moves on without it.
+const START_TIMEOUT_MS = 8000;
+const STALL_TIMEOUT_MS = 4000;
+const MAX_INTRO_MS = 25000;
+
 export function LoadingScene() {
   const [visible, setVisible] = React.useState(true);
   const [videoDone, setVideoDone] = React.useState(false);
   const [showLoader, setShowLoader] = React.useState(false);
   const [percent, setPercent] = React.useState(0);
   const videoFinishedRef = React.useRef(false);
+  const playbackStartedRef = React.useRef(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const canEnter = percent >= 100;
   const { enableByDefault, setMusicDucked } = useUiSounds();
@@ -37,6 +59,7 @@ export function LoadingScene() {
     videoFinishedRef.current = true;
     videoRef.current?.pause();
     setVideoDone(true);
+    setIntroPhase("loader");
     setMusicDucked(false);
     enableByDefault();
   }, [enableByDefault, setMusicDucked]);
@@ -48,44 +71,85 @@ export function LoadingScene() {
     return () => setMusicDucked(false);
   }, [visible, videoDone, setMusicDucked]);
 
-  // Coming back to the home page within the same visit goes straight to the site.
+  // Coming back to the home page within the same visit goes straight to the site. Otherwise the
+  // page behind the intro stays quiet until the film is over.
   React.useLayoutEffect(() => {
     if (introSeenInRuntime) {
       videoFinishedRef.current = true;
       videoRef.current?.pause();
+      setIntroPhase("done");
       setVisible(false);
+    } else {
+      setIntroPhase("video");
     }
+    return () => setIntroPhase("done");
   }, []);
 
-  const playIntroVideo = React.useCallback(async () => {
+  // Starts the film once. Sound first; browsers that refuse it get it muted, and anything that
+  // still refuses skips the film instead of leaving the poster on screen.
+  const startPlayback = React.useCallback(() => {
     const video = videoRef.current;
-    if (!video || videoFinishedRef.current || videoDone) return;
+    if (!video || videoFinishedRef.current || playbackStartedRef.current) return;
+    playbackStartedRef.current = true;
 
-    video.muted = false;
     video.volume = VIDEO_VOLUME;
-
-    try {
-      await video.play();
-    } catch {
-      video.muted = true;
-      await video.play().catch(finishVideo);
-    }
-  }, [finishVideo, videoDone]);
+    video.muted = false;
+    video
+      .play()
+      .catch(() => {
+        video.muted = true;
+        return video.play();
+      })
+      .catch(finishVideo);
+  }, [finishVideo]);
 
   React.useEffect(() => {
-    playIntroVideo();
-  }, [playIntroVideo]);
+    const video = videoRef.current;
+    if (!video || videoFinishedRef.current) return;
+    const alreadySmall = video.currentSrc.includes("720") || window.matchMedia("(max-width: 767px)").matches;
+    if (!alreadySmall && prefersSmallVideo()) {
+      video.src = INTRO_VIDEO_SMALL;
+      video.load();
+    }
+    startPlayback();
+  }, [startPlayback]);
 
-  // If the film can't load (offline, blocked, unsupported), move on instead of hanging on the
-  // poster. Errors raised before React attached its listeners are missed, so poll the element too.
+  // A film that never starts, or freezes, must not hold the whole site hostage: watch it and
+  // move on. Errors raised before React attached its listeners are missed, so poll the element.
   React.useEffect(() => {
     if (videoDone) return;
+    const STEP = 500;
+    let waited = 0;
+    let stalledFor = 0;
+    let lastTime = -1;
+    let retried = false;
+
     const timer = window.setInterval(() => {
       const video = videoRef.current;
-      if (video && (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
+      if (!video) return;
+      waited += STEP;
+
+      if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
         finishVideo();
+        return;
       }
-    }, 400);
+
+      if (!video.paused && video.currentTime > 0.05) {
+        stalledFor = video.currentTime === lastTime ? stalledFor + STEP : 0;
+        lastTime = video.currentTime;
+        if (stalledFor >= STALL_TIMEOUT_MS) finishVideo();
+      } else {
+        // Not playing yet: one more muted attempt halfway, then give up.
+        if (!retried && waited >= START_TIMEOUT_MS / 2) {
+          retried = true;
+          video.muted = true;
+          video.play().catch(() => {});
+        }
+        if (waited >= START_TIMEOUT_MS) finishVideo();
+      }
+
+      if (waited >= MAX_INTRO_MS) finishVideo();
+    }, STEP);
     return () => window.clearInterval(timer);
   }, [videoDone, finishVideo]);
 
@@ -111,36 +175,40 @@ export function LoadingScene() {
   const enterSite = React.useCallback(() => {
     if (!canEnter) return;
     markIntroSeen();
+    setIntroPhase("done");
     setVisible(false);
   }, [canEnter]);
 
+  // Enter or Space works from anywhere once the button is showing.
+  React.useEffect(() => {
+    if (!canEnter || !visible) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        enterSite();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [canEnter, visible, enterSite]);
+
+  // The loader fills on the clock, not by counting ticks, so a busy page can't stretch it out.
   React.useEffect(() => {
     if (!videoDone) return;
 
     setPercent(0);
-    let progressInterval: number | null = null;
+    const startedAt = performance.now();
     const loaderDelay = window.setTimeout(() => setShowLoader(true), 520);
-    const progressDelay = window.setTimeout(() => {
-      progressInterval = window.setInterval(() => {
-        setPercent((previous) => {
-          if (previous >= 100) {
-            if (progressInterval !== null) {
-              window.clearInterval(progressInterval);
-            }
-            return 100;
-          }
-
-          return Math.min(previous + 4, 100);
-        });
-      }, 50);
-    }, 900);
+    const timer = window.setInterval(() => {
+      const elapsed = performance.now() - startedAt - 900;
+      const next = elapsed <= 0 ? 0 : Math.min(100, Math.floor(elapsed / 50) * 4);
+      setPercent(next);
+      if (next >= 100) window.clearInterval(timer);
+    }, 50);
 
     return () => {
       window.clearTimeout(loaderDelay);
-      window.clearTimeout(progressDelay);
-      if (progressInterval !== null) {
-        window.clearInterval(progressInterval);
-      }
+      window.clearInterval(timer);
     };
   }, [videoDone]);
 
@@ -169,9 +237,7 @@ export function LoadingScene() {
                 preload="auto"
                 onEnded={finishVideo}
                 onError={finishVideo}
-                onCanPlay={() => {
-                  playIntroVideo();
-                }}
+                onCanPlay={startPlayback}
                 onPlay={(event) => {
                   if (!videoFinishedRef.current) return;
                   event.currentTarget.pause();

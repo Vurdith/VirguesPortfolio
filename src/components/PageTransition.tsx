@@ -99,7 +99,17 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
 
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
-      if (url.pathname === window.location.pathname) return; // hash jumps and same-page links
+      if (url.pathname === window.location.pathname) {
+        // Jump to a section on this page ourselves: the router's own hash scrolling can leave the
+        // page where it is on the first click.
+        const target = url.hash.length > 1 ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+        if (target) {
+          event.preventDefault();
+          target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+          window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+        }
+        return;
+      }
       if (isAdminPath(url.pathname) || isAdminPath(window.location.pathname)) return;
 
       event.preventDefault();
@@ -108,7 +118,7 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
 
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, [navigate]);
+  }, [navigate, reduceMotion]);
 
   const api = React.useMemo<TransitionApi>(() => ({ navigate }), [navigate]);
 

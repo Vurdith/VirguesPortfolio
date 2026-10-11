@@ -28,7 +28,7 @@ const LEFT_NAV: readonly NavItemData[] = [
 ];
 const RIGHT_NAV: readonly NavItemData[] = [
   { label: "REVIEWS", short: "REVIEWS", href: "/#reviews", sections: ["reviews"] },
-  { label: "GET A QUOTE", short: "QUOTE", href: "/#contact", sections: ["contact"], cta: true },
+  { label: "GET A QUOTE", short: "QUOTE", href: "/#quote", sections: ["contact"], cta: true },
 ];
 const TRACKED_SECTIONS = [...LEFT_NAV, ...RIGHT_NAV].flatMap((item) => item.sections);
 

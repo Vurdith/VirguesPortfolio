@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
-import { readDb, writeDb } from "@/lib/db";
+import { removeReviewContent, setReviewStatus } from "@/lib/db/reviews";
+import { NO_STORE } from "@/lib/reviewApi";
+import { deleteReviewImages } from "@/lib/reviewStorage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,19 +26,12 @@ export async function PATCH(
   const parsed = PatchSchema.safeParse(json);
   if (!parsed.success) return NextResponse.json({ error: "Invalid patch." }, { status: 400 });
 
-  const db = await readDb();
-  if (!db.reviews.some((r) => r.id === id)) {
+  if (!(await setReviewStatus(id, parsed.data.status))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await writeDb((next) => {
-    const review = next.reviews.find((r) => r.id === id);
-    if (!review) return;
-    review.status = parsed.data.status;
-  });
-
   revalidatePath("/");
-  return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ ok: true }, { headers: NO_STORE });
 }
 
 export async function DELETE(
@@ -47,18 +42,10 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
-  const db = await readDb();
-  if (!db.reviews.some((r) => r.id === id)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  const { found, orphaned } = await removeReviewContent({ kind: "review", reviewId: id });
+  if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await writeDb((next) => {
-    next.reviews = next.reviews.filter((r) => r.id !== id);
-  });
-
+  await deleteReviewImages(orphaned);
   revalidatePath("/");
-  return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ ok: true }, { headers: NO_STORE });
 }
-
-
-

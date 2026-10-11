@@ -1,49 +1,29 @@
 import { ReviewsModerationTable } from "@/components/admin/reviews/ReviewsModerationTable";
 import { readDb } from "@/lib/db";
+import { adminReview } from "@/lib/db/reviews";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminReviewsPage() {
   const db = await readDb();
-  const reviews = db.reviews;
-
-  const pending = reviews.filter((r) => r.status === "pending").length;
-  const approved = reviews.filter((r) => r.status === "approved").length;
-  const rejected = reviews.filter((r) => r.status === "rejected").length;
+  const reviews = [...db.reviews].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(adminReview);
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <p className="text-xs tracking-[0.22em] text-fog/70">REVIEWS</p>
-          <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
-            Moderation.
-          </h1>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge label="PENDING" value={pending} />
-          <Badge label="APPROVED" value={approved} />
-          <Badge label="REJECTED" value={rejected} />
-        </div>
+      <div>
+        <p className="text-xs tracking-[0.22em] text-fog/70">REVIEWS</p>
+        <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
+          Moderation.
+        </h1>
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-fog/75">
+          Nothing is public until you approve it. A review shows its approved images and replies; a
+          reviewer&apos;s follow-ups wait here for you, and your own replies go live with an OWNER badge.
+        </p>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-8">
         <ReviewsModerationTable initialReviews={reviews} />
       </div>
     </div>
   );
 }
-
-function Badge({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="inline-flex items-center gap-3 border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70">
-      <span>{label}</span>
-      <span className="h-px w-6 bg-line/10" />
-      <span className="text-ink/85">{value}</span>
-    </div>
-  );
-}
-
-
-

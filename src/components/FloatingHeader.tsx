@@ -8,6 +8,7 @@ import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { CornerMarks } from "@/components/CornerMarks";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
+import { useCurrentSection } from "@/hooks/useCurrentSection";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 type NavItemData = {
@@ -31,32 +32,6 @@ const RIGHT_NAV: readonly NavItemData[] = [
 ];
 const TRACKED_SECTIONS = [...LEFT_NAV, ...RIGHT_NAV].flatMap((item) => item.sections);
 
-/** The id of the section crossing the middle of the viewport, or null away from the home page. */
-function useCurrentSection() {
-  const [current, setCurrent] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        setCurrent(TRACKED_SECTIONS.find((id) => visible.has(id)) ?? null);
-      },
-      { rootMargin: "-48% 0px -48% 0px" },
-    );
-    for (const id of TRACKED_SECTIONS) {
-      const element = document.getElementById(id);
-      if (element) observer.observe(element);
-    }
-    return () => observer.disconnect();
-  }, []);
-
-  return current;
-}
-
 const VIZ_BARS = 20;
 const VIZ_SEQUENCE = [0, 7, 3, 11, 15, 5, 18, 2, 13, 9, 16, 4, 19, 1, 12, 6, 17, 8, 14, 10] as const;
 const PROFILE_BARS = Array.from({ length: VIZ_BARS }, (_, i) => ({
@@ -71,7 +46,7 @@ type SpokeStyle = React.CSSProperties & { "--a": string };
 
 export function FloatingHeader({ className }: { className?: string }) {
   const { scrollY } = useScroll();
-  const current = useCurrentSection();
+  const current = useCurrentSection(TRACKED_SECTIONS);
 
   // One spring drives the small "settle" effect applied once the page starts scrolling.
   const settle = useSpring(useTransform(scrollY, [0, 180], [0, 1]), SPRING);

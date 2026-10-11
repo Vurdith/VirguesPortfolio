@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 
 import { cn } from "@/lib/cn";
+import { useCurrentSection } from "@/hooks/useCurrentSection";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 const SECTIONS = [
@@ -16,35 +17,15 @@ const SECTIONS = [
   { id: "contact", label: "CONTACT" },
 ] as const;
 
+const SECTION_IDS = SECTIONS.map(({ id }) => id);
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** The section whose body currently crosses the middle of the viewport. */
+/** Index of the section currently being read (the intro until something else takes over). */
 function useActiveSection() {
-  const [active, setActive] = React.useState(0);
-
-  React.useEffect(() => {
-    const visible = new Map<string, number>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.set(entry.target.id, entry.intersectionRatio);
-          else visible.delete(entry.target.id);
-        }
-        const index = SECTIONS.findIndex(({ id }) => visible.has(id));
-        if (index !== -1) setActive(index);
-      },
-      // A thin band across the middle of the screen decides which section is "current".
-      { rootMargin: "-48% 0px -48% 0px" },
-    );
-
-    for (const { id } of SECTIONS) {
-      const element = document.getElementById(id);
-      if (element) observer.observe(element);
-    }
-    return () => observer.disconnect();
-  }, []);
-
-  return active;
+  const current = useCurrentSection(SECTION_IDS);
+  const index = SECTIONS.findIndex(({ id }) => id === current);
+  return index === -1 ? 0 : index;
 }
 
 /** Fixed rail on the right edge: section counter, progress line, and jump links. */

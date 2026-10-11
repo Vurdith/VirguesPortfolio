@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import type { Work } from "@/types/portfolio";
 import { cn } from "@/lib/cn";
 import { slugify } from "@/lib/slug";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 type Mode = "create" | "edit";
 
@@ -16,11 +15,19 @@ type FormState = {
   year: string;
   tags: string;
   summary: string;
+  client: string;
+  role: string;
+  problem: string;
+  solution: string;
+  result: string;
+  link: string;
   published: boolean;
   mediaKind: "image" | "video";
   srcType: "upload" | "url";
   src: string;
   poster: string;
+  focusX: number;
+  focusY: number;
 };
 
 function fromWork(work?: Work): FormState {
@@ -30,11 +37,19 @@ function fromWork(work?: Work): FormState {
     year: work?.year ? String(work.year) : "",
     tags: work?.tags?.join(", ") ?? "",
     summary: work?.summary ?? "",
+    client: work?.client ?? "",
+    role: work?.role ?? "",
+    problem: work?.problem ?? "",
+    solution: work?.solution ?? "",
+    result: work?.result ?? "",
+    link: work?.link ?? "",
     published: work?.published ?? false,
     mediaKind: work?.media.kind ?? "image",
     srcType: work?.media.srcType ?? "upload",
     src: work?.media.src ?? "",
     poster: work?.media.poster ?? "",
+    focusX: work?.media.focus?.x ?? 50,
+    focusY: work?.media.focus?.y ?? 50,
   };
 }
 
@@ -93,7 +108,6 @@ export function WorkForm({
   work?: Work;
 }) {
   const router = useRouter();
-  const { playHover, playClick } = useUiSounds();
 
   const [state, setState] = React.useState<FormState>(() => fromWork(work));
   const [slugTouched, setSlugTouched] = React.useState(false);
@@ -125,13 +139,21 @@ export function WorkForm({
         slug: state.slug.trim(),
         year: state.year.trim() ? Number(state.year.trim()) : undefined,
         tags,
-        summary: state.summary.trim() ? state.summary.trim() : undefined,
+        // Empty strings (not undefined) so a cleared field is actually cleared on save.
+        summary: state.summary.trim(),
+        client: state.client.trim(),
+        role: state.role.trim(),
+        problem: state.problem.trim(),
+        solution: state.solution.trim(),
+        result: state.result.trim(),
+        link: state.link.trim(),
         published: state.published,
         media: {
           kind: state.mediaKind,
           srcType: state.srcType,
           src: state.src.trim(),
           poster: state.mediaKind === "video" && state.poster.trim() ? state.poster.trim() : undefined,
+          focus: { x: Math.round(state.focusX), y: Math.round(state.focusY) },
         },
       };
 
@@ -213,11 +235,7 @@ export function WorkForm({
           <button
             type="button"
             disabled={busy}
-            onMouseEnter={playHover}
-            onClick={() => {
-              playClick();
-              void submit();
-            }}
+            onClick={() => void submit()}
             className={cn(
               "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
               "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
@@ -282,6 +300,37 @@ export function WorkForm({
       </div>
 
       <div className="mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
+        <div className="text-xs tracking-[0.22em] text-fog/70">CASE STUDY (OPTIONAL)</div>
+        <p className="mt-2 text-xs text-fog/60">
+          Shown under the work. Fill in only what helps: the story is what turns a screenshot into proof.
+        </p>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <Field label="CLIENT">
+            <input value={state.client} onChange={(e) => set("client", e.target.value)} className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="Studio or game" />
+          </Field>
+          <Field label="YOUR ROLE">
+            <input value={state.role} onChange={(e) => set("role", e.target.value)} className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="UI design and implementation" />
+          </Field>
+          <Field label="LIVE LINK">
+            <input value={state.link} onChange={(e) => set("link", e.target.value)} className="w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="https://…" />
+          </Field>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <Field label="THE PROBLEM">
+            <textarea value={state.problem} onChange={(e) => set("problem", e.target.value)} className="h-32 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="What was broken or missing?" />
+          </Field>
+          <Field label="WHAT I DID">
+            <textarea value={state.solution} onChange={(e) => set("solution", e.target.value)} className="h-32 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="The approach and the decisions." />
+          </Field>
+          <Field label="THE RESULT">
+            <textarea value={state.result} onChange={(e) => set("result", e.target.value)} className="h-32 w-full resize-none border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40" placeholder="What changed, ideally with a number." />
+          </Field>
+        </div>
+      </div>
+
+      <div className="mt-10 border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="text-xs tracking-[0.22em] text-fog/70">MEDIA</div>
           <div className="flex flex-wrap gap-2">
@@ -329,11 +378,7 @@ export function WorkForm({
                   <button
                     type="button"
                     disabled={busy || !pendingFile}
-                    onMouseEnter={playHover}
-                    onClick={() => {
-                        playClick();
-                        void uploadMain();
-                      }}
+                    onClick={() => void uploadMain()}
                     className={cn(
                       "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
                       "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
@@ -373,11 +418,7 @@ export function WorkForm({
                     <button
                       type="button"
                       disabled={busy || !pendingPoster}
-                      onMouseEnter={playHover}
-                      onClick={() => {
-                        playClick();
-                        void uploadPoster();
-                      }}
+                      onClick={() => void uploadPoster()}
                       className={cn(
                         "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-4 py-2 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
                         "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
@@ -391,11 +432,11 @@ export function WorkForm({
                 </div>
               )
             ) : state.src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <FocusPicker
                 src={state.src}
-                alt=""
-                className="mt-2 h-40 w-full border border-line/12 object-cover"
+                x={state.focusX}
+                y={state.focusY}
+                onChange={(x, y) => setState((current) => ({ ...current, focusX: x, focusY: y }))}
               />
             ) : (
               <div className="mt-2 h-40 w-full border border-line/12 bg-void/25" />
@@ -424,4 +465,86 @@ function Field({
   );
 }
 
+/**
+ * Click the image to choose the focal point. The thumbnails show how it crops into the gallery
+ * card (4:5) and a wide strip, so you can see what a crop keeps before saving.
+ */
+function FocusPicker({
+  src,
+  x,
+  y,
+  onChange,
+}: {
+  src: string;
+  x: number;
+  y: number;
+  onChange: (x: number, y: number) => void;
+}) {
+  const clamp = (value: number) => Math.min(100, Math.max(0, value));
 
+  const pick = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    onChange(
+      clamp(((event.clientX - rect.left) / rect.width) * 100),
+      clamp(((event.clientY - rect.top) / rect.height) * 100),
+    );
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = event.shiftKey ? 10 : 2;
+    const delta: Record<string, [number, number]> = {
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step],
+    };
+    const move = delta[event.key];
+    if (!move) return;
+    event.preventDefault();
+    onChange(clamp(x + move[0]), clamp(y + move[1]));
+  };
+
+  const thumb = (aspect: string, width: string) => (
+    <div
+      className={cn("shrink-0 border border-line/12 bg-void/40 bg-cover", aspect, width)}
+      style={{ backgroundImage: `url(${src})`, backgroundPosition: `${x}% ${y}%` }}
+    />
+  );
+
+  return (
+    <div className="mt-2">
+      <div
+        role="slider"
+        aria-label="Focal point"
+        aria-valuenow={Math.round(x)}
+        aria-valuetext={`${Math.round(x)}% across, ${Math.round(y)}% down`}
+        tabIndex={0}
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          pick(event);
+        }}
+        onPointerMove={(event) => {
+          if (event.buttons) pick(event);
+        }}
+        onKeyDown={onKeyDown}
+        className="relative inline-block max-w-full cursor-crosshair touch-none border border-line/12"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt="" draggable={false} className="block max-h-56 max-w-full select-none" />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
+          style={{ left: `${x}%`, top: `${y}%` }}
+        />
+      </div>
+      <div className="mt-3 flex items-end gap-3">
+        {thumb("aspect-[4/5]", "w-16")}
+        {thumb("aspect-[16/6]", "w-32")}
+        <span className="text-[10px] tracking-[0.22em] text-fog/60">
+          FOCAL POINT · CLICK OR USE ARROWS
+        </span>
+      </div>
+    </div>
+  );
+}

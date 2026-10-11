@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="film-grain vignette min-h-dvh px-6 py-16 md:px-10 md:py-20">
+    <main id="main" tabIndex={-1} className="film-grain vignette outline-none min-h-dvh px-6 py-16 md:px-10 md:py-20">
       <div className="mx-auto max-w-4xl">
         <p className="text-xs tracking-[0.22em] text-fog/70">404</p>
         <h1 className="mt-4 font-serif text-5xl leading-[0.92] tracking-[-0.06em] md:text-6xl">

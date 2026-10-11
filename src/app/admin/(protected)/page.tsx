@@ -7,6 +7,7 @@ export default async function AdminDashboardPage() {
   const db = await readDb();
   const worksCount = db.works.length;
   const reviewsPending = db.reviews.filter((r) => r.status === "pending").length;
+  const quotesNew = db.quotes.filter((q) => q.status === "new").length;
   const reviewsApproved = db.reviews.filter((r) => r.status === "approved").length;
   const latestWork = [...db.works].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0];
 
@@ -22,8 +23,9 @@ export default async function AdminDashboardPage() {
         <div className="hidden text-xs tracking-[0.22em] text-fog/60 md:block">/admin</div>
       </div>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
+      <div className="mt-10 grid gap-4 md:grid-cols-4">
         <Stat label="WORKS" value={worksCount} />
+        <Stat label="QUOTES (NEW)" value={quotesNew} />
         <Stat label="REVIEWS (PENDING)" value={reviewsPending} />
         <Stat label="REVIEWS (APPROVED)" value={reviewsApproved} />
       </div>
@@ -32,6 +34,9 @@ export default async function AdminDashboardPage() {
         <Panel title="Queue">
           <div className="grid gap-3 text-sm leading-relaxed text-fog/78">
             <p>Pending reviews sit first in moderation. Published work stays public immediately.</p>
+            <p className="text-xs tracking-[0.18em] text-fog/60">
+              {quotesNew ? `${quotesNew} NEW QUOTE REQUEST${quotesNew === 1 ? "" : "S"}` : "NO NEW QUOTE REQUESTS"}
+            </p>
             <div className="h-px bg-line/10" />
             <p className="text-xs tracking-[0.18em] text-fog/60">
               {reviewsPending ? `${reviewsPending} REVIEW${reviewsPending === 1 ? "" : "S"} WAITING` : "NO PENDING REVIEWS"}

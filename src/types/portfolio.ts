@@ -3,6 +3,8 @@ export type Media = {
   srcType: "upload" | "url";
   src: string;
   poster?: string;
+  /** Focal point (0-100) used when the image is cropped into a card. */
+  focus?: { x: number; y: number };
 };
 
 export type Work = {
@@ -12,6 +14,15 @@ export type Work = {
   year?: number;
   tags: string[];
   summary?: string;
+  /** Case study fields, all optional. */
+  client?: string;
+  role?: string;
+  problem?: string;
+  solution?: string;
+  result?: string;
+  link?: string;
+  /** Manual position in the gallery (lower first). Works without one follow, newest first. */
+  order?: number;
   media: Media;
   published: boolean;
   createdAt: string;
@@ -31,5 +42,16 @@ export type Review = {
   createdAt: string;
 };
 
+export type QuoteStatus = "new" | "replied" | "closed";
 
-
+export type QuoteRequest = {
+  id: string;
+  name: string;
+  email: string;
+  service: string;
+  budget: string;
+  deadline: string;
+  details: string;
+  status: QuoteStatus;
+  createdAt: string;
+};

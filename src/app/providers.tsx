@@ -1,16 +1,20 @@
 "use client";
 
-import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
+import { LazyMotion, domAnimation } from "framer-motion";
 
+import { PageTransitionProvider } from "@/components/PageTransition";
+import { MotionPreferenceProvider } from "@/providers/MotionPreferenceProvider";
 import { UiSoundProvider } from "@/providers/UiSoundProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionPreferenceProvider>
       <LazyMotion features={domAnimation}>
-        <UiSoundProvider>{children}</UiSoundProvider>
+        <UiSoundProvider>
+          <PageTransitionProvider>{children}</PageTransitionProvider>
+        </UiSoundProvider>
       </LazyMotion>
-    </MotionConfig>
+    </MotionPreferenceProvider>
   );
 }
 

@@ -1,18 +1,31 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 
+import { AvailabilityBadge } from "@/components/AvailabilityBadge";
+import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
-import { useUiSounds } from "@/hooks/useUiSounds";
+import { useDeviceTilt } from "@/hooks/useDeviceTilt";
+import { useAmbientPointer, useFinePointer } from "@/hooks/useFinePointer";
+import { useMotionPreference } from "@/providers/MotionPreferenceProvider";
+
+// WebGL code only loads on devices that will actually run it.
+const HeroShader = dynamic(() => import("@/components/HeroShader"), { ssr: false });
 
 export function Hero({ className }: { className?: string }) {
-  const { playHover, playClick } = useUiSounds();
-
   const ref = React.useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -46,12 +59,46 @@ export function Hero({ className }: { className?: string }) {
     mass: 0.7,
   });
 
+  const parallax = useAmbientPointer();
+  const finePointer = useFinePointer();
+  const { reduced: motionOff } = useMotionPreference();
+  const reduceMotion = useReducedMotion();
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const imageX = useSpring(useTransform(pointerX, [-0.5, 0.5], [28, -28]), {
+    stiffness: 70,
+    damping: 22,
+    mass: 0.8,
+  });
+  const imageY = useSpring(useTransform(pointerY, [-0.5, 0.5], [18, -18]), {
+    stiffness: 70,
+    damping: 22,
+    mass: 0.8,
+  });
+
+  // Phones have no mouse, so their tilt drives the same parallax.
+  useDeviceTilt(!finePointer && !reduceMotion && !motionOff, (x, y) => {
+    pointerX.set(x);
+    pointerY.set(y);
+  });
+
+  React.useEffect(() => {
+    if (!parallax) return;
+    const onMove = (event: PointerEvent) => {
+      pointerX.set(event.clientX / window.innerWidth - 0.5);
+      pointerY.set(event.clientY / window.innerHeight - 0.5);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [parallax, pointerX, pointerY]);
+
   const skewX = useTransform(scrollYProgress, [0, 0.5], [0, -15]);
   const skewY = useTransform(scrollYProgress, [0, 0.5], [0, 2]);
   const translateX = useTransform(scrollYProgress, [0, 0.5], [0, 40]);
 
   return (
     <section
+      id="top"
       ref={ref}
       className={cn("relative min-h-[100svh] overflow-hidden border-b border-line/10", className)}
       aria-label="Hero"
@@ -67,15 +114,18 @@ export function Hero({ className }: { className?: string }) {
           WebkitMaskImage: "radial-gradient(ellipse at 35% 40%, black 0%, rgba(0,0,0,0.4) 45%, transparent 85%)",
         }}
       >
-        <Image
-          src={SITE.heroImage}
-          alt=""
-          fill
-          priority
-          quality={82}
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+        <motion.div className="absolute inset-[-3%]" style={{ x: imageX, y: imageY }}>
+          <Image
+            src={SITE.heroImage}
+            alt=""
+            fill
+            priority
+            quality={82}
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+          {motionOff ? null : <HeroShader src={SITE.heroImage} />}
+        </motion.div>
       </motion.div>
 
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -91,21 +141,13 @@ export function Hero({ className }: { className?: string }) {
 
         <div className="flex flex-1 items-end">
           <motion.div style={{ y: titleY }} className="w-full pb-10 md:pb-14">
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.2, 0.85, 0.2, 1], delay: 0.05 }}
-              className="text-xs tracking-[0.22em] text-fog/80"
-            >
+            <p className="hero-fade text-xs tracking-[0.22em] text-fog/80">
               {SITE.role.toUpperCase()}
-            </motion.p>
+            </p>
 
             <motion.h1
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.1, ease: [0.2, 0.85, 0.2, 1] }}
               style={{ skewX, skewY, x: translateX }}
-              className="mt-4 font-serif text-[clamp(3.4rem,7.5vw,6.8rem)] leading-[0.88] tracking-[-0.06em] origin-left transform-gpu"
+              className="hero-fade mt-4 font-serif text-[clamp(3.4rem,7.5vw,6.8rem)] leading-[0.88] tracking-[-0.06em] origin-left transform-gpu"
             >
               {SITE.name}
               <span className="text-fog/70">.</span>
@@ -114,8 +156,6 @@ export function Hero({ className }: { className?: string }) {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/#work"
-                onMouseEnter={playHover}
-                onClick={playClick}
                 className={cn(
                   "group relative inline-flex items-center gap-3 rounded-none border border-line/20 bg-void/70 px-5 py-3 text-xs tracking-[0.22em] text-ink",
                   "hover:border-line/35",
@@ -124,17 +164,20 @@ export function Hero({ className }: { className?: string }) {
                 <span>VIEW WORK</span>
                 <span className="h-px w-10 bg-line/25 transition-all duration-300 group-hover:w-14 group-hover:bg-line/40" />
                 <MonoIcon name="work" className="size-4" />
-                <span className="pointer-events-none absolute inset-0">
-                  <span className="absolute left-0 top-0 h-3 w-3 border-l border-t border-line/35" />
-                  <span className="absolute right-0 top-0 h-3 w-3 border-r border-t border-line/35" />
-                  <span className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-line/35" />
-                  <span className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-line/35" />
+                <CornerMarks tone="border-line/35" />
+              </Link>
+
+              <Link
+                href="/#quote"
+                className="quote-cta inline-flex items-center gap-3 border border-line/20 bg-ink px-5 py-3 text-xs tracking-[0.22em] text-void"
+              >
+                <span>REQUEST A QUOTE</span>
+                <span aria-hidden="true" className="quote-cta-arrow">
+                  ↗
                 </span>
               </Link>
 
-              <div className="text-xs tracking-[0.18em] text-fog/60">
-                Available for select projects.
-              </div>
+              <AvailabilityBadge />
             </div>
           </motion.div>
         </div>

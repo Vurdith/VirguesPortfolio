@@ -3,36 +3,96 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 const INTRO_VIDEO = "/intro-loader-v2.mp4";
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
 
+const INTRO_SEEN_KEY = "virgue-intro-seen";
+// Remembered across visits: the film plays once, after that visitors go straight to the loader.
+const INTRO_VIDEO_SEEN_KEY = "virgue-intro-video-seen";
+
 let introSeenInRuntime = false;
 
+function readIntroSeen() {
+  if (introSeenInRuntime) return true;
+  try {
+    return window.sessionStorage.getItem(INTRO_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markIntroSeen() {
+  introSeenInRuntime = true;
+  try {
+    window.sessionStorage.setItem(INTRO_SEEN_KEY, "1");
+  } catch {
+    // Storage can be blocked; the in-memory flag still covers this tab.
+  }
+}
+
+function readVideoSeen() {
+  try {
+    return window.localStorage.getItem(INTRO_VIDEO_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markVideoSeen() {
+  try {
+    window.localStorage.setItem(INTRO_VIDEO_SEEN_KEY, "1");
+  } catch {
+    // ignore
+  }
+}
+
 export function LoadingScene() {
-  const [visible, setVisible] = React.useState(!introSeenInRuntime);
+  const [visible, setVisible] = React.useState(true);
   const [videoDone, setVideoDone] = React.useState(false);
   const [showLoader, setShowLoader] = React.useState(false);
   const [percent, setPercent] = React.useState(0);
-  const musicStartedRef = React.useRef(false);
   const videoFinishedRef = React.useRef(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const canEnter = percent >= 100;
-  const { playHover, playClick, toggleMuted, muted } = useUiSounds();
+  const { enableByDefault, setMusicDucked } = useUiSounds();
 
   const finishVideo = React.useCallback(() => {
     if (videoFinishedRef.current) return;
 
     videoFinishedRef.current = true;
     videoRef.current?.pause();
+    markVideoSeen();
     setVideoDone(true);
-    if (!musicStartedRef.current && muted) {
-      musicStartedRef.current = true;
-      toggleMuted();
+    setMusicDucked(false);
+    enableByDefault();
+  }, [enableByDefault, setMusicDucked]);
+
+  // The intro has its own soundtrack, so keep the ambient bed out of its way.
+  React.useEffect(() => {
+    if (!visible || videoDone) return;
+    setMusicDucked(true);
+    return () => setMusicDucked(false);
+  }, [visible, videoDone, setMusicDucked]);
+
+  // Returning visitors in the same session skip the intro.
+  React.useLayoutEffect(() => {
+    if (readIntroSeen()) {
+      videoFinishedRef.current = true;
+      videoRef.current?.pause();
+      setVisible(false);
+      return;
     }
-  }, [muted, toggleMuted]);
+    // Returning on a later day: skip the film, keep the loader (its button also unlocks audio).
+    if (readVideoSeen()) {
+      videoFinishedRef.current = true;
+      videoRef.current?.pause();
+      setVideoDone(true);
+    }
+  }, []);
 
   const playIntroVideo = React.useCallback(async () => {
     const video = videoRef.current;
@@ -74,10 +134,9 @@ export function LoadingScene() {
 
   const enterSite = React.useCallback(() => {
     if (!canEnter) return;
-    playClick();
-    introSeenInRuntime = true;
+    markIntroSeen();
     setVisible(false);
-  }, [canEnter, playClick]);
+  }, [canEnter]);
 
   React.useEffect(() => {
     if (!videoDone) return;
@@ -120,6 +179,17 @@ export function LoadingScene() {
             transition: { duration: 0.24, ease: EASE },
           }}
         >
+          {!videoDone ? (
+            <button
+              type="button"
+              onClick={finishVideo}
+              className="absolute bottom-6 right-6 z-10 inline-flex items-center gap-3 border border-line/20 bg-void/50 px-4 py-2.5 text-[10px] tracking-[0.3em] text-fog/85 backdrop-blur-md transition-colors hover:border-line/40 hover:text-ink"
+            >
+              SKIP INTRO
+              <span aria-hidden="true">→</span>
+            </button>
+          ) : null}
+
           <AnimatePresence>
             {!videoDone ? (
               <motion.video
@@ -227,17 +297,15 @@ export function LoadingScene() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.42, ease: EASE }}
-                        onMouseEnter={playHover}
                         onClick={enterSite}
                         className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[10px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
                       >
                         ENTER SITE
-                        <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="absolute left-0 top-0 h-2 w-2 border-l border-t border-line/40" />
-                          <span className="absolute right-0 top-0 h-2 w-2 border-r border-t border-line/40" />
-                          <span className="absolute bottom-0 left-0 h-2 w-2 border-b border-l border-line/40" />
-                          <span className="absolute bottom-0 right-0 h-2 w-2 border-b border-r border-line/40" />
-                        </span>
+                        <CornerMarks
+                          size={2}
+                          tone="border-line/40"
+                          className="opacity-0 transition-opacity group-hover:opacity-100"
+                        />
                       </motion.button>
                     ) : (
                       <motion.div

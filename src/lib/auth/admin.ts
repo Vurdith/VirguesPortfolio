@@ -142,9 +142,14 @@ export async function login(password: string) {
 
 export async function logoutByToken(token: string | undefined) {
   if (!token) return;
+  const db = await readDb();
+  const sessionId = readSignedToken(token, db.auth.passwordHash)?.id;
   const tokenHash = sha256(token);
-  await writeDb((db) => {
-    db.auth.sessions = db.auth.sessions.filter((s) => s.tokenHash !== tokenHash);
+
+  await writeDb((next) => {
+    next.auth.sessions = next.auth.sessions.filter(
+      (s) => s.id !== sessionId && s.tokenHash !== tokenHash,
+    );
   });
 }
 
@@ -152,8 +157,11 @@ export async function getAdminSession(token: string | undefined): Promise<DbSess
   if (!token) return null;
   const tokenHash = sha256(token);
   const db = await readDb();
+  // A signed token is only valid while its session is still stored, so logging out revokes it.
   const signedSession = readSignedToken(token, db.auth.passwordHash);
-  if (signedSession) return signedSession;
+  if (signedSession) {
+    return db.auth.sessions.some((s) => s.id === signedSession.id) ? signedSession : null;
+  }
 
   const session = db.auth.sessions.find((s) => s.tokenHash === tokenHash) ?? null;
   if (!session) return null;

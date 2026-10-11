@@ -2,28 +2,25 @@
 
 import { motion } from "framer-motion";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { cn } from "@/lib/cn";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
 export function SoundToggle({ className }: { className?: string }) {
-  const { muted, toggleMuted, playClick } = useUiSounds();
+  const { muted, toggleMuted } = useUiSounds();
 
   return (
     <motion.button
       type="button"
-      onClick={() => {
-        toggleMuted();
-        playClick();
-      }}
+      onClick={toggleMuted}
       whileTap={{ scale: 0.98 }}
       className={cn(
         "group relative inline-flex h-9 items-center gap-2.5 rounded-none border border-line/15 bg-void/40 px-3 text-xs tracking-[0.22em] text-fog/80 backdrop-blur-md",
         "hover:border-line/30 hover:text-ink",
-        "focus-visible:outline-none",
+        
         className,
       )}
       aria-pressed={!muted}
-      aria-label={muted ? "Enable UI sounds" : "Disable UI sounds"}
     >
       <div className="relative flex h-3 w-3 items-center justify-center overflow-hidden">
         <svg
@@ -47,14 +44,13 @@ export function SoundToggle({ className }: { className?: string }) {
           )}
         </svg>
       </div>
-      <span className="text-[10px] opacity-70">{muted ? "OFF" : "ON"}</span>
+      <span className="text-[10px] opacity-70">SOUND {muted ? "OFF" : "ON"}</span>
 
-      <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <span className="absolute left-0 top-0 h-2 w-2 border-l border-t border-line/35" />
-        <span className="absolute right-0 top-0 h-2 w-2 border-r border-t border-line/35" />
-        <span className="absolute bottom-0 left-0 h-2 w-2 border-b border-l border-line/35" />
-        <span className="absolute bottom-0 right-0 h-2 w-2 border-b border-r border-line/35" />
-      </span>
+      <CornerMarks
+        size={2}
+        tone="border-line/35"
+        className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      />
     </motion.button>
   );
 }

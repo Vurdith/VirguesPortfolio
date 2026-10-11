@@ -1,4 +1,4 @@
-import type { Review, Work } from "@/types/portfolio";
+import type { QuoteRequest, Review, Work } from "@/types/portfolio";
 
 export type DbSession = {
   id: string;
@@ -14,6 +14,7 @@ export type Db = {
   };
   works: Work[];
   reviews: Review[];
+  quotes: QuoteRequest[];
 };
 
 export const DEFAULT_DB: Db = {
@@ -23,6 +24,7 @@ export const DEFAULT_DB: Db = {
   },
   works: [],
   reviews: [],
+  quotes: [],
 };
 
 

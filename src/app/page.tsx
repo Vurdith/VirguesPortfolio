@@ -6,25 +6,21 @@ import { ReviewsSection } from "@/sections/ReviewsSection";
 import { PaymentSection } from "@/sections/PaymentSection";
 import { ContactFooter } from "@/sections/ContactFooter";
 
-import { mockWorks } from "@/content/mockWorks";
-import { mockReviews } from "@/content/mockReviews";
 import { getPublicPortfolioData } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const { works, reviews } = await getPublicPortfolioData();
-  const worksForUi = works.length ? works : mockWorks;
-  const reviewsForUi = reviews.length ? reviews : mockReviews;
 
   return (
-    <main className="film-grain vignette">
+    <main id="main" tabIndex={-1} className="film-grain vignette outline-none">
       <Hero />
-      <WorkGallery works={worksForUi} />
+      <WorkGallery works={works} />
       <OfferingsSection />
       <ProcessBlueprint />
-      <ReviewsSection reviews={reviewsForUi} />
       <PaymentSection />
+      <ReviewsSection reviews={reviews} />
       <ContactFooter />
     </main>
   );

@@ -3,13 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
+import { QuoteForm } from "@/components/QuoteForm";
+import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
+import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 import { SITE } from "@/lib/site";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 export function ContactFooter({ className }: { className?: string }) {
-  const { playHover, playClick } = useUiSounds();
   const [copied, setCopied] = React.useState(false);
   const resetTimer = React.useRef<number | null>(null);
 
@@ -72,9 +74,10 @@ export function ContactFooter({ className }: { className?: string }) {
               <MonoIcon name="mail" className="size-4" />
               <span>CONTACT</span>
             </div>
-            <h2 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
+            <RevealHeading className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
               High contrast.
-            </h2>
+            </RevealHeading>
+            <AvailabilityBadge className="mt-6" />
             <p className="mt-6 max-w-prose text-pretty text-sm leading-relaxed text-fog/80">
               If the work feels right, we can build something sharp together. No fluff. Fast
               feedback loops. Clean handoff.
@@ -83,16 +86,11 @@ export function ContactFooter({ className }: { className?: string }) {
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onMouseEnter={playHover}
-                onClick={() => {
-                  playClick();
-                  void copyEmail();
-                }}
+                onClick={() => void copyEmail()}
                 className={cn(
                   "group relative inline-flex items-center gap-3 border border-line/18 bg-void/30 px-5 py-3 text-xs tracking-[0.22em] text-ink backdrop-blur-md",
                   "hover:border-line/35",
                 )}
-                aria-label={`Copy email address ${SITE.email}`}
               >
                 <span className="text-fog/70">EMAIL</span>
                 <MonoIcon name="mail" className="size-4" />
@@ -100,21 +98,18 @@ export function ContactFooter({ className }: { className?: string }) {
                 <span className="min-w-14 text-left text-fog/70" aria-live="polite">
                   {copied ? "COPIED" : "COPY"}
                 </span>
-                <span className="pointer-events-none absolute inset-0 opacity-80">
-                  <span className="absolute left-0 top-0 h-3 w-3 border-l border-t border-line/30" />
-                  <span className="absolute right-0 top-0 h-3 w-3 border-r border-t border-line/30" />
-                  <span className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-line/30" />
-                  <span className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-line/30" />
-                </span>
+                <CornerMarks className="opacity-80" />
               </button>
 
-              <div className="text-xs tracking-[0.18em] text-fog/60">
+              <div className="text-xs tracking-[0.18em] text-fog/72">
                 Prefer DM? Use the links.
               </div>
             </div>
           </div>
 
-          <div className="md:col-span-5">
+          <div id="quote" className="scroll-mt-24 space-y-6 md:col-span-5">
+            <QuoteForm />
+
             <div className="border border-line/12 bg-void/25 p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div className="text-xs tracking-[0.22em] text-fog/70">LINKS</div>
@@ -123,21 +118,17 @@ export function ContactFooter({ className }: { className?: string }) {
               <div className="mt-6 space-y-3">
                 <Link
                   href={SITE.socials.discord}
-                  onMouseEnter={playHover}
-                  onClick={playClick}
                   className="group flex items-center justify-between border border-line/12 bg-void/35 px-4 py-3 text-xs tracking-[0.22em] text-fog/80 hover:border-line/25 hover:text-ink"
                 >
                   <span>DISCORD</span>
-                  <span className="text-fog/50 transition-colors group-hover:text-fog/70">↗</span>
+                  <span className="text-fog/72 transition-colors group-hover:text-fog/70">↗</span>
                 </Link>
                 <Link
                   href={SITE.socials.x}
-                  onMouseEnter={playHover}
-                  onClick={playClick}
                   className="group flex items-center justify-between border border-line/12 bg-void/35 px-4 py-3 text-xs tracking-[0.22em] text-fog/80 hover:border-line/25 hover:text-ink"
                 >
                   <span>X</span>
-                  <span className="text-fog/50 transition-colors group-hover:text-fog/70">↗</span>
+                  <span className="text-fog/72 transition-colors group-hover:text-fog/70">↗</span>
                 </Link>
               </div>
 

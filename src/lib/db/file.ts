@@ -1,27 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { createMutex } from "./mutex";
 import { DEFAULT_DB, type Db } from "./types";
 
 const DB_PATH = path.join(process.cwd(), "data", "db.json");
 const DB_DIR = path.dirname(DB_PATH);
 
-let chain: Promise<void> = Promise.resolve();
-
-async function runExclusive<T>(fn: () => Promise<T>): Promise<T> {
-  const prev = chain;
-  let release!: () => void;
-  chain = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-
-  await prev;
-  try {
-    return await fn();
-  } finally {
-    release();
-  }
-}
+const runExclusive = createMutex();
 
 async function writeAtomic(targetPath: string, contents: string): Promise<void> {
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
@@ -61,14 +47,28 @@ export async function ensureDbFile(): Promise<void> {
   }
 }
 
+/** Reads the file and throws if it is unreadable or corrupt, so a write never overwrites it. */
+async function readDbStrict(): Promise<Db> {
+  await ensureDbFile();
+  try {
+    const db = JSON.parse(await fs.readFile(DB_PATH, "utf8")) as Db;
+    // Files written before quotes existed have no such list.
+    db.quotes ??= [];
+    return db;
+  } catch (err) {
+    // Still missing after ensureDbFile means a read-only disk: start from an empty database.
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return structuredClone(DEFAULT_DB);
+    throw err;
+  }
+}
+
+/** Public reads degrade to an empty database instead of failing the page. */
 export async function readDb(): Promise<Db> {
   try {
-    await ensureDbFile();
-    const raw = await fs.readFile(DB_PATH, "utf8");
-    return JSON.parse(raw) as Db;
+    return await readDbStrict();
   } catch (err) {
     console.error("Database read failed, falling back to default:", err);
-    return DEFAULT_DB;
+    return structuredClone(DEFAULT_DB);
   }
 }
 
@@ -76,23 +76,18 @@ export async function writeDb(
   mutate: (db: Db) => void | Db | Promise<void | Db>,
 ): Promise<Db> {
   return runExclusive(async () => {
+    const db = await readDbStrict();
+    const maybeNext = await mutate(db);
+    const next = (maybeNext ?? db) as Db;
+
     try {
       await fs.mkdir(DB_DIR, { recursive: true });
-      const db = await readDb();
-      const maybeNext = await mutate(db);
-      const next = (maybeNext ?? db) as Db;
       await writeAtomic(DB_PATH, JSON.stringify(next, null, 2));
-      return next;
     } catch (err) {
+      // Read-only deployments (no Firestore, no writable disk) still answer this request.
       console.error("Database write failed:", err);
-      // In a read-only environment, we still return the mutated object so the 
-      // current request feels successful, even if it won't persist.
-      const db = await readDb();
-      const maybeNext = await mutate(db);
-      return (maybeNext ?? db) as Db;
     }
+
+    return next;
   });
 }
-
-
-

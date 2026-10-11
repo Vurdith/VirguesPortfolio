@@ -4,9 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 
+import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
+import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 const STRIPE_URL = "https://buy.stripe.com/6oUaEZ9geg0p0Qm3X7aMU00";
 const PAYPAL_EMAIL = "reeceleneveu@gmail.com";
@@ -25,9 +26,9 @@ const PAYMENT_METHODS = [
   },
   {
     title: "PayPal",
-    eyebrow: PAYPAL_EMAIL,
+    eyebrow: "Invoice Payment",
     description:
-      "Prefer PayPal? Use this email to send payment once the project scope and quote are confirmed.",
+      "Prefer PayPal? Pay through PayPal once the project scope and quote are confirmed.",
     cta: "Pay with PayPal",
     href: PAYPAL_URL,
   },
@@ -46,8 +47,6 @@ export function PaymentSection({ className }: { className?: string }) {
     offset: ["start end", "end start"],
   });
 
-  const skewX = useTransform(scrollYProgress, [0, 1], [-3, 3]);
-  const skewY = useTransform(scrollYProgress, [0, 1], [-1, 1]);
   const lineScale = useSpring(useTransform(scrollYProgress, [0.18, 0.82], [0, 1]), {
     stiffness: 120,
     damping: 28,
@@ -74,12 +73,7 @@ export function PaymentSection({ className }: { className?: string }) {
               <MonoIcon name="card" className="size-4" />
               <span>PAYMENT</span>
             </div>
-            <motion.h2
-              style={{ skewX, skewY }}
-              className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl"
-            >
-              Checkout.
-            </motion.h2>
+            <RevealHeading className="mt-3 origin-left font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">Checkout.</RevealHeading>
           </div>
           <p className="max-w-xl text-pretty text-sm leading-relaxed text-fog/80 md:col-span-7 md:justify-self-end">
             Payment happens after the scope is agreed, so the checkout screen stays simple:
@@ -95,8 +89,8 @@ export function PaymentSection({ className }: { className?: string }) {
           </div>
 
           <div className="perf-card relative overflow-hidden border border-line/12 bg-void/30 p-5 backdrop-blur-sm">
-            <CornerLines />
-            <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] text-fog/60">
+            <CornerMarks size={4} className="opacity-70" />
+            <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] text-fog/72">
               <MonoIcon name="process" className="size-4" />
               <span>FLOW</span>
             </div>
@@ -113,7 +107,7 @@ export function PaymentSection({ className }: { className?: string }) {
                     <div className="text-xs tracking-[0.18em] text-ink/82">
                       {item.label.toUpperCase()}
                     </div>
-                    <p className="mt-2 text-xs leading-relaxed text-fog/62">{item.detail}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-fog/72">{item.detail}</p>
                   </div>
                 </div>
               ))}
@@ -126,11 +120,9 @@ export function PaymentSection({ className }: { className?: string }) {
 }
 
 function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number] }) {
-  const { playHover, playClick } = useUiSounds();
-
   return (
     <article className="perf-card group relative min-h-[320px] overflow-hidden border border-line/12 bg-void/35 p-6 backdrop-blur-sm transition-colors duration-300 hover:border-line/30">
-      <CornerLines />
+      <CornerMarks size={4} className="opacity-70" />
       <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
         <div className="absolute inset-x-0 top-0 h-px bg-line/35" />
         <div className="absolute -right-20 -top-20 size-56 rounded-full border border-line/10" />
@@ -139,7 +131,7 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
       <div className="relative flex h-full flex-col">
         <div className="flex items-start justify-between gap-5">
           <div>
-            <p className="text-[10px] tracking-[0.28em] text-fog/60">{method.eyebrow}</p>
+            <p className="text-[10px] tracking-[0.28em] text-fog/72">{method.eyebrow}</p>
             <h3 className="mt-4 font-serif text-3xl leading-none tracking-[-0.05em]">
               {method.title}
             </h3>
@@ -156,15 +148,13 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
             href={method.href}
             target="_blank"
             rel="noopener noreferrer"
-            onMouseEnter={playHover}
-            onClick={playClick}
             className="group/button relative inline-flex w-full items-center justify-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink hover:border-line/35"
             aria-label={method.cta}
           >
             <span>{method.cta.toUpperCase()}</span>
             <span className="h-px w-10 bg-line/20 transition-all duration-300 group-hover/button:w-14 group-hover/button:bg-line/40" />
             <span className="text-fog/70">↗</span>
-            <CornerLines />
+            <CornerMarks size={4} className="opacity-70" />
           </Link>
         </div>
       </div>
@@ -172,13 +162,3 @@ function PaymentMethodCard({ method }: { method: (typeof PAYMENT_METHODS)[number
   );
 }
 
-function CornerLines() {
-  return (
-    <span className="pointer-events-none absolute inset-0 opacity-70">
-      <span className="absolute left-0 top-0 h-4 w-4 border-l border-t border-line/30" />
-      <span className="absolute right-0 top-0 h-4 w-4 border-r border-t border-line/30" />
-      <span className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-line/30" />
-      <span className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-line/30" />
-    </span>
-  );
-}

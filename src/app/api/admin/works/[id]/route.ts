@@ -1,32 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb, writeDb } from "@/lib/db";
+import { MISSING_MEDIA_MESSAGE, WorkPatchSchema } from "@/lib/validation/work";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const MediaSchema = z.object({
-  kind: z.enum(["image", "video"]),
-  srcType: z.enum(["upload", "url"]),
-  src: z.string().trim().max(2048),
-  poster: z.string().trim().optional(),
-});
-
-const WorkPatchSchema = z.object({
-  title: z.string().trim().min(1).max(80).optional(),
-  slug: z
-    .string()
-    .trim()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug.")
-    .optional(),
-  year: z.number().int().min(1970).max(2100).optional(),
-  tags: z.array(z.string().trim().min(1).max(24)).max(12).optional(),
-  summary: z.string().trim().max(420).optional(),
-  published: z.boolean().optional(),
-  media: MediaSchema.optional(),
-});
 
 export async function GET(
   req: NextRequest,
@@ -60,30 +39,38 @@ export async function PATCH(
   const patch = parsed.data;
   const now = new Date().toISOString();
 
-  const db = await readDb();
-  const current = db.works.find((w) => w.id === id);
-  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Validated against the stored work inside the write, so concurrent edits cannot slip past.
+  const result: { outcome: "ok" | "missing" | "slug_taken" | "no_media" } = { outcome: "ok" };
+  await writeDb((db) => {
+    const index = db.works.findIndex((w) => w.id === id);
+    if (index === -1) {
+      result.outcome = "missing";
+      return;
+    }
 
-  const candidate = {
-    ...current,
-    ...patch,
-    media: patch.media ?? current.media,
-  };
-  if (candidate.published && !candidate.media.src.trim()) {
-    return NextResponse.json({ error: "Published works must have media." }, { status: 400 });
-  }
+    const candidate = { ...db.works[index], ...patch, updatedAt: now };
+    if (candidate.published && !candidate.media.src.trim()) {
+      result.outcome = "no_media";
+      return;
+    }
+    if (patch.slug && db.works.some((w) => w.slug === patch.slug && w.id !== id)) {
+      result.outcome = "slug_taken";
+      return;
+    }
 
-  if (patch.slug && db.works.some((w) => w.slug === patch.slug && w.id !== id)) {
-    return NextResponse.json({ error: "Slug already exists." }, { status: 409 });
-  }
-
-  await writeDb((next) => {
-    const idx = next.works.findIndex((w) => w.id === id);
-    if (idx === -1) return;
-    next.works[idx] = { ...next.works[idx], ...patch, updatedAt: now };
+    db.works[index] = candidate;
   });
 
-  return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+  switch (result.outcome) {
+    case "missing":
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    case "no_media":
+      return NextResponse.json({ error: MISSING_MEDIA_MESSAGE }, { status: 400 });
+    case "slug_taken":
+      return NextResponse.json({ error: "Slug already exists." }, { status: 409 });
+    default:
+      return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+  }
 }
 
 export async function DELETE(

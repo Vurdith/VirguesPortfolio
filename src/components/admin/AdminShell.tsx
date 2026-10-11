@@ -5,16 +5,15 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/cn";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 const NAV = [
   { label: "DASHBOARD", href: "/admin" },
   { label: "WORKS", href: "/admin/works" },
+  { label: "QUOTES", href: "/admin/quotes" },
   { label: "REVIEWS", href: "/admin/reviews" },
 ] as const;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { playHover, playClick } = useUiSounds();
   const pathname = usePathname();
 
   return (
@@ -49,8 +48,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   key={item.href}
                   label={item.label}
-                  onClick={playClick}
-                  onHover={playHover}
                 />
               ))}
             </nav>
@@ -62,7 +59,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="relative z-10">{children}</main>
+      <main id="main" tabIndex={-1} className="relative z-10 outline-none">
+        {children}
+      </main>
     </div>
   );
 }
@@ -71,20 +70,14 @@ function AdminNavLink({
   active,
   href,
   label,
-  onClick,
-  onHover,
 }: {
   active?: boolean;
   href: string;
   label: string;
-  onClick: () => void;
-  onHover: () => void;
 }) {
   return (
     <Link
       href={href}
-      onMouseEnter={onHover}
-      onClick={onClick}
       className={cn(
         "relative inline-flex h-9 min-w-24 items-center justify-center border border-line/12 bg-void/35 px-4 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-px hover:border-line/30 hover:bg-void/55 hover:text-ink",
         active && "border-line/30 bg-white/[0.035] text-ink"

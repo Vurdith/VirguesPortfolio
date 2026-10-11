@@ -3,16 +3,15 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import type { Rating, Review, ReviewStatus } from "@/types/portfolio";
+import type { Review, ReviewStatus } from "@/types/portfolio";
+import { Stars } from "@/components/Stars";
 import { cn } from "@/lib/cn";
-import { useUiSounds } from "@/hooks/useUiSounds";
 
 type BusyAction = "approve" | "reject" | "delete";
 type RowBusy = { id: string; action: BusyAction } | null;
 
 export function ReviewsModerationTable({ initialReviews }: { initialReviews: Review[] }) {
   const router = useRouter();
-  const { playHover, playClick } = useUiSounds();
 
   const [reviews, setReviews] = React.useState<Review[]>(initialReviews);
   const [busy, setBusy] = React.useState<RowBusy>(null);
@@ -99,7 +98,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
               </div>
 
               <div className="md:col-span-2">
-                <Stars rating={r.rating} />
+                <Stars rating={r.rating} glyph="★" />
               </div>
 
               <div className="md:col-span-2">
@@ -110,30 +109,18 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
                 <ActionButton
                   label="APPROVE"
                   disabled={busy?.id === r.id || r.status === "approved"}
-                  onHover={playHover}
-                  onClick={() => {
-                    playClick();
-                    void patch(r.id, "approved", "approve");
-                  }}
+                  onClick={() => void patch(r.id, "approved", "approve")}
                 />
                 <ActionButton
                   label="REJECT"
                   disabled={busy?.id === r.id || r.status === "rejected"}
-                  onHover={playHover}
-                  onClick={() => {
-                    playClick();
-                    void patch(r.id, "rejected", "reject");
-                  }}
+                  onClick={() => void patch(r.id, "rejected", "reject")}
                 />
                 <ActionButton
                   label="DEL"
                   disabled={busy?.id === r.id}
-                  onHover={playHover}
                   danger
-                  onClick={() => {
-                    playClick();
-                    void del(r.id);
-                  }}
+                  onClick={() => void del(r.id)}
                 />
               </div>
             </div>
@@ -158,40 +145,22 @@ function StatusBadge({ status }: { status: ReviewStatus }) {
   );
 }
 
-function Stars({ rating }: { rating: Rating }) {
-  return (
-    <div className="flex items-center gap-1" aria-label={`${rating} out of 5 stars`}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span
-          key={i}
-          aria-hidden="true"
-          className={cn("text-xs", i < rating ? "text-ink/90" : "text-fog/35")}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function ActionButton({
   label,
   disabled,
   danger,
-  onHover,
   onClick,
 }: {
   label: string;
   disabled?: boolean;
   danger?: boolean;
-  onHover: () => void;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
-      onMouseEnter={onHover}
       onClick={onClick}
       className={cn(
         "inline-flex h-9 min-w-12 items-center justify-center border border-line/12 bg-void/35 px-3 text-[10px] tracking-[0.22em] text-fog/70 transition-[border-color,color,transform,opacity] duration-300",

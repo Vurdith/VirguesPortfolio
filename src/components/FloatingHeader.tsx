@@ -27,7 +27,7 @@ const LEFT_NAV: readonly NavItemData[] = [
 ];
 const RIGHT_NAV: readonly NavItemData[] = [
   { label: "REVIEWS", short: "REVIEWS", href: "/#reviews", sections: ["reviews"] },
-  { label: "REQUEST A QUOTE", short: "QUOTE", href: "/#contact", sections: ["contact"], cta: true },
+  { label: "GET A QUOTE", short: "QUOTE", href: "/#contact", sections: ["contact"], cta: true },
 ];
 const TRACKED_SECTIONS = [...LEFT_NAV, ...RIGHT_NAV].flatMap((item) => item.sections);
 
@@ -99,7 +99,7 @@ export function FloatingHeader({ className }: { className?: string }) {
         <span aria-hidden="true" className="absolute left-0 top-1/2 h-px w-3 bg-line/10" />
         <span aria-hidden="true" className="absolute right-0 top-1/2 h-px w-3 bg-line/10" />
 
-        <div className="nav-group relative z-10 flex justify-end gap-3">
+        <div className="nav-group relative z-10 grid grid-cols-2 gap-3">
           {LEFT_NAV.map((item) => (
             <NavItem item={item} key={item.href} active={current !== null && item.sections.includes(current)} />
           ))}
@@ -108,7 +108,7 @@ export function FloatingHeader({ className }: { className?: string }) {
         <div aria-hidden="true" className="relative z-0 h-9 w-full" />
         <ProfileHome />
 
-        <div className="nav-group relative z-10 flex justify-start gap-3">
+        <div className="nav-group relative z-10 grid grid-cols-2 gap-3">
           {RIGHT_NAV.map((item) => (
             <NavItem item={item} key={item.href} active={current !== null && item.sections.includes(current)} />
           ))}
@@ -130,39 +130,33 @@ const NavItem = React.memo(function NavItem({ item, active }: { item: NavItemDat
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
       className={cn(
-        "relative z-10 inline-flex h-11 min-w-0 items-center justify-center overflow-hidden border px-2 text-[10px] tracking-[0.1em] transition-colors duration-300 flex-auto md:h-10 md:px-3 md:text-[11px] md:tracking-[0.18em]",
-        item.cta
-          ? "border-ink bg-ink font-medium text-void hover:bg-white"
-          : cn(
-              "border-line/15 bg-void/70",
-              active ? "border-line/45 text-ink" : "text-fog/90",
-              hovered ? "border-line/35 text-ink" : "hover:border-line/30",
-            ),
+        "relative z-10 inline-flex h-11 min-w-0 items-center justify-center overflow-hidden border px-1 text-[9px] tracking-[0.06em] transition-colors duration-300 md:h-10 md:px-3 md:text-[11px] md:tracking-[0.18em]",
+        "border-line/15 bg-void/70",
+        item.cta ? "border-line/40 bg-white/[0.07] text-ink" : active ? "border-line/45 text-ink" : "text-fog/90",
+        hovered ? "border-line/35 text-ink" : "hover:border-line/30",
       )}
     >
       <span className="relative z-10 hidden whitespace-nowrap md:inline">
         <ScrambleText active={hovered} text={item.label} />
       </span>
       <span className="relative z-10 md:hidden">{item.short}</span>
-      {item.cta ? null : (
-        <>
-          <span
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-0 border border-line/20 bg-white/[0.035] transition-opacity duration-300",
-              hovered ? "opacity-100" : "opacity-0",
-            )}
-          />
-          <span
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-x-2 bottom-0 h-px origin-left bg-ink transition-transform duration-300",
-              active ? "scale-x-100" : "scale-x-0",
-            )}
-          />
-          <CornerMarks size={2} tone="border-line/35" className="opacity-75" />
-        </>
-      )}
+      <>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-0 border border-line/20 bg-white/[0.035] transition-opacity duration-300",
+            hovered ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <span
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-x-2 bottom-0 h-px origin-left bg-ink transition-transform duration-300",
+            active ? "scale-x-100" : "scale-x-0",
+          )}
+        />
+        <CornerMarks size={2} tone="border-line/35" className="opacity-75" />
+      </>
     </Link>
   );
 });

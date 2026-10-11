@@ -43,7 +43,19 @@ async function createWork(slug: string, body: Record<string, unknown>) {
   createdIds.push(((await res.json()) as { id: string }).id);
 }
 
-async function enterSite() {
+/**
+ * Opens the home page. It is cached (revalidate = 60) and a render that was already in flight can
+ * miss a just-created work, so wait until the server's copy lists it; the timed refresh fixes it.
+ */
+async function enterSite(expectText?: string) {
+  if (expectText) {
+    await expect
+      .poll(async () => (await (await page.request.get("/")).text()).includes(expectText), {
+        timeout: 100_000,
+        intervals: [1000],
+      })
+      .toBe(true);
+  }
   await page.route("**/intro-loader-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
@@ -172,10 +184,11 @@ test("a duplicate slug is reported on the slug field", async () => {
 });
 
 test("gallery marks collection cards and the viewer steps through the pieces", async () => {
+  test.setTimeout(150_000);
   await createWork("deck-e2e", { title: "Deck E2E", media: PIECES[0], items: PIECES });
   await createWork("solo-e2e", { title: "Solo E2E", media: PIECES[1] });
 
-  await enterSite();
+  await enterSite("Deck E2E");
   const deck = page.locator('a[data-pieces="3"]', { hasText: "Deck E2E" });
   await deck.scrollIntoViewIfNeeded();
   await expect(deck).toContainText("3 PIECES");
@@ -184,7 +197,8 @@ test("gallery marks collection cards and the viewer steps through the pieces", a
   await expect(solo).toHaveCount(1);
   await expect(solo).not.toHaveAttribute("data-pieces", /.*/);
 
-  await deck.click();
+  // The deck floats continuously, so Playwright's stability check would never settle.
+  await deck.click({ force: true });
   const dialog = page.getByRole("dialog", { name: "Deck E2E" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("1 / 3")).toBeVisible();
@@ -207,7 +221,8 @@ test("gallery marks collection cards and the viewer steps through the pieces", a
 });
 
 test("single-piece works open without any piece controls", async () => {
-  await enterSite();
+  test.setTimeout(150_000);
+  await enterSite("Solo E2E");
   const solo = page.locator("a", { hasText: "Solo E2E" });
   await solo.scrollIntoViewIfNeeded();
   await solo.click();

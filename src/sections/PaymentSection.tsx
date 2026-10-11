@@ -34,12 +34,6 @@ const PAYMENT_METHODS = [
   },
 ] as const;
 
-const PAYMENT_FLOW = [
-  { label: "Scope agreed", detail: "Quote and deliverables are confirmed first." },
-  { label: "Checkout sent", detail: "Client chooses Stripe or PayPal after the quote is confirmed." },
-  { label: "Work begins", detail: "Payment confirmation keeps the handoff clear." },
-] as const;
-
 export function PaymentSection({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
@@ -81,37 +75,11 @@ export function PaymentSection({ className }: { className?: string }) {
           </p>
         </header>
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="mt-10">
           <div className="grid gap-4 md:grid-cols-2">
             {PAYMENT_METHODS.map((method) => (
               <PaymentMethodCard key={method.title} method={method} />
             ))}
-          </div>
-
-          <div className="perf-card relative overflow-hidden border border-line/12 bg-void/30 p-5">
-            <CornerMarks size={4} className="opacity-70" />
-            <div className="flex items-center gap-3 text-[11px] tracking-[0.28em] text-fog/72">
-              <MonoIcon name="process" className="size-4" />
-              <span>FLOW</span>
-            </div>
-            <h3 className="mt-3 font-serif text-2xl leading-none tracking-[-0.04em]">
-              How it works
-            </h3>
-            <div className="mt-6 grid gap-5">
-              {PAYMENT_FLOW.map((item, index) => (
-                <div key={item.label} className="grid grid-cols-[36px_1fr] gap-4">
-                  <div className="grid size-9 place-items-center border border-line/15 bg-black/35 text-[11px] text-fog/70">
-                    {String(index + 1).padStart(2, "0")}
-                  </div>
-                  <div>
-                    <div className="text-xs tracking-[0.18em] text-ink/82">
-                      {item.label.toUpperCase()}
-                    </div>
-                    <p className="mt-2 text-xs leading-relaxed text-fog/72">{item.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

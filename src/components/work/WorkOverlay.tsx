@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-import type { Work } from "@/types/portfolio";
+import type { Media, Work } from "@/types/portfolio";
 import { CornerMarks } from "@/components/CornerMarks";
 import { WorkInfo, WorkMedia } from "@/components/work/WorkViewer";
 import { cn } from "@/lib/cn";
@@ -16,7 +16,8 @@ export const workLayoutId = (id: string) => `work-media-${id}`;
  */
 export function WorkOverlay({ work, onClose }: { work: Work; onClose: () => void }) {
   const reduceMotion = useReducedMotion();
-  const backdropSrc = work.media.kind === "video" ? work.media.poster : work.media.src;
+  const [piece, setPiece] = React.useState<Media>(work.media);
+  const backdropSrc = piece.kind === "video" ? piece.poster : piece.src;
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const closeRef = React.useRef<HTMLButtonElement>(null);
 
@@ -78,14 +79,22 @@ export function WorkOverlay({ work, onClose }: { work: Work; onClose: () => void
         className="absolute inset-0 bg-void"
         transition={{ duration: reduceMotion ? 0 : 0.65, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div
-          className="absolute inset-0 scale-110 opacity-40 blur-3xl"
-          style={{
-            backgroundImage: backdropSrc ? `url(${backdropSrc})` : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
+        {/* Cross-fades when a collection moves to another piece; the first one just appears. */}
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={backdropSrc ?? ""}
+            className="absolute inset-0 scale-110 blur-3xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.4 }}
+            style={{
+              backgroundImage: backdropSrc ? `url(${backdropSrc})` : undefined,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+        </AnimatePresence>
         <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_30%,transparent_30%,rgb(0_0_0/0.8)_100%)]" />
       </motion.div>
 
@@ -112,7 +121,7 @@ export function WorkOverlay({ work, onClose }: { work: Work; onClose: () => void
 
         <div className="mx-auto flex min-h-dvh max-w-6xl flex-col justify-center px-6 py-16 md:px-10">
           <div className="flex flex-1 items-center justify-center">
-            <WorkMedia work={work} />
+            <WorkMedia work={work} onPieceChange={setPiece} />
           </div>
           <WorkInfo work={work} />
         </div>

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 
-import { readDb, writeDb } from "@/lib/db";
+import { readAuth, writeDb } from "@/lib/db";
 import type { DbSession } from "@/lib/db";
 
 export const ADMIN_COOKIE_NAME = "pt_admin";
@@ -98,13 +98,13 @@ export function sessionCookieOptions() {
 }
 
 export async function isPasswordSet() {
-  const db = await readDb();
-  return Boolean(db.auth.passwordHash);
+  const auth = await readAuth();
+  return Boolean(auth.passwordHash);
 }
 
 export async function setupPassword(password: string) {
-  const db = await readDb();
-  if (db.auth.passwordHash) return { ok: false as const, reason: "already_set" as const };
+  const auth = await readAuth();
+  if (auth.passwordHash) return { ok: false as const, reason: "already_set" as const };
 
   const hash = await bcrypt.hash(password, 12);
   const { session } = newSession();
@@ -121,14 +121,14 @@ export async function setupPassword(password: string) {
 }
 
 export async function login(password: string) {
-  const db = await readDb();
-  if (!db.auth.passwordHash) return { ok: false as const, reason: "not_setup" as const };
+  const auth = await readAuth();
+  if (!auth.passwordHash) return { ok: false as const, reason: "not_setup" as const };
 
-  const valid = await bcrypt.compare(password, db.auth.passwordHash);
+  const valid = await bcrypt.compare(password, auth.passwordHash);
   if (!valid) return { ok: false as const, reason: "invalid" as const };
 
   const { session } = newSession();
-  const token = createSignedToken(session, db.auth.passwordHash);
+  const token = createSignedToken(session, auth.passwordHash);
   if (!token) return { ok: false as const, reason: "signing_failed" as const };
 
   await writeDb((next) => {
@@ -142,8 +142,8 @@ export async function login(password: string) {
 
 export async function logoutByToken(token: string | undefined) {
   if (!token) return;
-  const db = await readDb();
-  const sessionId = readSignedToken(token, db.auth.passwordHash)?.id;
+  const auth = await readAuth();
+  const sessionId = readSignedToken(token, auth.passwordHash)?.id;
   const tokenHash = sha256(token);
 
   await writeDb((next) => {
@@ -156,14 +156,14 @@ export async function logoutByToken(token: string | undefined) {
 export async function getAdminSession(token: string | undefined): Promise<DbSession | null> {
   if (!token) return null;
   const tokenHash = sha256(token);
-  const db = await readDb();
+  const auth = await readAuth();
   // A signed token is only valid while its session is still stored, so logging out revokes it.
-  const signedSession = readSignedToken(token, db.auth.passwordHash);
+  const signedSession = readSignedToken(token, auth.passwordHash);
   if (signedSession) {
-    return db.auth.sessions.some((s) => s.id === signedSession.id) ? signedSession : null;
+    return auth.sessions.some((s) => s.id === signedSession.id) ? signedSession : null;
   }
 
-  const session = db.auth.sessions.find((s) => s.tokenHash === tokenHash) ?? null;
+  const session = auth.sessions.find((s) => s.tokenHash === tokenHash) ?? null;
   if (!session) return null;
 
   // Best-effort touch (don’t block auth on a write).
@@ -179,10 +179,10 @@ export async function getAdminSession(token: string | undefined): Promise<DbSess
 
 
 export async function changePassword(currentPassword: string, newPassword: string) {
-  const db = await readDb();
-  if (!db.auth.passwordHash) return { ok: false as const, reason: "not_setup" as const };
+  const auth = await readAuth();
+  if (!auth.passwordHash) return { ok: false as const, reason: "not_setup" as const };
 
-  const valid = await bcrypt.compare(currentPassword, db.auth.passwordHash);
+  const valid = await bcrypt.compare(currentPassword, auth.passwordHash);
   if (!valid) return { ok: false as const, reason: "invalid" as const };
 
   const hash = await bcrypt.hash(newPassword, 12);

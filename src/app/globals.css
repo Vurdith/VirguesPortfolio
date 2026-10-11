@@ -481,3 +481,29 @@ html[data-motion="reduced"] .hero-fade {
 .group:focus-within .animate-ring {
   animation-play-state: running;
 }
+
+/* Collection cards: the pieces behind the cover float gently, a few pixels apart. */
+.deck-layer {
+  transform-origin: 50% 0;
+  transform: translate3d(0, var(--deck-y), var(--deck-z)) scale(var(--deck-s));
+  animation: deck-float 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes deck-float {
+  from {
+    transform: translate3d(0, var(--deck-y), var(--deck-z)) scale(var(--deck-s));
+  }
+  to {
+    transform: translate3d(0, calc(var(--deck-y) - 3px), var(--deck-z)) scale(var(--deck-s));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-layer {
+    animation: none;
+  }
+}
+
+html[data-motion="reduced"] .deck-layer {
+  animation: none;
+}

@@ -14,9 +14,7 @@ export default async function AdminWorksPage() {
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
         <div>
           <p className="text-xs tracking-[0.22em] text-fog/70">WORKS</p>
-          <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
-            Catalog.
-          </h1>
+          <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">Catalog.</h1>
         </div>
 
         <Link
@@ -30,18 +28,8 @@ export default async function AdminWorksPage() {
       </div>
 
       <div className="mt-10 overflow-hidden border border-line/12 bg-void/25">
-        <div className="hidden grid-cols-12 gap-3 border-b border-line/10 px-5 py-3 text-[11px] tracking-[0.22em] text-fog/70 md:grid">
-          <div className="col-span-2">ORDER / PREVIEW</div>
-          <div className="col-span-3">TITLE</div>
-          <div className="col-span-3">SLUG</div>
-          <div className="col-span-2">STATE</div>
-          <div className="col-span-2 text-right">ACTIONS</div>
-        </div>
-
         <WorksList initialWorks={works} />
       </div>
     </div>
   );
 }
-
-

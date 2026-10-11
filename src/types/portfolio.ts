@@ -25,7 +25,10 @@ export type Work = {
   link?: string;
   /** Manual position in the gallery (lower first). Works without one follow, newest first. */
   order?: number;
+  /** Cover piece. When `items` is set, this mirrors `items[0]`. */
   media: Media;
+  /** Every piece of a collection, in order (cover first). Absent for single-piece works. */
+  items?: Media[];
   published: boolean;
   createdAt: string;
   updatedAt: string;
@@ -35,6 +38,24 @@ export type ReviewStatus = "pending" | "approved" | "rejected";
 
 export type Rating = 1 | 2 | 3 | 4 | 5;
 
+/** An image a visitor attached to a review or reply. Public only once its parent item is approved. */
+export type ReviewAttachment = {
+  /** Storage file name, e.g. "<uuid>.webp". Random and server-generated. */
+  id: string;
+  url: string;
+};
+
+export type ReviewReply = {
+  id: string;
+  /** "owner" replies are written by the site owner from the admin. */
+  author: "client" | "owner";
+  text: string;
+  attachments?: ReviewAttachment[];
+  /** Client replies start as pending; owner replies are approved when posted. */
+  status: ReviewStatus;
+  createdAt: string;
+};
+
 export type Review = {
   id: string;
   name: string;
@@ -42,6 +63,17 @@ export type Review = {
   text: string;
   status: ReviewStatus;
   createdAt: string;
+  attachments?: ReviewAttachment[];
+  replies?: ReviewReply[];
+  /** SHA-256 of the thread token handed to the reviewer once, so only they can reply. Never sent out. */
+  tokenHash?: string;
+  /** Salted hash of the sender's IP, kept briefly for rate limiting and then dropped. Never sent out. */
+  ipHash?: string;
+};
+
+/** A review as the browser sees it: no hashes, replies and attachments already filtered. */
+export type PublicReview = Omit<Review, "tokenHash" | "ipHash" | "replies"> & {
+  replies: (ReviewReply & { pending?: boolean })[];
 };
 
 export type QuoteStatus = "new" | "replied" | "closed";

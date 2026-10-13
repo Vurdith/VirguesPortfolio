@@ -5,9 +5,9 @@ export const CHAT_LIMITS = {
   /** Customer messages per conversation. Reaching it ends the conversation and sends what exists. */
   userMessages: 40,
   /** Reference images per conversation. */
-  images: 6,
+  images: 20,
   /** Images that can ride on one message. */
-  imagesPerMessage: 3,
+  imagesPerMessage: 6,
   /** An open conversation with no activity for this long is treated as abandoned. */
   idleMs: 3 * 60 * 60 * 1000,
   /** An open conversation silent for this long counts as gone quiet, and the owner is told once. */

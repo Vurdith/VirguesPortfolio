@@ -25,7 +25,7 @@ const fail = (error: string, status: number, headers: Record<string, string> = {
 export async function POST(req: Request) {
   if (!chatEnabled()) return fail("Uploads are unavailable right now.", 503);
 
-  const limited = rateLimit("chat-upload", clientKey(req), 20, 60 * 60 * 1000);
+  const limited = rateLimit("chat-upload", clientKey(req), 40, 60 * 60 * 1000);
   if (!limited.ok) return fail("Too many uploads. Try again later.", 429, { "retry-after": String(limited.retryAfterSeconds) });
 
   const length = Number(req.headers.get("content-length"));

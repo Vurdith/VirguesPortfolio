@@ -221,8 +221,8 @@ test("reference images need a conversation, are limited, and reach the model", a
   const fake = await a.upload("x.png", Buffer.from("not an image at all"));
   expect(fake.status()).toBe(415);
 
-  // Six per conversation.
-  for (let i = 0; i < 5; i++) expect((await upload()).status()).toBe(201);
+  // Twenty per conversation.
+  for (let i = 0; i < 19; i++) expect((await upload()).status()).toBe(201);
   expect((await upload()).status()).toBe(409);
   await a.context.close();
 });

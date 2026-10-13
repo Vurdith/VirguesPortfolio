@@ -9,7 +9,7 @@ export default async function AdminQuotesPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-      <PageHeader eyebrow="QUOTES" title="Requests." />
+      <PageHeader title="Quotes" />
       <div className="mt-10">
         <QuotesTable initialQuotes={db.quotes.map(publicQuote)} />
       </div>

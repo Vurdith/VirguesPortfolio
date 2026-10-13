@@ -19,11 +19,11 @@ import {
 } from "./pieces";
 
 const INPUT =
-  "w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40 transition-colors duration-200 hover:border-line/25 focus:border-line/40";
+  "w-full rounded-xl border border-line/10 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40 transition-colors duration-200 hover:border-line/25 focus:border-line/40";
 const BUTTON =
-  "inline-flex items-center justify-center gap-2 border border-line/18 bg-void/40 px-4 py-2 text-[11px] tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-200 hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0";
+  "inline-flex items-center justify-center gap-2 rounded-full border border-line/20 bg-void/40 px-4 py-2 text-[11px] tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-200 hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0";
 const ICON_BUTTON =
-  "inline-flex size-7 items-center justify-center border border-line/12 bg-void/40 text-[11px] leading-none text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line/12 disabled:hover:text-fog/70";
+  "inline-flex size-7 items-center justify-center rounded-full border border-line/10 bg-void/40 text-[11px] leading-none text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line/10 disabled:hover:text-fog/70";
 
 type SetPieces = React.Dispatch<React.SetStateAction<PieceDraft[]>>;
 
@@ -433,7 +433,7 @@ function Tile({
         "group relative block aspect-[4/5] w-full cursor-grab overflow-hidden border bg-void/40 transition-[border-color,box-shadow] duration-200 active:cursor-grabbing",
         selected
           ? "border-line/60 shadow-[0_0_0_1px_rgb(255_255_255/0.25)]"
-          : "border-line/12 hover:border-line/30",
+          : "border-line/10 hover:border-line/30",
         (failed || error) && !selected && "border-red-300/50",
       )}
     >
@@ -444,11 +444,11 @@ function Tile({
       />
       <span className="absolute left-2 top-1.5 text-[11px] tracking-[0.22em] text-ink">{pad(index + 1)}</span>
       {index === 0 ? (
-        <span className="absolute right-1.5 top-1.5 border border-line/30 bg-void/80 px-1.5 py-0.5 text-[10px] tracking-[0.2em] text-ink">
+        <span className="absolute right-1.5 top-1.5 rounded-md border border-line/30 bg-void/80 px-1.5 py-0.5 text-[10px] tracking-[0.2em] text-ink">
           COVER
         </span>
       ) : null}
-      <span className="absolute bottom-1.5 left-1.5 border border-line/20 bg-void/80 px-1.5 py-0.5 text-[10px] tracking-[0.2em] text-fog/80">
+      <span className="absolute bottom-1.5 left-1.5 rounded-md border border-line/20 bg-void/80 px-1.5 py-0.5 text-[10px] tracking-[0.2em] text-fog/80">
         {kindLabel(piece)}
       </span>
 
@@ -549,7 +549,7 @@ function PieceEditor({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="mt-6 border border-line/12 bg-void/30 p-4 md:p-5"
+      className="mt-6 rounded-2xl border border-line/10 bg-void/30 p-4 md:p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[11px] tracking-[0.22em] text-fog/70">
@@ -581,10 +581,10 @@ function PieceEditor({
               muted
               playsInline
               preload="metadata"
-              className="max-h-56 max-w-full border border-line/12 bg-black"
+              className="max-h-56 max-w-full rounded-xl border border-line/10 bg-black"
             />
           ) : (
-            <div className="flex h-40 w-full items-center justify-center border border-line/12 bg-void/25 text-[11px] tracking-[0.22em] text-fog/50">
+            <div className="flex h-40 w-full items-center justify-center rounded-xl border border-line/10 bg-void/25 text-[11px] tracking-[0.22em] text-fog/50">
               NO PREVIEW
             </div>
           )}
@@ -658,7 +658,7 @@ function PieceEditor({
             <select
               value={piece.kind}
               onChange={(event) => onPatch({ kind: event.target.value as PieceDraft["kind"] })}
-              className="mt-2 block w-full border border-line/12 bg-void/35 px-3 py-2.5 text-xs tracking-[0.22em] text-fog/80"
+              className="mt-2 block w-full rounded-xl border border-line/10 bg-void/35 px-3 py-2.5 text-xs tracking-[0.22em] text-fog/80"
             >
               <option value="image">IMAGE / GIF</option>
               <option value="video">VIDEO</option>
@@ -762,7 +762,7 @@ function FocusPicker({
 
   const thumb = (aspect: string, width: string) => (
     <div
-      className={cn("shrink-0 border border-line/12 bg-void/40 bg-cover", aspect, width)}
+      className={cn("shrink-0 rounded-xl border border-line/10 bg-void/40 bg-cover", aspect, width)}
       style={{ backgroundImage: `url(${src})`, backgroundPosition: `${x}% ${y}%` }}
     />
   );
@@ -785,7 +785,7 @@ function FocusPicker({
           if (event.buttons) pick(event);
         }}
         onKeyDown={onKeyDown}
-        className="relative inline-block max-w-full cursor-crosshair touch-none border border-line/12"
+        className="relative inline-block max-w-full cursor-crosshair touch-none rounded-xl border border-line/10"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt="" draggable={false} className="block max-h-56 max-w-full select-none" />

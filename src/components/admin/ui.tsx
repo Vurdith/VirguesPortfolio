@@ -3,7 +3,6 @@
 import * as React from "react";
 import { animate, motion, useInView, useReducedMotion } from "framer-motion";
 
-import { CornerMarks } from "@/components/CornerMarks";
 import { cn } from "@/lib/cn";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -36,12 +35,12 @@ export function Reveal({
 }
 
 export function PageHeader({
-  eyebrow,
   title,
+  description,
   children,
 }: {
-  eyebrow: string;
   title: string;
+  description?: string;
   children?: React.ReactNode;
 }) {
   const reduce = useReducedMotion();
@@ -50,18 +49,18 @@ export function PageHeader({
       initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: EASE }}
-      className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end"
+      className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-end"
     >
-      <div>
-        <p className="text-xs tracking-[0.22em] text-fog/70">{eyebrow}</p>
-        <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">{title}</h1>
+      <div className="min-w-0">
+        <h1 className="font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">{title}</h1>
+        {description ? <p className="mt-3 max-w-xl text-sm leading-relaxed text-fog/70">{description}</p> : null}
       </div>
       {children}
     </motion.div>
   );
 }
 
-/** A framed panel in the portfolio's corner-bracket style. */
+/** A frosted panel. Interactive ones rise and glow under the pointer. */
 export function AdminCard({
   children,
   className,
@@ -74,13 +73,12 @@ export function AdminCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden border border-line/12 bg-void/40",
+        "relative overflow-hidden rounded-2xl border border-line/10 bg-white/[0.025] backdrop-blur-sm",
         interactive &&
-          "transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-line/30 hover:bg-white/[0.03]",
+          "transition-[border-color,background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-line/25 hover:bg-white/[0.045] hover:shadow-[0_18px_50px_-24px_rgb(255_255_255/0.18)]",
         className,
       )}
     >
-      <CornerMarks size={4} tone="border-line/30" className="opacity-60" />
       {children}
     </div>
   );
@@ -112,7 +110,11 @@ export function CountNumber({ value }: { value: number }) {
 }
 
 export const adminButton =
-  "inline-flex h-9 items-center justify-center gap-2 border border-line/15 bg-void/40 px-4 text-[11px] tracking-[0.22em] text-fog/80 transition-[border-color,color,background-color,transform] duration-200 hover:border-line/35 hover:text-ink active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-full border border-line/15 bg-white/[0.03] px-5 text-[11px] tracking-[0.2em] text-fog/85 transition-[border-color,color,background-color,transform] duration-200 hover:border-line/35 hover:bg-white/[0.07] hover:text-ink active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50";
+
+/** The main action on a page: a solid light pill. */
+export const adminButtonSolid =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-5 text-[11px] tracking-[0.2em] text-void transition-[opacity,transform] duration-200 hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40";
 
 export const adminInput =
-  "w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-fog/40 focus:border-line/40";
+  "w-full rounded-xl border border-line/10 bg-white/[0.03] px-3.5 py-3 text-sm text-ink outline-none transition-[border-color,box-shadow] placeholder:text-fog/40 focus:border-line/40 focus:shadow-[0_0_0_4px_rgb(255_255_255/0.05)]";

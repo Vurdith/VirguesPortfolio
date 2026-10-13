@@ -54,7 +54,7 @@ export function ReviewCard({
       aria-label={`Review by ${review.name}`}
       className={cn(
         "border bg-void/25 transition-colors duration-200 hover:border-line/25",
-        review.status === "pending" ? "border-ink/30" : "border-line/12",
+        review.status === "pending" ? "border-ink/30" : "border-line/10",
       )}
     >
       <div className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:gap-8">
@@ -122,7 +122,7 @@ export function ReviewCard({
         {open ? (
           <div id={`thread-${review.id}`} className="space-y-5 border-t border-line/10 px-5 py-5">
             {replies.length ? (
-              <ol className="space-y-5 border-l border-line/12 pl-5">
+              <ol className="space-y-5 border-l border-line/10 pl-5">
                 {replies.map((reply) => (
                   <ReplyRow
                     key={reply.id}
@@ -244,7 +244,7 @@ function OwnerComposer({
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void submit();
         }}
         placeholder="Write back to this reviewer"
-        className="mt-2 h-20 w-full resize-none border border-line/14 bg-void/35 px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-fog/50 focus:border-ink/60"
+        className="mt-2 h-20 w-full resize-none rounded-xl border border-line/15 bg-void/35 px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-fog/50 focus:border-ink/60"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-fog/70">
@@ -276,7 +276,7 @@ function AdminImages({
   return (
     <ul className={cn("flex flex-wrap gap-2", className)}>
       {images.map((image, index) => (
-        <li key={image.id} className="group relative size-24 border border-line/14 bg-void/50">
+        <li key={image.id} className="group relative size-24 rounded-xl border border-line/15 bg-void/50">
           <button
             type="button"
             onClick={() => onOpen(index)}
@@ -291,7 +291,7 @@ function AdminImages({
             disabled={disabled}
             onClick={() => onRemove(image)}
             aria-label={`Remove image ${index + 1}`}
-            className="absolute right-1 top-1 grid size-6 place-items-center border border-line/25 bg-black/75 text-sm leading-none text-ink opacity-70 transition-opacity hover:border-ink/70 hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-30"
+            className="absolute right-1 top-1 grid size-6 place-items-center rounded-full border border-line/25 bg-black/75 text-sm leading-none text-ink opacity-70 transition-opacity hover:border-ink/70 hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-30"
           >
             ×
           </button>
@@ -305,10 +305,10 @@ function Badge({ children, tone }: { children: React.ReactNode; tone?: "alert" |
   return (
     <span
       className={cn(
-        "inline-flex items-center border px-2 py-1 text-[11px] tracking-[0.22em]",
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] tracking-[0.1em]",
         tone === "alert" && "border-ink/60 bg-white/[0.08] text-ink",
         tone === "owner" && "border-ink/70 text-ink",
-        !tone && "border-line/12 bg-void/35 text-fog/70",
+        !tone && "border-line/10 bg-void/35 text-fog/70",
       )}
     >
       {children}
@@ -346,7 +346,7 @@ function ActionButton({
         "inline-flex items-center justify-center border text-[11px] tracking-[0.22em] transition-[border-color,color,background-color,transform,opacity] duration-200",
         "hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40",
         small ? "h-8 px-3" : "h-10 px-4",
-        primary ? "border-ink bg-ink font-medium text-void hover:bg-white" : "border-line/14 bg-void/35 text-fog/72 hover:border-line/35 hover:text-ink",
+        primary ? "border-ink bg-ink font-medium text-void hover:bg-white" : "border-line/15 bg-void/35 text-fog/72 hover:border-line/35 hover:text-ink",
         danger && !primary && "hover:border-red-300/50 hover:text-red-200",
       )}
     >

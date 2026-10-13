@@ -16,8 +16,8 @@ test("admin routes are protected", async ({ page }) => {
 
 test("first-run setup needs the setup token", async ({ page }) => {
   await page.goto("/admin/login");
-  await page.getByPlaceholder(/Create a strong password/).fill(PASSWORD);
-  await page.getByPlaceholder(/ADMIN_SETUP_TOKEN/).fill("wrong-token");
+  await page.getByPlaceholder("10+ characters").fill(PASSWORD);
+  await page.getByPlaceholder("Required in production").fill("wrong-token");
   await page.getByRole("button", { name: /SET PASSWORD/ }).click();
   await expect(page).toHaveURL(/\/admin\/login/);
   await expect(page.getByText("Invalid setup token.")).toBeVisible();
@@ -25,11 +25,11 @@ test("first-run setup needs the setup token", async ({ page }) => {
 
 test("setup, then the dashboard and quotes list load", async ({ page }) => {
   await page.goto("/admin/login");
-  await page.getByPlaceholder(/Create a strong password/).fill(PASSWORD);
-  await page.getByPlaceholder(/ADMIN_SETUP_TOKEN/).fill("e2e-setup-token");
+  await page.getByPlaceholder("10+ characters").fill(PASSWORD);
+  await page.getByPlaceholder("Required in production").fill("e2e-setup-token");
   await page.getByRole("button", { name: /SET PASSWORD/ }).click();
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: "Control room." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 
   await page.goto("/admin/quotes");
   await expect(page.getByText("E2E Tester").or(page.getByText(/no quote/i)).first()).toBeVisible();
@@ -38,7 +38,7 @@ test("setup, then the dashboard and quotes list load", async ({ page }) => {
 test("password can be changed and the old one stops working", async ({ page, browser }) => {
   await page.goto("/admin/login");
   await page.getByPlaceholder("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "LOGIN" }).click();
+  await page.getByRole("button", { name: "SIGN IN" }).click();
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.getByLabel("CURRENT PASSWORD").fill("not-the-password");
@@ -52,7 +52,7 @@ test("password can be changed and the old one stops working", async ({ page, bro
 
   // Still signed in here, but a fresh browser must use the new password.
   await page.goto("/admin");
-  await expect(page.getByRole("heading", { name: "Control room." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 
   const other = await browser.newContext();
   const otherPage = await other.newPage();

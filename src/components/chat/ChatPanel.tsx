@@ -233,7 +233,7 @@ export function ChatPanel() {
       <Link
         href="/"
         aria-label={`Back to ${SITE.name}`}
-        className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-line/18 bg-void/40 pl-3.5 pr-4 text-[11px] tracking-[0.22em] text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
+        className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-line/20 bg-void/40 pl-3.5 pr-4 text-[11px] tracking-[0.22em] text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
       >
         <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M19 12H5M11 6l-6 6 6 6" />
@@ -391,7 +391,7 @@ export function ChatPanel() {
                     setText(starter);
                     inputRef.current?.focus();
                   }}
-                  className="shrink-0 rounded-full border border-line/18 bg-white/[0.03] px-3.5 py-2 text-xs text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
+                  className="shrink-0 rounded-full border border-line/20 bg-white/[0.03] px-3.5 py-2 text-xs text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
                 >
                   {starter}
                 </button>
@@ -402,7 +402,7 @@ export function ChatPanel() {
           {drafts.length ? (
             <ul className="mb-3 flex flex-wrap gap-2">
               {drafts.map((draft) => (
-                <li key={draft.key} className="relative size-16 overflow-hidden rounded-xl border border-line/18">
+                <li key={draft.key} className="relative size-16 overflow-hidden rounded-xl border border-line/20">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={draft.preview} alt="Attached reference" className={cn("size-full object-cover", draft.status !== "done" && "opacity-50")} />
                   {draft.status === "uploading" ? (
@@ -428,7 +428,7 @@ export function ChatPanel() {
             </ul>
           ) : null}
 
-          <div className="flex items-end gap-1.5 rounded-[26px] border border-line/16 bg-void/50 p-1.5 transition-[border-color,box-shadow] duration-300 focus-within:border-ink/60 focus-within:shadow-[0_0_0_4px_rgb(255_255_255/0.05)]">
+          <div className="flex items-end gap-1.5 rounded-[26px] border border-line/15 bg-void/50 p-1.5 transition-[border-color,box-shadow] duration-300 focus-within:border-ink/60 focus-within:shadow-[0_0_0_4px_rgb(255_255_255/0.05)]">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -511,7 +511,7 @@ export function ChatPanel() {
 const STARTERS = ["A game UI", "A website or landing page", "Replicate a style I like", "I'm not sure yet"];
 
 function Banner({ children }: { children: React.ReactNode }) {
-  return <p className="mx-auto max-w-md rounded-2xl border border-line/12 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-fog/80">{children}</p>;
+  return <p className="mx-auto max-w-md rounded-2xl border border-line/10 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-fog/80">{children}</p>;
 }
 
 function Notice({ title, children }: { title: string; children: React.ReactNode }) {
@@ -556,7 +556,7 @@ function ThinkingBubble({ reading }: { reading: boolean }) {
   return (
     <div className="bubble-in flex items-end gap-2" role="status" aria-live="polite">
       <AgentIcon mode="thinking" size={28} />
-      <div className="inline-flex items-center gap-2.5 rounded-2xl rounded-bl-md border border-line/12 bg-white/[0.03] py-2.5 pl-3 pr-4 text-xs text-fog/80">
+      <div className="inline-flex items-center gap-2.5 rounded-2xl rounded-bl-md border border-line/10 bg-white/[0.03] py-2.5 pl-3 pr-4 text-xs text-fog/80">
         <ThinkingOrb state={current.state} size={20} theme="dark" aria-label={current.label} />
         <AnimatePresence mode="wait" initial={false}>
           <motion.span

@@ -3,10 +3,9 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { cn } from "@/lib/cn";
+import { adminInput } from "@/components/admin/ui";
 
-const FIELD =
-  "mt-2 w-full border border-line/12 bg-void/35 px-3 py-3 text-sm text-ink placeholder:text-fog/40";
+const FIELD = `mt-2 ${adminInput}`;
 
 export function ChangePasswordForm() {
   const router = useRouter();
@@ -42,7 +41,7 @@ export function ChangePasswordForm() {
   return (
     <form onSubmit={(event) => void submit(event)} className="grid gap-4">
       <label className="block">
-        <span className="text-[11px] tracking-[0.22em] text-fog/70">CURRENT PASSWORD</span>
+        <span className="text-xs text-fog/65">Current password</span>
         <input
           type="password"
           autoComplete="current-password"
@@ -52,7 +51,7 @@ export function ChangePasswordForm() {
         />
       </label>
       <label className="block">
-        <span className="text-[11px] tracking-[0.22em] text-fog/70">NEW PASSWORD</span>
+        <span className="text-xs text-fog/65">New password</span>
         <input
           type="password"
           autoComplete="new-password"
@@ -69,13 +68,9 @@ export function ChangePasswordForm() {
         <button
           type="submit"
           disabled={status === "submitting" || !current || next.length < 10}
-          className={cn(
-            "inline-flex items-center gap-3 border border-line/18 bg-void/40 px-5 py-3 text-xs tracking-[0.22em] text-ink transition-[border-color,transform,opacity] duration-300",
-            "hover:-translate-y-px hover:border-line/35 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50",
-          )}
+          className="inline-flex h-10 items-center justify-center rounded-full bg-ink px-6 text-[11px] tracking-[0.2em] text-void transition-[opacity,transform] hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <span>CHANGE PASSWORD</span>
-          <span className="h-px w-10 bg-line/20" />
+          {status === "submitting" ? "SAVING…" : "CHANGE PASSWORD"}
         </button>
       </div>
     </form>

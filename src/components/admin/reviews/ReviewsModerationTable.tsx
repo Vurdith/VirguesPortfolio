@@ -146,7 +146,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
       <div
         role="tablist"
         aria-label="Filter reviews"
-        className="flex flex-wrap gap-2 border-b border-line/10 pb-4"
+        className="flex flex-wrap gap-1.5 pb-4"
       >
         {TABS.map((tab, index) => {
           const active = filter === tab.id;
@@ -165,10 +165,10 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
               onClick={() => setFilter(tab.id)}
               onKeyDown={(event) => onTabKeyDown(event, index)}
               className={cn(
-                "inline-flex items-center gap-3 border px-3.5 py-2.5 text-[11px] tracking-[0.22em] transition-[border-color,color,background-color] duration-200",
+                "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-sm transition-[border-color,color,background-color] duration-200",
                 active
-                  ? "border-ink/70 bg-white/[0.06] text-ink"
-                  : "border-line/12 bg-void/35 text-fog/72 hover:border-line/30 hover:text-ink",
+                  ? "border-line/15 bg-white/[0.08] text-ink"
+                  : "border-transparent text-fog/65 hover:text-ink",
               )}
             >
               <span>{tab.label}</span>
@@ -220,7 +220,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
             </AnimatePresence>
           </ul>
         ) : (
-          <div className="border border-line/12 bg-void/25 px-5 py-10 text-sm text-fog/70">
+          <div className="rounded-2xl border border-line/10 bg-void/25 px-5 py-10 text-sm text-fog/70">
             {filter === "all" ? "No reviews yet." : `Nothing ${filter === "pending" ? "waiting for approval" : filter}.`}
           </div>
         )}

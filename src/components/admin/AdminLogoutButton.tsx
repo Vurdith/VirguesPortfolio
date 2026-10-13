@@ -21,16 +21,14 @@ export function AdminLogoutButton({ className }: { className?: string }) {
       type="button"
       onClick={() => void logout()}
       className={cn(
-        "inline-flex h-9 items-center gap-3 border border-line/18 bg-void/40 px-4 text-xs tracking-[0.22em] text-fog/80 transition-[border-color,color,transform] duration-300",
-        "hover:-translate-y-px hover:border-line/35 hover:text-ink active:translate-y-0 active:scale-[0.985]",
+        "flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm text-fog/65 transition-colors hover:bg-white/[0.04] hover:text-ink",
         className,
       )}
     >
-      <span>LOGOUT</span>
-      <span className="h-px w-8 bg-line/15" />
+      <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M10 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M15 8l4 4-4 4M19 12H9" />
+      </svg>
+      Log out
     </button>
   );
 }
-
-
-

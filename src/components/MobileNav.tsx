@@ -20,7 +20,7 @@ export type MobileNavItem = {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
- * The header on phones: home, the quote button and a menu button. The menu slides in from the
+ * The header on phones: home and a menu button. The menu slides in from the
  * right as a side panel, so the links are full-width rows rather than four cramped boxes.
  */
 export function MobileNav({
@@ -80,12 +80,6 @@ export function MobileNav({
           </span>
         </Link>
         <div className="relative z-10 flex shrink-0 items-center gap-2">
-          <Link
-            href={quoteHref}
-            className="inline-flex h-11 items-center border border-line/40 bg-white/[0.07] px-4 text-[11px] tracking-[0.18em] text-ink"
-          >
-            QUOTE
-          </Link>
           <button
             ref={buttonRef}
             type="button"

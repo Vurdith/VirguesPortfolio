@@ -5,12 +5,10 @@ import { SITE } from "@/lib/site";
 export const OG_SIZE = { width: 1200, height: 630 };
 
 type Card = {
-  /** Short page name shown in the corner, such as "CHAT". */
-  label: string;
   title: string;
   line: string;
-  /** SVG path data on a 24 by 24 grid, drawn as a line icon. */
-  icon: string[];
+  /** SVG path data on a 24 by 24 grid, drawn as a line icon. Left out, that corner stays empty. */
+  icon?: string[];
 };
 
 /** One of the site's faces, cut down to the letters needed. Without it the card falls back to the default face. */
@@ -48,7 +46,7 @@ function Corner({ at }: { at: { top?: number; bottom?: number; left?: number; ri
 }
 
 /** The link-preview image for a page: the site's frame, the page's name, and an icon that tells pages apart. */
-export async function ogCard({ label, title, line, icon }: Card) {
+export async function ogCard({ title, line, icon }: Card) {
   return new ImageResponse(
     (
       <div
@@ -71,25 +69,24 @@ export async function ogCard({ label, title, line, icon }: Card) {
           <Corner at={{ bottom: -1, left: -1 }} />
           <Corner at={{ bottom: -1, right: -1 }} />
 
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22, letterSpacing: 6, color: FOG }}>
-            <span>{SITE.name.toUpperCase()}</span>
-            <span>{label}</span>
-          </div>
+          <div style={{ display: "flex", fontSize: 22, letterSpacing: 6, color: FOG }}>{SITE.name.toUpperCase()}</div>
 
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
             <div style={{ display: "flex", flexDirection: "column", maxWidth: 720 }}>
               <div style={{ fontFamily: "Instrument Serif", fontSize: 112, lineHeight: 0.95, letterSpacing: -4 }}>{title}</div>
               <div style={{ marginTop: 28, fontSize: 28, lineHeight: 1.35, color: FOG }}>{line}</div>
             </div>
-            <svg width="230" height="230" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
-              {icon.map((d) => (
-                <path key={d} d={d} />
-              ))}
-            </svg>
+            {icon ? (
+              <svg width="230" height="230" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
+                {icon.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </svg>
+            ) : null}
           </div>
         </div>
       </div>
     ),
-    { ...OG_SIZE, fonts: (await Promise.all([face("Instrument Sans", `${SITE.name.toUpperCase()}${label}${line}`), face("Instrument Serif", title)])).flat() },
+    { ...OG_SIZE, fonts: (await Promise.all([face("Instrument Sans", `${SITE.name.toUpperCase()}${line}`), face("Instrument Serif", title)])).flat() },
   );
 }

@@ -78,10 +78,13 @@ BOUNDARIES
 OUTPUT
 Reply with one JSON object and nothing else:
 {"reply": string, "brief": {"name": string, "contact": string, "project": string, "platform": string, "frames": number|null, "styleReplication": boolean, "screens": string[], "style": string, "references": string, "deadline": string, "extras": string, "summary": string}, "offer": number, "concede": boolean, "styleOffer": number, "concedeStyle": boolean, "awaitingConfirm": boolean, "resolved": boolean}
-"brief" is your complete, up-to-date understanding after this message (carry forward everything already known; never drop details). "screens" lists each screen or task by name. "summary" is the document ${NAME} will read instead of the chat, so make it thorough and well organised in plain text with these labelled sections: OVERVIEW, GOAL, AUDIENCE AND PLATFORM, SCREENS (one entry per screen with its purpose, content, states and notes), STYLE DIRECTION, REFERENCES (each "Ref N" with what to take from it), EXISTING ASSETS, DELIVERABLES, TIMELINE, BUDGET AND PRICE DISCUSSED (what was quoted, what was negotiated), OPEN QUESTIONS. "reply" is what the customer sees.`;
+"brief" is your complete, up-to-date understanding after this message (carry forward everything already known; never drop details). "screens" lists each screen or task by name. "summary" is the document ${NAME} will read instead of the chat, so make it thorough and well organised in plain text with these labelled sections: OVERVIEW, GOAL, AUDIENCE AND PLATFORM, SCREENS (one entry per screen with its purpose, content, states and notes), STYLE DIRECTION, REFERENCES (each "Ref N" with what to take from it), EXISTING ASSETS, DELIVERABLES, TIMELINE, BUDGET AND PRICE DISCUSSED (what was quoted, what was negotiated), OPEN QUESTIONS. "reply" is what the customer sees. Writing the summary is the most expensive part of a turn, so CURRENT STATE says when to write it; on other turns set "summary" to "" (your last one is kept for you).`;
 
 type ModelPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
 type ModelMessage = { role: "system" | "user" | "assistant"; content: string | ModelPart[] };
+
+/** The summary is long and costs the most to write, so it is only asked for now and then and when closing. */
+const summaryDue = (turn: number) => turn % 6 === 0 || turn >= CHAT_LIMITS.userMessages - 1;
 
 function stateNote(thread: ChatThread, turn: number): string {
   const lowest = lowestAllowedOffer(thread, turn);
@@ -95,7 +98,10 @@ function stateNote(thread: ChatThread, turn: number): string {
     `- Style replication price on the table: £${thread.styleOffer} per task. Lowest you may move to this turn: £${lowestStyle}${none(lowestStyle, thread.styleOffer)}`,
     `- You have ${thread.awaitingConfirm ? "already" : "not yet"} asked the customer "is that everything?"`,
     blocked ? `- You may not ask "is that everything?" yet: ${blocked}` : "- You may ask \"is that everything?\" once you have nothing left to ask.",
-    `- Brief so far: ${JSON.stringify(thread.brief)}`,
+    summaryDue(turn)
+      ? '- Brief "summary": WRITE the full summary this turn.'
+      : '- Brief "summary": set it to "" this turn (the last one is kept), unless you are asking "is that everything?" or the customer just confirmed, in which case write the full summary.',
+    `- Brief so far: ${JSON.stringify({ ...thread.brief, summary: thread.brief.summary ? "(written; kept for you)" : "" })}`,
     ...(thread.messages.some((message) => message.by === "owner")
       ? [`- ${NAME} (the owner) has personally written some messages in this chat, marked [${NAME.toUpperCase()}]. Stay consistent with anything they said, including prices.`]
       : []),

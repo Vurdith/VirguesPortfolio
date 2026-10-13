@@ -79,7 +79,7 @@ export async function chatImageForModel(id: string): Promise<string | null> {
   // Models are picky: animated images, huge files and some formats are rejected outright. A small
   // still JPEG (the first frame, if animated) is accepted everywhere and is plenty to read a layout.
   try {
-    const still = await sharp(bytes).resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true }).flatten({ background: "#ffffff" }).jpeg({ quality: 80 }).toBuffer();
+    const still = await sharp(bytes).resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).flatten({ background: "#ffffff" }).jpeg({ quality: 80 }).toBuffer();
     return `data:image/jpeg;base64,${still.toString("base64")}`;
   } catch (err) {
     console.error("Could not prepare chat image for the model:", err);

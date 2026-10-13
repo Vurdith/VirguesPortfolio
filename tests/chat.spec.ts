@@ -518,6 +518,12 @@ test("the handover summary is written once, after the chat ends, and token use i
   // The summary is written just after the customer's last reply, so give it a moment.
   await expect.poll(async () => (await find()).brief.summary, { timeout: 15_000 }).toContain("SUMMARY STUB covering 6 customer messages");
 
+  const written = (await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z").then((res) => res.json())) as {
+    briefs: { updatedAt: string; messages: { content: string; at: string }[] }[];
+  };
+  const finished = written.briefs.find((brief) => brief.messages.some((message) => message.content === "Yes, that is everything"))!;
+  expect(Date.parse(finished.updatedAt)).toBeGreaterThan(Date.parse(finished.messages.at(-1)!.at));
+
   const text = await admin.request.get(`/api/admin/briefs/${(await find()).id}/transcript`);
   expect(await text.text()).toMatch(/Tokens: \d+ in \(\d+ read from cache\)/);
   await a.context.close();
@@ -544,6 +550,55 @@ test("filler openers, compliments and repeated price confirmations are stripped 
   expect(a.lastReply(first.body)).toBe("Which platform is it for? Virguê confirms the final price.");
   const second = await a.say("tidy-check two");
   expect(a.lastReply(second.body)).toBe("Which platform is it for?");
+  await a.context.close();
+});
+
+test("the assistant may not wrap up before it has the deadline", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  for (const text of ["one", "two", "three", "four"]) await a.say(`nodeadline ${text}`);
+
+  const blocked = await a.say("nodeadline ready to wrap up");
+  expect(blocked.body?.thread?.ended).toBe(false);
+  expect(a.lastReply(blocked.body)).toContain("anything about the screens");
+
+  // Once a deadline is known, it may ask.
+  expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("Is that everything");
+  await a.context.close();
+});
+
+test("a question the customer ignored is not asked again", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const first = await a.say("repeat-check one");
+  expect(a.lastReply(first.body)).toBe("What genre is the game, and which platform is it on?");
+  const second = await a.say("repeat-check two");
+  expect(a.lastReply(second.body)).toBe("Which screens do you need?");
+  await a.context.close();
+});
+
+test("the details panel shows who they are and what they want, and the owner can write a summary", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("discord-contact nodeadline hello");
+
+  await admin.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const page = await admin.newPage();
+  await page.goto("/admin/briefs");
+  await page.getByRole("button", { name: /Which visual style are you after/ }).first().click();
+
+  await expect(page.getByText("Survival game inventory")).toBeVisible();
+  await expect(page.locator("dt", { hasText: "Deadline" }).locator("xpath=following-sibling::dd")).toHaveText("Not given");
+  await expect(page.locator("dt", { hasText: "Budget" }).locator("xpath=following-sibling::dd")).toHaveText("£35-40, firm");
+
+  // Not an email, so the action is copying the handle.
+  await page.getByRole("button", { name: "Copy e2e_handle" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Write summary" }).click();
+  await expect(page.getByText("SUMMARY STUB covering 1 customer messages.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Write summary" })).toHaveCount(0);
+  await page.close();
   await a.context.close();
 });
 

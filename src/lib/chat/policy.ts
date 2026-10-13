@@ -76,6 +76,7 @@ export function closingBlockedReason(brief: ChatBrief, turn: number): string | n
   const missing = [
     !brief.project.trim() && "what the project is",
     !brief.platform.trim() && "the platform",
+    !brief.deadline.trim() && "the deadline (or that they have none)",
     !brief.screens.length && "the screens",
     !(brief.style.trim() || brief.references.trim()) && "the style direction or references",
   ].filter(Boolean);
@@ -165,6 +166,40 @@ export function tidyReply(reply: string, earlier: string[]): string {
   return text[0].toUpperCase() + text.slice(1);
 }
 
+const STOP_WORDS = new Set(
+  "the a an is are was do does did you your yours it its this that these those to of for on in at as by with and or but what which how any about me my i so if can could would should have has be been there also just some roughly more other else then than from will want need like such first".split(" "),
+);
+/** Questions about who they are or what they will pay are worth asking again; the rest should not be. */
+const PERSISTENT = /\b(name|contact|reach|email|discord|budget|price|afford)\b/i;
+
+type Clause = { text: string; words: Set<string> };
+
+/** The questions in a reply, cut into their parts ("What genre is it, and which platform?" is two). */
+function questionClauses(text: string): Clause[] {
+  return (text.match(/[^.!?]*\?/g) ?? [])
+    .flatMap((question) => question.split(/,?\s+(?:and|also|plus)\s+(?=\w)/i))
+    .filter((clause) => !PERSISTENT.test(clause))
+    .map((clause) => ({
+      text: clause.replace(/^\s*[?,;:]+\s*/, "").trim(),
+      words: new Set((clause.toLowerCase().match(/[a-z0-9£']+/g) ?? []).filter((word) => !STOP_WORDS.has(word))),
+    }))
+    .filter((clause) => clause.words.size >= 2);
+}
+
+const similar = (a: Set<string>, b: Set<string>) => {
+  let shared = 0;
+  for (const word of a) if (b.has(word)) shared += 1;
+  return shared / (a.size + b.size - shared) >= 0.7;
+};
+
+/** The first question in `reply` that repeats one asked in the last two replies, or null. */
+export function repeatedQuestion(reply: string, earlier: string[]): string | null {
+  const before = earlier.slice(-2).flatMap(questionClauses);
+  if (!before.length) return null;
+  const repeat = questionClauses(reply).find((clause) => before.some((past) => similar(clause.words, past.words)));
+  return repeat ? repeat.text.replace(/\?$/, "") : null;
+}
+
 /** Reads the model's JSON. Tolerates fences and surrounding prose; returns null if it is unusable. */
 export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput | null {
   const start = raw.indexOf("{");
@@ -201,6 +236,7 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
     style: clip(b.style, 1000) || previous.style,
     references: clip(b.references, 2000) || previous.references,
     deadline: clip(b.deadline, 160) || previous.deadline,
+    budget: clip(b.budget, 160) || (previous.budget ?? ""),
     extras: clip(b.extras, 1000) || previous.extras,
     // The handover summary is written separately when the conversation ends, not by the chat model.
     summary: previous.summary,

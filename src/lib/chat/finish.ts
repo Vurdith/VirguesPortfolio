@@ -10,8 +10,8 @@ export async function finishChat(id: string, reason: Extract<OwnerEmailReason, "
   try {
     const thread = await getThread(id);
     if (!thread) return;
-    await refreshSummary(thread);
-    await emailOwner(thread, reason);
+    const updated = await refreshSummary(thread);
+    await emailOwner(updated ?? thread, reason);
   } catch (err) {
     console.error("Finishing the chat failed:", err);
   }

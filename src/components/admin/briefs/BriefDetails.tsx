@@ -6,7 +6,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { AdminBrief } from "@/lib/chat/admin";
 import { cn } from "@/lib/cn";
 import type { QuoteStatus } from "@/types/portfolio";
-import { contactLink, money, total, unitPrice } from "./shared";
+import { contactHandle, contactLink, copyText, money, total, unitPrice } from "./shared";
 
 const HANDLED: { key: QuoteStatus; label: string }[] = [
   { key: "new", label: "New" },
@@ -26,6 +26,7 @@ export function BriefDetails({
   onEnd,
   onUnsteer,
   onDelete,
+  onSummary,
 }: {
   brief: AdminBrief;
   busy: boolean;
@@ -33,29 +34,38 @@ export function BriefDetails({
   onEnd: () => void;
   onUnsteer: (noteId: string) => void;
   onDelete: () => void;
+  onSummary: () => Promise<boolean>;
 }) {
   const info = brief.brief;
   const replica = info.styleReplication;
   const sum = total(brief);
   const link = contactLink(info.contact);
+  const handle = contactHandle(info.contact);
   const open = brief.status === "open";
   const finished = brief.status === "resolved";
   const [menu, setMenu] = React.useState(false);
   const [confirm, setConfirm] = React.useState<"end" | "delete" | null>(null);
+  const [copied, setCopied] = React.useState(false);
+  const [writing, setWriting] = React.useState(false);
 
   React.useEffect(() => {
     setMenu(false);
     setConfirm(null);
+    setCopied(false);
+    setWriting(false);
   }, [brief.id]);
 
-  // What the assistant has not found out yet, so you know what to ask about.
-  const missing = [
-    !info.contact && "contact",
-    !info.platform && "platform",
-    !info.deadline && "deadline",
-    !info.frames && (replica ? "task count" : "frame count"),
-    !info.style && "style",
-  ].filter(Boolean) as string[];
+  const copyContact = async () => {
+    if (!(await copyText(handle))) return;
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const writeSummary = async () => {
+    setWriting(true);
+    await onSummary();
+    setWriting(false);
+  };
 
   const hasMore = Boolean(info.style || info.references || info.extras);
 
@@ -64,32 +74,37 @@ export function BriefDetails({
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
         <div className="rounded-2xl border border-line/10 bg-white/[0.03] p-5">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-sm text-fog/65">{replica ? "Style replication" : "Original design"}</p>
-            <span className="text-xs tabular-nums text-fog/45">${brief.costUsd.toFixed(3)}</span>
+            <p className="min-w-0 truncate font-serif text-2xl leading-tight tracking-[-0.03em]">{info.name || "Unnamed visitor"}</p>
+            <span className="mt-1 shrink-0 text-xs tabular-nums text-fog/45">${brief.costUsd.toFixed(3)}</span>
           </div>
-          <p className="mt-2 font-serif text-5xl leading-none tracking-[-0.05em]">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span key={sum ?? unitPrice(brief)} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.3, ease: EASE }} className="inline-block tabular-nums">
-                {money(sum ?? unitPrice(brief))}
-              </motion.span>
-            </AnimatePresence>
-          </p>
-          <p className="mt-2 text-sm text-fog/65">
-            {money(unitPrice(brief))} per {replica ? "task" : "frame"}
-            {info.frames ? ` × ${info.frames}` : ""}
-          </p>
-          {info.platform || info.deadline ? (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {info.platform ? <Chip>{info.platform}</Chip> : null}
-              {info.deadline ? <Chip>{info.deadline}</Chip> : null}
-            </div>
-          ) : null}
+          <p className="mt-1 break-words text-sm text-fog/70">{info.contact || "No contact given yet"}</p>
+
+          <div className="mt-5 border-t border-line/10 pt-5">
+            <p className="text-sm text-fog/65">{replica ? "Style replication" : "Original design"}</p>
+            <p className="mt-2 font-serif text-5xl leading-none tracking-[-0.05em]">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span key={sum ?? unitPrice(brief)} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.3, ease: EASE }} className="inline-block tabular-nums">
+                  {money(sum ?? unitPrice(brief))}
+                </motion.span>
+              </AnimatePresence>
+            </p>
+            <p className="mt-2 text-sm text-fog/65">
+              {money(unitPrice(brief))} per {replica ? "task" : "frame"}
+              {info.frames ? ` × ${info.frames}` : ""}
+            </p>
+          </div>
+
+          <dl className="mt-5 space-y-2.5 border-t border-line/10 pt-5 text-sm">
+            <Detail label="Platform" value={info.platform} />
+            <Detail label="Deadline" value={info.deadline} />
+            <Detail label="Budget" value={info.budget} />
+          </dl>
         </div>
 
-        {missing.length && open ? (
-          <p className="rounded-2xl border border-dashed border-line/15 px-4 py-3 text-[13px] leading-relaxed text-fog/60">
-            Still to find out: {missing.join(", ")}.
-          </p>
+        {info.project ? (
+          <Section title="Project" defaultOpen>
+            <p className="text-pretty text-[13px] leading-relaxed text-fog/80">{info.project}</p>
+          </Section>
         ) : null}
 
         {info.screens.length ? (
@@ -129,9 +144,23 @@ export function BriefDetails({
           </Section>
         ) : null}
 
-        {info.summary ? (
-          <Section title="Summary">
-            <p className="whitespace-pre-wrap text-pretty text-[13px] leading-relaxed text-fog/80">{info.summary}</p>
+        {brief.userTurns ? (
+          <Section title="Summary" defaultOpen>
+            {info.summary ? (
+              <p className="whitespace-pre-wrap text-pretty text-[13px] leading-relaxed text-fog/80">{info.summary}</p>
+            ) : (
+              <p className="text-[13px] leading-relaxed text-fog/50">{open ? "Written when the chat ends, or on request." : "Not written yet."}</p>
+            )}
+            {!info.summary || brief.summaryStale ? (
+              <button
+                type="button"
+                disabled={writing}
+                onClick={() => void writeSummary()}
+                className="mt-3 inline-flex h-9 items-center rounded-full border border-line/15 px-4 text-sm text-fog/85 transition-colors hover:border-line/35 hover:text-ink disabled:opacity-50"
+              >
+                {writing ? "Writing…" : info.summary ? "Update summary" : "Write summary"}
+              </button>
+            ) : null}
           </Section>
         ) : null}
 
@@ -195,8 +224,16 @@ export function BriefDetails({
             >
               Email {info.name ? info.name.split(" ")[0] : "them"}
             </a>
+          ) : info.contact ? (
+            <button
+              type="button"
+              onClick={() => void copyContact()}
+              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center rounded-full bg-ink px-5 text-sm font-medium text-void transition-[opacity,transform] hover:opacity-90 active:scale-[0.97]"
+            >
+              <span className="truncate">{copied ? "Copied" : `Copy ${handle}`}</span>
+            </button>
           ) : (
-            <span className="flex h-11 flex-1 items-center justify-center rounded-full border border-line/10 text-sm text-fog/45">No email given</span>
+            <span className="flex h-11 flex-1 items-center justify-center rounded-full border border-line/10 text-sm text-fog/45">No contact yet</span>
           )}
 
           <div className="relative">
@@ -269,6 +306,15 @@ function MenuItem({ label, onClick, confirm, danger, busy }: { label: string; on
     >
       {confirm ? "Tap again to confirm" : label}
     </button>
+  );
+}
+
+function Detail({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className="shrink-0 text-fog/50">{label}</dt>
+      <dd className={cn("min-w-0 text-right", value ? "text-fog/90" : "text-fog/35")}>{value || "Not given"}</dd>
+    </div>
   );
 }
 

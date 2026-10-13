@@ -60,3 +60,30 @@ export function stateOf(brief: AdminBrief): { label: string; tone: "live" | "you
   if (brief.status === "abandoned") return { label: "Unfinished", tone: "quiet" };
   return brief.handled === "new" ? { label: "New", tone: "new" } : { label: brief.handled === "replied" ? "Replied" : "Closed", tone: "quiet" };
 }
+
+/** The part of a contact worth pasting: "Discord: gyroac" becomes "gyroac". */
+export const contactHandle = (contact: string) =>
+  contact.replace(/^\s*(?:discord|x|twitter|telegram|instagram|email|e-mail)\s*[:\-–]\s*/i, "").trim();
+
+/** Copies text to the clipboard. False when the browser refuses. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.appendChild(field);
+      field.select();
+      const done = document.execCommand("copy");
+      field.remove();
+      return done;
+    } catch {
+      return false;
+    }
+  }
+}

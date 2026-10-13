@@ -108,7 +108,7 @@ export function BriefsInbox({ initialBriefs, initialId }: { initialBriefs: Admin
   const replace = (brief: AdminBrief) =>
     setBriefs((current) => current.map((item) => (item.id === brief.id ? brief : item)).sort(byNewest));
 
-  const call = async (id: string, path: "reply" | "control", body: unknown) => {
+  const call = async (id: string, path: "reply" | "control" | "summary", body: unknown) => {
     setBusy(true);
     setError(null);
     try {
@@ -348,7 +348,7 @@ function Details({
   brief: AdminBrief;
   busy: boolean;
   setHandled: (brief: AdminBrief, handled: QuoteStatus) => Promise<void>;
-  call: (id: string, path: "reply" | "control", body: unknown) => Promise<boolean>;
+  call: (id: string, path: "reply" | "control" | "summary", body: unknown) => Promise<boolean>;
   remove: (brief: AdminBrief) => Promise<void>;
 }) {
   return (
@@ -359,6 +359,7 @@ function Details({
       onEnd={() => void call(brief.id, "control", { action: "end" })}
       onUnsteer={(noteId) => void call(brief.id, "control", { action: "unsteer", noteId })}
       onDelete={() => void remove(brief)}
+      onSummary={() => call(brief.id, "summary", {})}
     />
   );
 }

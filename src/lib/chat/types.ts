@@ -26,6 +26,8 @@ export type ChatBrief = {
   style: string;
   references: string;
   deadline: string;
+  /** What the customer says they can spend, in their words. Absent on conversations from before it existed. */
+  budget?: string;
   extras: string;
   summary: string;
 };
@@ -41,6 +43,7 @@ export const EMPTY_BRIEF: ChatBrief = {
   style: "",
   references: "",
   deadline: "",
+  budget: "",
   extras: "",
   summary: "",
 };

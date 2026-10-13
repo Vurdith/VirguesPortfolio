@@ -40,8 +40,15 @@ export async function sweepQuietChats(now = Date.now()): Promise<{ emailed: numb
 
     await saveThread(thread);
     if (tell) {
-      if (summaries < SUMMARIES_PER_SWEEP && (await refreshSummary(thread))) summaries += 1;
-      await emailOwner(thread, "idle");
+      let latest = thread;
+      if (summaries < SUMMARIES_PER_SWEEP) {
+        const updated = await refreshSummary(thread);
+        if (updated) {
+          latest = updated;
+          summaries += 1;
+        }
+      }
+      await emailOwner(latest, "idle");
       emailed += 1;
     }
   }

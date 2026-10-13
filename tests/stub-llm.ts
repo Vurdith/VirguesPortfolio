@@ -26,7 +26,8 @@ const BRIEF = {
   screens: ["Inventory"],
   style: "dark",
   references: "",
-  deadline: "",
+  deadline: "Flexible",
+  budget: "",
   extras: "",
   summary:
     "OVERVIEW: A survival game needs an inventory and crafting menu in a dark style for Roblox. SCREENS: inventory grid, crafting list, item detail. STYLE DIRECTION: dark and gritty. TIMELINE: flexible. BUDGET AND PRICE DISCUSSED: ten frames.",
@@ -36,9 +37,9 @@ const number = (pattern: RegExp, text: string) => Number(pattern.exec(text)?.[1]
 
 function answer(messages: Msg[], raw: Raw) {
   const system = systemText(messages[0]);
-  const lowest = number(/Frame price on the table: £\d+ per frame\. Lowest you may move to this turn: £(\d+)/, system);
+  const lowest = number(/Frame price on the table: £\d+ per frame\. Next step down if you concede this turn: £(\d+)/, system);
   const offer = number(/Frame price on the table: £(\d+) per frame/, system);
-  const lowestStyle = number(/Style replication price on the table: £\d+ per task\. Lowest you may move to this turn: £(\d+)/, system);
+  const lowestStyle = number(/Style replication price on the table: £\d+ per task\. Next step down if you concede this turn: £(\d+)/, system);
   const styleOffer = number(/Style replication price on the table: £(\d+) per task/, system);
   const userMessages = messages.filter((m) => m.role === "user" && !textOf(m.content).startsWith("Your last reply"));
   const last = userMessages[userMessages.length - 1];
@@ -47,7 +48,12 @@ function answer(messages: Msg[], raw: Raw) {
   const replicating = userMessages.some((m) => /replicate/.test(textOf(m.content)));
 
   const base = {
-    brief: { ...BRIEF, styleReplication: replicating },
+    brief: {
+      ...BRIEF,
+      styleReplication: replicating,
+      ...(/nodeadline/.test(text) ? { deadline: "" } : {}),
+      ...(/discord-contact/.test(text) ? { contact: "Discord: e2e_handle", budget: "£35-40, firm" } : {}),
+    },
     offer,
     concede: false,
     styleOffer,
@@ -62,6 +68,10 @@ function answer(messages: Msg[], raw: Raw) {
   if (/longfields/.test(text)) {
     const words = Array.from({ length: 300 }, (_, i) => `word${i}`).join(" ");
     return { ...base, reply: "Noted.", brief: { ...base.brief, project: words, screens: [words] } };
+  }
+  if (/repeat-check/.test(text)) {
+    const corrected = /already asked/.test(textOf(messages[messages.length - 1].content));
+    return { ...base, reply: corrected ? "Which screens do you need?" : "What genre is the game, and which platform is it on?" };
   }
   if (/delta-check/.test(text)) return { ...base, reply: "Noted.", brief: { project: "Changed project" } };
   if (/cache-check/.test(text)) {

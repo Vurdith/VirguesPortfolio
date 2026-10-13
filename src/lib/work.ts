@@ -28,6 +28,25 @@ export function mergeWork(stored: Work, patch: Partial<Work>): Work {
   return normalizePieces(merged);
 }
 
+/** A link to one post on X (or its old twitter.com address). */
+export const X_POST_PATTERN = /^https:\/\/(?:www\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/status\/\d{5,25}(?:[/?#].*)?$/;
+
+/**
+ * The pieces a save added to a work, judged by their files. Empty unless the work grew: swapping
+ * a piece's file, reordering and removing are edits, not news.
+ */
+export function addedPieces(before: WithPieces, after: WithPieces): Media[] {
+  const had = new Set(workPieces(before).map((piece) => piece.src));
+  const now = workPieces(after);
+  if (now.length <= had.size) return [];
+  return now.filter((piece) => piece.src && !had.has(piece.src));
+}
+
+/** The X posts attached to these pieces, each once, in order. */
+export function xPosts(pieces: Media[]): string[] {
+  return [...new Set(pieces.map((piece) => piece.xUrl?.trim() ?? "").filter((url) => X_POST_PATTERN.test(url)))];
+}
+
 export function missingPieceIndex(work: WithPieces): number {
   return workPieces(work).findIndex((piece) => !piece.src.trim());
 }

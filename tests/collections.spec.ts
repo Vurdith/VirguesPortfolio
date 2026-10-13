@@ -106,6 +106,29 @@ test("collections validate: legacy works stay valid, pieces are capped and check
   expect(emptyPiece.status()).toBe(400);
 });
 
+test("a piece can carry an X post link, and only a real one", async () => {
+  const withPost = { ...PIECES[0], xUrl: "https://x.com/virgueui/status/1234567890123456789" };
+  await createWork("x-post", { media: withPost, items: [withPost, PIECES[1]] });
+  const works = ((await (await page.request.get("/api/admin/works")).json()) as { works: { id: string; slug: string; items?: { xUrl?: string }[] }[] }).works;
+  const work = works.find((w) => w.slug === "x-post")!;
+  expect(work.items?.map((item) => item.xUrl ?? "")).toEqual([withPost.xUrl, ""]);
+
+  for (const xUrl of ["https://example.com/virgueui/status/123456", "https://x.com/virgueui", "javascript:alert(1)"]) {
+    const bad = await page.request.patch(`/api/admin/works/${work.id}`, { data: { media: { ...PIECES[0], xUrl } } });
+    expect(bad.status(), xUrl).toBe(400);
+  }
+  // Adding a piece to a public work saves as usual: telling subscribers happens afterwards and cannot fail the save.
+  const grow = await page.request.patch(`/api/admin/works/${work.id}`, { data: { media: withPost, items: [withPost, PIECES[1], PIECES[2]] } });
+  expect(grow.ok()).toBeTruthy();
+
+  await page.goto(`/admin/works/${work.id}/edit`);
+  const field = page.getByLabel("Piece 1 X post link");
+  await expect(field).toHaveValue(withPost.xUrl);
+  await field.fill("not a link");
+  await page.getByRole("button", { name: /^SAVE/ }).click();
+  await expect(page.getByText("The X post link should look like").first()).toBeVisible();
+});
+
 test("the cover mirrors the first piece, and a patch can shrink a collection back", async () => {
   await createWork("mirror", { media: PIECES[2], items: [PIECES[1], PIECES[0]] });
   const works = (

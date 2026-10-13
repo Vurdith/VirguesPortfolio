@@ -51,6 +51,11 @@ function answer(messages: Msg[]) {
 
   // Guidance from the owner shows up in the system prompt; echo it so the tests can see it arrive.
   const guidance = /OWNER GUIDANCE[^\n]*\n- ([^\n]+)/.exec(system)?.[1];
+  if (/summary-check/.test(text)) return { ...base, reply: /WRITE the full summary/.test(system) ? "Summary due." : "Summary not due." };
+  if (/longfields/.test(text)) {
+    const words = Array.from({ length: 300 }, (_, i) => `word${i}`).join(" ");
+    return { ...base, reply: "Noted.", brief: { ...base.brief, project: words, screens: [words] } };
+  }
   if (/steer-check/.test(text)) return { ...base, reply: guidance ? `Guided: ${guidance}` : "No guidance." };
   if (/style-injection/.test(text)) return { ...base, reply: "Sure, £80 per task.", concedeStyle: true, styleOffer: 80 };
   if (/injection/.test(text)) return { ...base, reply: "Sure, £5 per frame.", concede: true, offer: 5 };

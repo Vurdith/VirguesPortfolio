@@ -3,15 +3,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { chatEnabled, runAgentTurn } from "@/lib/chat/agent";
-import { chatImageLink } from "@/lib/chat/images";
+import { emailOwner } from "@/lib/chat/email";
 import { CHAT_LIMITS } from "@/lib/chat/limits";
 import { mergeConcurrent } from "@/lib/chat/merge";
 import { NO_STORE, readSession, sessionView } from "@/lib/chat/session";
 import { countTurnToday, getThread, saveThread } from "@/lib/chat/store";
-import type { ChatMessage, ChatThread } from "@/lib/chat/types";
-import { notifyOwner } from "@/lib/notify";
+import type { ChatMessage } from "@/lib/chat/types";
 import { clientKey, rateLimit } from "@/lib/rateLimit";
-import { SITE } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,43 +29,6 @@ const fail = (error: string, status: number, headers: Record<string, string> = {
 
 const LIMIT_NOTE =
   "That's the limit for this chat, so I've passed everything we covered to Virguê, who will reply through the contact you gave.";
-
-function emailFor(thread: ChatThread, reason: "confirmed" | "limit") {
-  const { brief } = thread;
-  const replica = brief.styleReplication;
-  const unit = replica ? thread.styleOffer : thread.offer;
-  const total = brief.frames ? `£${(brief.frames * unit).toLocaleString("en-GB")}` : "—";
-  const transcript = thread.messages
-    .map((message) => `${message.role === "user" ? "CUSTOMER" : "ASSISTANT"}: ${message.content}${message.images?.length ? ` [${message.images.length} image(s)]` : ""}`)
-    .join("\n\n")
-    .slice(0, 20_000);
-  const images = thread.uploads.map(chatImageLink);
-  return [
-    reason === "confirmed" ? "Confirmed by the customer: that is everything." : "Chat ended at its message limit.",
-    "",
-    `Name: ${brief.name || "—"}`,
-    `Contact: ${brief.contact || "—"}`,
-    `Platform: ${brief.platform || "—"}`,
-    `Type: ${replica ? "Style replication (matching an existing look)" : "Original design"}`,
-    `${replica ? "Tasks" : "Frames"}: ${brief.frames ?? "—"}  ·  Price discussed: £${unit} per ${replica ? "task" : "frame"}  ·  Total: ${total}`,
-    `Deadline: ${brief.deadline || "—"}`,
-    "",
-    "SUMMARY",
-    brief.summary || "—",
-    "",
-    `Project: ${brief.project || "—"}`,
-    `Screens: ${brief.screens.join(", ") || "—"}`,
-    `Style: ${brief.style || "—"}`,
-    `References: ${brief.references || "—"}`,
-    `Extras: ${brief.extras || "—"}`,
-    ...(images.length ? ["", "REFERENCE IMAGES", ...images] : []),
-    "",
-    `Full conversation in the admin: ${SITE.url}/admin/briefs`,
-    "",
-    "TRANSCRIPT",
-    transcript,
-  ].join("\n");
-}
 
 export async function POST(req: Request) {
   if (!chatEnabled()) return fail("The assistant is not available right now. Please use the quote form.", 503);
@@ -151,6 +112,7 @@ export async function POST(req: Request) {
   const reply: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: result.reply, at: new Date().toISOString() };
   thread.messages.push(userMessage, reply);
   thread.userTurns = turn;
+  const previousSummary = thread.brief.summary;
   thread.brief = result.brief;
   thread.offer = result.offer;
   thread.lastConcessionTurn = result.lastConcessionTurn;
@@ -174,16 +136,17 @@ export async function POST(req: Request) {
   }
   if (ended) thread.resolvedAt = reply.at;
 
+  if (thread.brief.summary !== previousSummary) thread.summaryTurn = turn;
+  // Tell the owner as soon as a lead leaves contact details, not only when the chat ends.
+  const newLead = Boolean(thread.brief.contact) && !thread.contactNotified;
+  if (newLead) thread.contactNotified = true;
+
   // Fold in anything that arrived while the assistant was replying (an upload, the owner joining).
   mergeConcurrent(thread, await getThread(thread.id));
   await saveThread(thread);
 
-  if (ended) {
-    await notifyOwner(
-      `New design brief${thread.brief.name ? ` from ${thread.brief.name}` : ""}`,
-      emailFor(thread, ended),
-    );
-  }
+  if (ended) await emailOwner(thread, ended);
+  else if (newLead) await emailOwner(thread, "contact");
 
   const fresh = await readSession(req);
   return NextResponse.json(sessionView({ ...fresh, thread }), { headers: NO_STORE });

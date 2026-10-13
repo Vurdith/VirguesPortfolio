@@ -100,7 +100,7 @@ test("messages need a conversation and are validated", async ({ browser }) => {
   expect((await a.say("hello", ["00000000-0000-0000-0000-000000000000.webp"])).res.status()).toBe(400);
   const ok = await a.say("I need a survival game inventory.");
   expect(ok.res.status()).toBe(200);
-  expect(a.lastReply(ok.body)).toContain("What style");
+  expect(a.lastReply(ok.body)).toContain("visual style");
   await a.context.close();
 });
 
@@ -180,7 +180,7 @@ test("a conversation only closes after the customer confirms, then the address i
 
   // Asking "is that everything?" is also refused while the conversation is still shallow.
   expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("anything about the screens");
-  expect(a.lastReply((await a.say("some more details")).body)).toContain("What style");
+  expect(a.lastReply((await a.say("some more details")).body)).toContain("visual style");
 
   // From the fifth message on it may ask.
   expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("Is that everything");
@@ -284,7 +284,7 @@ test("the floating bubble opens a full chat page that works", async ({ page }) =
 
   await page.getByLabel("Your message").fill("A shop menu for my game");
   await page.getByRole("button", { name: "SEND" }).click();
-  await expect(page.getByText("Noted. What style are you after?")).toBeVisible();
+  await expect(page.getByText("Which visual style are you after?")).toBeVisible();
   await expect(page.getByText("A shop menu for my game")).toBeVisible();
 });
 
@@ -361,7 +361,7 @@ test("a model that rejects JSON mode still works, and a failing model is reporte
   // JSON mode rejected (400): the call is retried without it.
   const retried = await a.say("no-json please");
   expect(retried.res.status()).toBe(200);
-  expect(a.lastReply(retried.body)).toContain("What style");
+  expect(a.lastReply(retried.body)).toContain("visual style");
 
   // Everything failing: the customer gets a retryable error, nothing is added, and the owner sees why.
   const failed = await a.say("boom");
@@ -376,7 +376,7 @@ test("a model that rejects JSON mode still works, and a failing model is reporte
   expect(mine?.lastError?.message).toContain("upstream exploded");
 
   // The next message that works clears it.
-  expect(a.lastReply((await a.say("hello again")).body)).toContain("What style");
+  expect(a.lastReply((await a.say("hello again")).body)).toContain("visual style");
   const after = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
   const list = (await after.json()) as { briefs: { lastError?: unknown; messages: { content: string }[] }[] };
   expect(list.briefs.find((brief) => brief.messages.some((m) => m.content === "hello again"))?.lastError).toBeUndefined();
@@ -390,9 +390,9 @@ test("the owner's inbox shows a conversation, takes it over and replies", async 
 
   const page = await admin.newPage();
   await page.goto("/admin/briefs");
-  await page.getByRole("button", { name: /What style are you after/ }).first().click();
+  await page.getByRole("button", { name: /Which visual style are you after/ }).first().click();
   await expect(page).toHaveURL(/\/admin\/briefs\/.+/);
-  await expect(page.getByText("Noted. What style are you after?").first()).toBeVisible();
+  await expect(page.getByText("Which visual style are you after?").first()).toBeVisible();
 
   // Replying as the owner takes the chat over; the customer sees it.
   await page.getByLabel("Reply to the customer").fill("Hi, Virguê here.");
@@ -421,7 +421,7 @@ test("the owner can download a transcript and every chat, and only the owner", a
   expect(text.headers()["content-disposition"]).toContain("attachment");
   const body = await text.text();
   expect(body).toContain("CUSTOMER: transcript-test hello");
-  expect(body).toContain("AI: Noted. What style are you after?");
+  expect(body).toContain("AI: Which visual style are you after?");
 
   const json = await admin.request.get(`/api/admin/briefs/${id}/transcript?format=json`);
   expect(((await json.json()) as { id: string }).id).toBe(id);
@@ -534,6 +534,16 @@ test("a conversation that has cost too much is wrapped up", async ({ browser }) 
   const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
   const { briefs } = (await res.json()) as { briefs: { endReason?: string; messages: { content: string }[] }[] };
   expect(briefs.find((brief) => brief.messages.some((message) => message.content === "costly-turn"))?.endReason).toBe("Cost limit reached");
+  await a.context.close();
+});
+
+test("filler openers, compliments and repeated price confirmations are stripped from replies", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const first = await a.say("tidy-check one");
+  expect(a.lastReply(first.body)).toBe("Which platform is it for? Virguê confirms the final price.");
+  const second = await a.say("tidy-check two");
+  expect(a.lastReply(second.body)).toBe("Which platform is it for?");
   await a.context.close();
 });
 

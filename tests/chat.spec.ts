@@ -409,6 +409,31 @@ test("the owner's inbox shows a conversation, takes it over and replies", async 
   await a.context.close();
 });
 
+test("the owner can download a transcript and every chat, and only the owner", async ({ browser, request }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("transcript-test hello");
+  const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const { briefs } = (await res.json()) as { briefs: { id: string; messages: { content: string }[] }[] };
+  const { id } = briefs.find((brief) => brief.messages.some((message) => message.content === "transcript-test hello"))!;
+
+  const text = await admin.request.get(`/api/admin/briefs/${id}/transcript`);
+  expect(text.headers()["content-disposition"]).toContain("attachment");
+  const body = await text.text();
+  expect(body).toContain("CUSTOMER: transcript-test hello");
+  expect(body).toContain("AI: Noted. What style are you after?");
+
+  const json = await admin.request.get(`/api/admin/briefs/${id}/transcript?format=json`);
+  expect(((await json.json()) as { id: string }).id).toBe(id);
+
+  const all = await admin.request.get("/api/admin/briefs/export");
+  expect(((await all.json()) as { id: string }[]).some((brief) => brief.id === id)).toBe(true);
+
+  expect((await request.get(`/api/admin/briefs/${id}/transcript`)).status()).toBe(401);
+  expect((await request.get("/api/admin/briefs/export")).status()).toBe(401);
+  await a.context.close();
+});
+
 test("the admin can poll for conversations changed since a time, and only the admin", async ({ browser, request }) => {
   const a = await visitor(browser);
   await a.start();

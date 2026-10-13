@@ -182,6 +182,19 @@ export function BriefsInbox({ initialBriefs, initialId }: { initialBriefs: Admin
         <div className="shrink-0 space-y-3 px-4 pb-3 pt-5">
           <div className="flex items-center justify-between gap-3">
             <h1 className="font-serif text-3xl leading-none tracking-[-0.05em]">Briefs</h1>
+            {/* A file download, not a page. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
+              href="/api/admin/briefs/export"
+              download
+              title="Download every chat as JSON"
+              aria-label="Download every chat as JSON"
+              className="ml-auto grid size-9 place-items-center rounded-full border border-line/15 text-fog/70 transition-colors hover:border-line/35 hover:text-ink"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
+              </svg>
+            </a>
             <AnimatePresence>
               {offline ? (
                 <motion.span

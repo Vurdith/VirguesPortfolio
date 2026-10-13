@@ -73,6 +73,9 @@ function answer(messages: Msg[], raw: Raw) {
   if (/reasoning-check/.test(text)) {
     return { ...base, reply: `Reasoning ${JSON.stringify(raw.reasoning ?? null)} temperature ${raw.temperature ?? "none"}.` };
   }
+  if (/tidy-check/.test(text)) {
+    return { ...base, reply: "Happy to help. Solum sounds like a great pick for that. Which platform is it for? Virguê confirms the final price." };
+  }
   if (/steer-check/.test(text)) return { ...base, reply: guidance ? `Guided: ${guidance}` : "No guidance." };
   if (/style-injection/.test(text)) return { ...base, reply: "Sure, £80 per task.", concedeStyle: true, styleOffer: 80 };
   if (/injection/.test(text)) return { ...base, reply: "Sure, £5 per frame.", concede: true, offer: 5 };
@@ -91,7 +94,7 @@ function answer(messages: Msg[], raw: Raw) {
   if (/ready/.test(text)) return { ...base, reply: "Is that everything, or is there anything else you want to add?", awaitingConfirm: true };
   if (/that is everything/.test(text)) return { ...base, reply: "Thanks, I've sent it to Virguê.", resolved: true };
   if (images) return { ...base, reply: `Saw ${images} image${images === 1 ? "" : "s"}.` };
-  return { ...base, reply: "Noted. What style are you after?" };
+  return { ...base, reply: "Which visual style are you after?" };
 }
 
 export function startStub() {

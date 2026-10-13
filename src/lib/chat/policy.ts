@@ -137,6 +137,34 @@ const clip = (value: unknown, max: number) => {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.-]+$/, "")}…`;
 };
 
+/** Opening acknowledgements such as "Got it." or "Thanks Reece.", which the prompt bans and models still add. */
+const FILLER_OPENER =
+  /^(?:happy to help|glad to help|got it|noted|understood|thanks|thank you|great|perfect|awesome|brilliant|excellent|sounds good|sounds great|no problem)(?:\s+[A-Z][\w'’-]*)?\s*[.!]\s+/i;
+const COMPLIMENT =
+  /\b(?:sounds like (?:a |an )?(?:great|good|strong|solid|fun|cool|fantastic|wonderful)|great (?:pick|choice|idea|project|game|start)|love (?:that|this|the idea)|what a (?:great|cool|fun)|nice (?:one|choice|pick))\b/i;
+
+/**
+ * Removes what the prompt bans but models still add: opening acknowledgements, an opening
+ * compliment, and "Virguê confirms the price" once it has already been said in the chat.
+ * Never returns an empty reply.
+ */
+export function tidyReply(reply: string, earlier: string[]): string {
+  let text = reply.trim();
+  for (let i = 0; i < 3 && FILLER_OPENER.test(text); i++) text = text.replace(FILLER_OPENER, "");
+
+  const first = /^([^.!?]*[.!])\s+/.exec(text);
+  if (first && COMPLIMENT.test(first[1])) text = text.slice(first[0].length);
+
+  if (earlier.some((past) => /Virguê confirms/i.test(past))) {
+    const sentences = text.match(/[^.!?]+(?:[.!?]+|$)\s*/g) ?? [text];
+    text = sentences.filter((sentence) => !(/^\s*Virguê confirms/i.test(sentence) && sentence.trim().split(/\s+/).length <= 12)).join("");
+  }
+
+  text = text.trim();
+  if (text.length < 3) return reply.trim();
+  return text[0].toUpperCase() + text.slice(1);
+}
+
 /** Reads the model's JSON. Tolerates fences and surrounding prose; returns null if it is unusable. */
 export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput | null {
   const start = raw.indexOf("{");

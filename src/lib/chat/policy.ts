@@ -161,7 +161,7 @@ const clip = (value: unknown, max: number) => {
 
 /** Opening acknowledgements such as "Got it." or "Thanks Reece.", which the prompt bans and models still add. */
 const FILLER_OPENER =
-  /^(?:happy to help|glad to help|got it|noted|understood|thanks|thank you|great|perfect|awesome|brilliant|excellent|sounds good|sounds great|no problem)(?:\s+[A-Z][\w'’-]*)?\s*[.!]\s+/i;
+  /^(?:happy to help|glad to help|got it|noted|understood|thanks|thank you|great|perfect|awesome|brilliant|excellent|sounds good|sounds great|no problem)(?:,?\s+[A-Z][\w'’-]*)?\s*[.!,]\s+/i;
 const COMPLIMENT =
   /\b(?:sounds like (?:a |an )?(?:great|good|strong|solid|fun|cool|fantastic|wonderful)|great (?:pick|choice|idea|project|game|start)|love (?:that|this|the idea)|what a (?:great|cool|fun)|nice (?:one|choice|pick))\b/i;
 
@@ -221,6 +221,9 @@ export function repeatedQuestion(reply: string, earlier: string[]): string | nul
   return repeat ? repeat.text.replace(/\?$/, "") : null;
 }
 
+/** "Open: none" and the like, which say nothing and clutter the brief. */
+const NOTHING_OPEN = /^(?:open:?\s*)?(?:none|nothing|n\/a|no open (?:points|questions))\.?$/i;
+
 /** Reads the model's JSON. Tolerates fences and surrounding prose; returns null if it is unusable. */
 export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput | null {
   const start = raw.indexOf("{");
@@ -258,7 +261,7 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
     references: clip(b.references, 2000) || previous.references,
     deadline: clip(b.deadline, 160) || previous.deadline,
     budget: clip(b.budget, 160) || (previous.budget ?? ""),
-    extras: clip(b.extras, 1000) || previous.extras,
+    extras: (NOTHING_OPEN.test(clip(b.extras, 1000)) ? "" : clip(b.extras, 1000)) || previous.extras,
     // The handover summary is written separately when the conversation ends, not by the chat model.
     summary: previous.summary,
   };

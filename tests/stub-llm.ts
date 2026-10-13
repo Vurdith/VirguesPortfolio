@@ -82,6 +82,9 @@ export function startStub() {
         const lastUser = [...messages].reverse().find((m) => m.role === "user");
         const asked = lastUser ? textOf(lastUser.content) : "";
         // Failure modes, so the tests can check what the customer and the owner see.
+        // A provider that cannot take the images: only a text-only call can succeed.
+        const sawImages = messages.some((m) => Array.isArray(m.content) && m.content.some((part) => part.type === "image_url"));
+        if (/badimg/.test(asked) && sawImages) return void res.writeHead(400).end("could not fetch image");
         if (/boom/.test(asked)) return void res.writeHead(500).end("upstream exploded");
         if (/no-json/.test(asked) && response_format) return void res.writeHead(400).end("response_format is not supported");
         const out = JSON.stringify({

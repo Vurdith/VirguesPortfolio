@@ -227,6 +227,37 @@ test("reference images need a conversation, are limited, and reach the model", a
   await a.context.close();
 });
 
+test("images the model cannot take do not stop the chat", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const { id } = (await (await a.upload()).json()) as { id: string };
+  const sent = await a.say("badimg here is a reference", [id]);
+  expect(sent.res.status()).toBe(200);
+  expect(sent.body?.thread?.messages.at(-2)?.content).toContain("badimg");
+  await a.context.close();
+});
+
+test("a pasted image attaches, and leaves the composer once sent", async ({ browser }) => {
+  const context = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": freshIp() } });
+  const page = await context.newPage();
+  await page.goto("/chat");
+  await page.getByRole("button", { name: "START CHAT" }).click();
+  const box = page.getByLabel("Your message");
+  await box.fill("here is a reference");
+  await box.evaluate((el, b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const data = new DataTransfer();
+    data.items.add(new File([bytes], "pasted.png", { type: "image/png" }));
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+  }, PNG.toString("base64"));
+  await expect(page.getByAltText("Attached reference")).toBeVisible();
+
+  await page.getByRole("button", { name: "SEND" }).click();
+  await expect(page.getByText("Saw 1 image.")).toBeVisible();
+  await expect(page.getByAltText("Attached reference")).toHaveCount(0);
+  await context.close();
+});
+
 test("the floating bubble opens a full chat page that works", async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": freshIp() });
   await page.route("**/intro-loader-*.mp4", (route) => route.abort());

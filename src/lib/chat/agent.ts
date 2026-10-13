@@ -184,6 +184,17 @@ async function complete(messages: ModelMessage[]): Promise<Completion> {
   const plan: [string, boolean][] = [[primary, true], [primary, false]];
   if (fallback !== primary) plan.push([fallback, true]);
 
+  // Last resort when images are the problem: answer from the text alone, so the chat keeps working.
+  const hasImages = messages.some((message) => Array.isArray(message.content) && message.content.some((part) => part.type === "image_url"));
+  const textOnly: ModelMessage[] = messages.map((message) =>
+    Array.isArray(message.content)
+      ? {
+          ...message,
+          content: `${message.content.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("\n")}\n[The customer attached reference images, but you cannot see them right now. Acknowledge them, and ask what to take from each one.]`,
+        }
+      : message,
+  );
+
   const started = Date.now();
   let last: unknown;
   for (const [model, jsonMode] of plan) {
@@ -193,6 +204,13 @@ async function complete(messages: ModelMessage[]): Promise<Completion> {
     } catch (err) {
       last = err;
       if (err instanceof ModelError && [401, 402, 403].includes(err.status)) throw err;
+    }
+  }
+  if (hasImages) {
+    try {
+      return await request(textOnly, primary, false);
+    } catch {
+      // Report the original failure.
     }
   }
   throw last;

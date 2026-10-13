@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
 import { getR2BucketName, getR2Client, getR2PublicUrl, hasR2Config } from "@/lib/r2/client";
@@ -55,7 +56,7 @@ export async function readLocalChatImage(id: string): Promise<Buffer | null> {
 }
 
 /**
- * What the model is given for an image: the bytes inline. Handing a provider a public address
+ * What the model is given for an image: a small still, inline. Handing a provider a public address
  * means it has to fetch it, and storage addresses are often blocked, slow or rate limited for
  * that, which fails the whole reply. The images are small (re-encoded on upload).
  */
@@ -73,7 +74,17 @@ export async function chatImageForModel(id: string): Promise<string | null> {
   } else {
     bytes = await readLocalChatImage(id);
   }
-  return bytes ? `data:image/webp;base64,${bytes.toString("base64")}` : null;
+  if (!bytes) return null;
+
+  // Models are picky: animated images, huge files and some formats are rejected outright. A small
+  // still JPEG (the first frame, if animated) is accepted everywhere and is plenty to read a layout.
+  try {
+    const still = await sharp(bytes).resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true }).flatten({ background: "#ffffff" }).jpeg({ quality: 80 }).toBuffer();
+    return `data:image/jpeg;base64,${still.toString("base64")}`;
+  } catch (err) {
+    console.error("Could not prepare chat image for the model:", err);
+    return `data:image/webp;base64,${bytes.toString("base64")}`;
+  }
 }
 
 /** Best effort: a missing file never blocks deleting a conversation. */

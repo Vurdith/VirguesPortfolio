@@ -1,13 +1,17 @@
 import { revalidatePath } from "next/cache";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb, writeDb } from "@/lib/db";
+import { announceWork } from "@/lib/discordNotify";
 import { MISSING_MEDIA_MESSAGE, WorkPatchSchema } from "@/lib/validation/work";
 import { mergeWork, missingPieceIndex } from "@/lib/work";
+import type { Work } from "@/types/portfolio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Telling Discord subscribers about a newly published work runs after the reply and can take a while.
+export const maxDuration = 60;
 
 export async function GET(
   req: NextRequest,
@@ -42,7 +46,7 @@ export async function PATCH(
   const now = new Date().toISOString();
 
   // Validated against the stored work inside the write, so concurrent edits cannot slip past.
-  const result: { outcome: "ok" | "missing" | "slug_taken" | "no_media" } = { outcome: "ok" };
+  const result: { outcome: "ok" | "missing" | "slug_taken" | "no_media"; published?: Work } = { outcome: "ok" };
   await writeDb((db) => {
     const index = db.works.findIndex((w) => w.id === id);
     if (index === -1) {
@@ -60,6 +64,8 @@ export async function PATCH(
       return;
     }
 
+    // A draft going live is news; an edit to something already public is not.
+    if (candidate.published && !db.works[index].published) result.published = candidate;
     db.works[index] = candidate;
   });
 
@@ -70,9 +76,12 @@ export async function PATCH(
       return NextResponse.json({ error: MISSING_MEDIA_MESSAGE }, { status: 400 });
     case "slug_taken":
       return NextResponse.json({ error: "Slug already exists." }, { status: 409 });
-    default:
+    default: {
       revalidatePath("/");
+      const { published } = result;
+      if (published) after(() => announceWork(published));
       return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+    }
   }
 }
 

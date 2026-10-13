@@ -40,9 +40,12 @@ const BACKDROPS = [
 
 export function WorkGallery({
   works,
+  subscribeUrl,
   className,
 }: {
   works: Work[];
+  /** Where to subscribe to new work on Discord. Left out, the link is not shown. */
+  subscribeUrl?: string | null;
   className?: string;
 }) {
   const ref = React.useRef<HTMLElement>(null);
@@ -128,9 +131,21 @@ export function WorkGallery({
             <RevealHeading className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl origin-left">Work.</RevealHeading>
           </div>
 
-          <p className="max-w-lg text-pretty text-sm leading-relaxed text-fog/80">
-            Recent interface and design projects. Click any piece to view it full screen.
-          </p>
+          <div className="max-w-lg">
+            <p className="text-pretty text-sm leading-relaxed text-fog/80">
+              Recent interface and design projects. Click any piece to view it full screen.
+            </p>
+            {subscribeUrl ? (
+              <a
+                href={subscribeUrl}
+                rel="noopener"
+                className="group mt-4 inline-flex items-center gap-3 border border-line/18 bg-void/30 px-4 py-2.5 text-[11px] tracking-[0.22em] text-fog/85 backdrop-blur-md transition-colors hover:border-line/40 hover:text-ink"
+              >
+                <span>GET NEW WORK ON DISCORD</span>
+                <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+              </a>
+            ) : null}
+          </div>
         </header>
 
         {works.length ? (

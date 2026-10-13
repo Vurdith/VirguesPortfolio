@@ -40,6 +40,12 @@ const SECTIONS = [
     ],
   },
   {
+    title: "Discord updates",
+    body: [
+      "If you subscribe to new work on Discord, you authorise an app that sees your Discord username and id, adds you to my server and sends you a direct message when I publish a work. Only that id and name are stored. Every message has an unsubscribe button, which deletes them.",
+    ],
+  },
+  {
     title: "On your device",
     body: [
       "The site saves a few preferences in your browser: whether sound and motion are on, whether you have seen the intro, an unsent quote draft so a refresh does not lose your message, and the private key for any review you wrote. They never leave your device (the key is only sent back to prove a reply is yours), and the draft is removed once you send it.",

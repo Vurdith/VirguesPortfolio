@@ -133,7 +133,7 @@ export function ChatPanel() {
     const slotsLeft = (view?.thread?.imagesLeft ?? 0) - drafts.length;
     const room = Math.min(CHAT_LIMITS.imagesPerMessage - drafts.length, slotsLeft);
     if (room <= 0) {
-      setError(slotsLeft <= 0 ? "You've used all the image slots for this chat." : `Up to ${CHAT_LIMITS.imagesPerMessage} images per message.`);
+      setError(slotsLeft <= 0 ? "You've used all the image slots for this chat." : `That's ${CHAT_LIMITS.imagesPerMessage} images already. Send this message, then add more.`);
       return;
     }
     setError(null);

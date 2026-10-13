@@ -10,6 +10,8 @@ export type ChatMessage = {
   content: string;
   /** The assistant's own turn as JSON, which is how the model is shown it afterwards. Never sent to the browser. */
   json?: string;
+  /** Answers the customer can tap in reply to this message. */
+  suggest?: string[];
   /** Ids of uploaded reference images. */
   images?: string[];
   at: string;

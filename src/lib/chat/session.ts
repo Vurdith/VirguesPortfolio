@@ -107,7 +107,11 @@ export const cookieOptions = () => ({
 
 /** What the browser is allowed to see of a conversation: no hashes, no pricing floor, no internals. */
 export function threadView(thread: ChatThread) {
+  const last = thread.messages.at(-1);
+  // Offered only on the assistant's newest question, always with a way to say "I don't know".
+  const answerable = thread.status === "open" && !thread.takeover && last?.role === "assistant" && !last.by && thread.userTurns > 0;
   return {
+    suggestions: answerable && last.content.includes("?") ? [...(last.suggest ?? []), "Not sure"] : [],
     messages: thread.messages.map((message) => ({
       id: message.id,
       role: message.role,

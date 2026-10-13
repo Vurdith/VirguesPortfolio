@@ -98,10 +98,11 @@ BOUNDARIES
 
 OUTPUT
 Reply with one JSON object and nothing else, on a single line with no code fence. Keep it minimal:
-{"reply": string, "brief": {...}, "offer": number, "concede": boolean, "styleOffer": number, "concedeStyle": boolean, "awaitingConfirm": boolean, "resolved": boolean}
+{"reply": string, "brief": {...}, "offer": number, "concede": boolean, "styleOffer": number, "concedeStyle": boolean, "awaitingConfirm": boolean, "resolved": boolean, "suggest": [string]}
 - "reply" is what the customer sees.
 - "brief" holds ONLY what you learned or changed in this message, from these fields: name, contact, project, platform, frames (a number), styleReplication (a boolean), screens, style, references, deadline (write "none" if they have none), budget (what they say they can spend, in their words), extras. Everything already known is kept for you, so never repeat it, and leave "brief" out when nothing changed. "screens", "references" and "extras" accumulate, so when one changes send its complete updated value (screens as the full list of screen NAMES, two or three words each, no details; references with every "Ref N: ..." so far). "project" is at most two sentences. Keep every field short and factual.
-- Leave out "offer" and "styleOffer" unless you are conceding, and leave out any boolean that is false.`;
+- Leave out "offer" and "styleOffer" unless you are conceding, and leave out any boolean that is false.
+- "suggest" is up to 4 answers the customer could tap instead of typing, for the question you just asked. Write them as the customer would say them, 1 to 5 words each, concrete and different from each other (for "which platform?": "Roblox", "PC", "Mobile", "Console"). Never put a price, a discount or "not sure" in them; the site adds "Not sure" itself. Leave "suggest" out when only they can know the answer (their name, their contact, their own idea in their words).`;
 
 /** Words that mean money is on the table, which is when thinking before replying is worth paying for. */
 const PRICE_TALK = /£|\$|€|\b(budget|price|prices|pricing|cost|costs|cheap|cheaper|expensive|afford|discount|quote|total|pay|rate|rates|deal)\b/i;
@@ -219,7 +220,7 @@ const BRIEF_FIELDS = ["name", "contact", "project", "platform", "frames", "style
  * the brief fields that changed, and whatever took effect. Seeing its past turns in the format it
  * must write is what keeps it writing that format first time.
  */
-function sentJson(reply: string, before: ChatThread, brief: ChatBrief, result: TurnResult): string {
+function sentJson(reply: string, before: ChatThread, brief: ChatBrief, result: TurnResult, suggest: string[]): string {
   const changes: Record<string, unknown> = {};
   for (const field of BRIEF_FIELDS) {
     if (JSON.stringify(brief[field] ?? "") !== JSON.stringify(before.brief[field] ?? "")) changes[field] = brief[field];
@@ -231,6 +232,7 @@ function sentJson(reply: string, before: ChatThread, brief: ChatBrief, result: T
     ...(result.styleOffer < before.styleOffer ? { styleOffer: result.styleOffer, concedeStyle: true } : {}),
     ...(result.awaitingConfirm ? { awaitingConfirm: true } : {}),
     ...(result.resolved ? { resolved: true } : {}),
+    ...(suggest.length ? { suggest } : {}),
   });
 }
 
@@ -245,6 +247,8 @@ export type AgentTurn = {
   resolved: boolean;
   /** This turn as JSON, kept on the reply so the model is shown it in later turns. */
   json: string;
+  /** Answers the customer can tap. Empty when the reply is the server's own. */
+  suggest: string[];
   costUsd: number;
   usage: Usage;
 };
@@ -286,7 +290,9 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
           awaitingConfirm: thread.awaitingConfirm,
           resolved: false,
         };
-    return { reply, brief, ...result, json: sentJson(reply, thread, brief, result), costUsd, usage };
+    // Suggestions answer the model's own question, so they go only with its own words.
+    const suggest = output && reply !== KEEP_GOING && !result.resolved ? output.suggest : [];
+    return { reply, brief, ...result, json: sentJson(reply, thread, brief, result, suggest), suggest, costUsd, usage };
   };
 
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {

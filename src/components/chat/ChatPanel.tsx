@@ -170,8 +170,8 @@ export function ChatPanel() {
   const uploading = drafts.some((draft) => draft.status === "uploading");
   const failed = drafts.some((draft) => draft.status === "error");
 
-  const send = async () => {
-    const content = text.trim();
+  const send = async (quick?: string) => {
+    const content = (quick ?? text).trim();
     const images = drafts.flatMap((draft) => (draft.status === "done" && draft.id ? [draft.id] : []));
     if (sending || uploading || (!content && !images.length)) return;
     if (failed) {
@@ -354,6 +354,7 @@ export function ChatPanel() {
   }
 
   const quickStarts = open && !text && !drafts.length && messages.length <= 1 ? STARTERS : [];
+  const suggestions = open && !sending && !text && !drafts.length ? (thread?.suggestions ?? []) : [];
 
   return (
     <>
@@ -394,6 +395,21 @@ export function ChatPanel() {
                   className="shrink-0 rounded-full border border-line/20 bg-white/[0.03] px-3.5 py-2 text-xs text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
                 >
                   {starter}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {suggestions.length ? (
+            <div className="-mx-3 mb-3 flex gap-2 overflow-x-auto px-3 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0" aria-label="Suggested replies">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => void send(suggestion)}
+                  className="shrink-0 rounded-full border border-line/20 bg-white/[0.03] px-3.5 py-2 text-xs text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
+                >
+                  {suggestion}
                 </button>
               ))}
             </div>

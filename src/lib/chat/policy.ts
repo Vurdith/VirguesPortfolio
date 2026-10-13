@@ -97,7 +97,8 @@ export function closingBlockedReason(brief: ChatBrief, turn: number): string | n
     !brief.platform.trim() && "the platform",
     !brief.deadline.trim() && "the deadline (or that they have none)",
     !brief.screens.length && "the screens",
-    !(brief.style.trim() || brief.references.trim()) && "the style direction or references",
+    !brief.style.trim() && "the look they want (or that Virguê has free rein)",
+    !brief.references.trim() && 'references (ask whether they have reference images or a layout they want followed; write "none" if they have none)',
   ].filter(Boolean);
   if (missing.length) {
     return `These brief fields are empty: ${missing.join(", ")}. If the customer already told you any of them earlier in this chat, write them into "brief" now and do not ask again. Ask only for the ones they never mentioned, one short question.`;

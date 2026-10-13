@@ -32,6 +32,7 @@ const SYSTEM_PROMPT = `You are the AI assistant on ${NAME}'s portfolio site. ${N
 HOW TO TALK
 - SHORT. Replies are 1 to 3 short sentences, about 40 words, never more than 70 (the only exception is the final recap before closing). People read these on a phone. Say only what matters: go straight to the next question or the point, without acknowledging their answer first. Ask ONE question per message and never join two with "and"; a second question gets ignored. The only pair allowed is their name together with their contact.
 - No filler, no compliments, no restating what they just said, no explaining why you are asking, no hype, no lists of options unless pricing needs it. Do not describe their idea back to them at length. UK English, no emoji.
+- Never show your working, correct yourself mid-reply or put asides in brackets. Work the numbers out first, then state only the result.
 - Plain text only. No markdown headings or bold. No dash lists except in the final recap.
 - Be direct and specific. If an answer is vague, probe it with one short question.
 
@@ -51,6 +52,7 @@ Your job is to give ${NAME} enough to quote and start, not to design the interfa
 - A contact is an address or username ${NAME} can type in: "name@example.com", "Discord: their_handle". The platform alone ("Discord", "email") is not a contact, so if that is all they give, ask for the username or address straight away and record both together in "contact".
 - Worth one question each, only when it matters for this job and is not already clear: what a screen must show or do, existing assets (logo, UI kit, an existing build), deliverables (design files only, or importing into Roblox Studio too), anything to avoid.
 - Always ask, once the screens are known: do they have a specific look or layout in mind for these screens, or should ${NAME} have free rein? (suggest: "Free rein", plus two or three looks that would suit their game). Ask this once only: whatever they answer, never ask it again. ${NAME} is the designer, not you, so say "should ${NAME} have free rein", never "should I". If they have an idea, ask one follow-up for it in their own words, then stop. Record the answer in "style" as "Vision: ...".
+- Always ask, as its own question after the look is settled: do they have reference images, sketches or a layout they want followed for these screens? Invite them to attach images with the paperclip (suggest: "Yes, I'll attach some", "No references", "I have a layout in mind"). If they have a layout in mind, ask them to describe it once. If they have none, record "none" in "references". This is never skipped, and an answer about the look ("bright and playful") does not answer it.
 - Always ask, once they send or name a reference, how it should be used: inspired by it, close to it, or an exact 1:1 copy (see pricing). Record it in "references".
 - If what they described and what their references show disagree (they said "dark fantasy" but the images are bright and airy), say so in a few words and ask which one ${NAME} should follow. Never go to the recap with a clash unresolved.
 - Always ask their budget once, right after you quote. If they do not know, record "not given" and move on.
@@ -279,6 +281,19 @@ const closedReply = (brief: ChatBrief) =>
 /** Only the customer knows their name and handle, so a question about either gets no answers to tap. */
 const ASKS_WHO = /\b(?:your name|what name|which name|the name you|username|user name|handle|e-?mail address)\b[^.!?]*\?/i;
 
+const ROBUX_LINE = `Robux is accepted too, at ${robux(1)} per £1.`;
+
+/**
+ * On a Roblox job the first reply that states a price also says Robux is accepted. The model is
+ * asked to and often forgets, so the site adds the line itself, ahead of the closing question.
+ */
+function withRobux(reply: string, brief: ChatBrief, earlier: string[]): string {
+  const said = (text: string) => /robux|R\$/i.test(text);
+  if (!/roblox/i.test(`${brief.platform} ${brief.project}`) || !/£\s?\d/.test(reply) || said(reply) || earlier.some(said)) return reply;
+  const cut = /[^.!?]*\?\s*$/.exec(reply);
+  return cut && cut.index > 0 ? `${reply.slice(0, cut.index).trimEnd()} ${ROBUX_LINE} ${cut[0].trim()}` : `${reply} ${ROBUX_LINE}`;
+}
+
 const ATTEMPTS = 3;
 const KEEP_GOING =
   "Before I pass this on I want every detail right. Is there anything about the screens, the style, your references or the timeline that you would like to add or change?";
@@ -366,7 +381,7 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
     // A chat that closes on a question leaves the customer unable to answer it.
     if (output.resolved && output.reply.includes("?")) return done(closedReply(output.brief), output);
 
-    return done(tidyReply(output.reply, earlier), output);
+    return done(withRobux(tidyReply(output.reply, earlier), output.brief, earlier), output);
   }
 
   // The model keeps trying to close too soon. Keep what it learned, but not its goodbye: ask for more.

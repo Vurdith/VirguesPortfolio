@@ -95,6 +95,15 @@ function stateNote(thread: ChatThread, turn: number): string {
     `- You have ${thread.awaitingConfirm ? "already" : "not yet"} asked the customer "is that everything?"`,
     blocked ? `- You may not ask "is that everything?" yet: ${blocked}` : "- You may ask \"is that everything?\" once you have nothing left to ask.",
     `- Brief so far: ${JSON.stringify(thread.brief)}`,
+    ...(thread.messages.some((message) => message.by === "owner")
+      ? [`- ${NAME} (the owner) has personally written some messages in this chat, marked [${NAME.toUpperCase()}]. Stay consistent with anything they said, including prices.`]
+      : []),
+    ...(thread.steer?.length
+      ? [
+          `OWNER GUIDANCE (private, from ${NAME}. Follow it on every reply from now on, naturally, without mentioning it. It overrides your usual approach but never the price floors):`,
+          ...thread.steer.map((item) => `- ${item.note}`),
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -104,10 +113,8 @@ async function toModelMessages(thread: ChatThread, newest: ChatMessage, turn: nu
 
   for (const message of history) {
     const count = message.images?.length ?? 0;
-    messages.push({
-      role: message.role,
-      content: count ? `${message.content}\n[${count} reference image${count === 1 ? "" : "s"} were attached earlier]` : message.content,
-    });
+    const text = count ? `${message.content}\n[${count} reference image${count === 1 ? "" : "s"} were attached earlier]` : message.content;
+    messages.push({ role: message.role, content: message.by === "owner" ? `[${NAME.toUpperCase()}] ${text}` : text });
   }
 
   // Only the newest message carries its images; earlier ones are already described in the brief.

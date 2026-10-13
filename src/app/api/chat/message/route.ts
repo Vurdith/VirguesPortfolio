@@ -5,6 +5,7 @@ import { z } from "zod";
 import { chatEnabled, runAgentTurn } from "@/lib/chat/agent";
 import { chatImageLink } from "@/lib/chat/images";
 import { CHAT_LIMITS } from "@/lib/chat/limits";
+import { mergeConcurrent } from "@/lib/chat/merge";
 import { NO_STORE, readSession, sessionView } from "@/lib/chat/session";
 import { countTurnToday, getThread, saveThread } from "@/lib/chat/store";
 import type { ChatMessage, ChatThread } from "@/lib/chat/types";
@@ -92,6 +93,23 @@ export async function POST(req: Request) {
   if (!images.every((id) => thread.uploads.includes(id))) return fail("Unknown image.", 400);
   if (thread.userTurns >= CHAT_LIMITS.userMessages) return fail("This conversation has reached its limit.", 409);
 
+  // The owner has taken over: keep the customer's message for them and leave the reply to the owner.
+  if (thread.takeover) {
+    const sent: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content,
+      ...(images.length ? { images } : {}),
+      at: new Date().toISOString(),
+    };
+    thread.messages.push(sent);
+    thread.userTurns += 1;
+    thread.updatedAt = sent.at;
+    mergeConcurrent(thread, await getThread(thread.id));
+    await saveThread(thread);
+    return NextResponse.json(sessionView({ ...session, thread }), { headers: NO_STORE });
+  }
+
   // One request at a time per conversation; a stale lock from a crashed request expires by itself.
   if (thread.lockedUntil && Date.parse(thread.lockedUntil) > Date.now()) {
     return fail("One moment, I'm still replying to your last message.", 429);
@@ -150,9 +168,8 @@ export async function POST(req: Request) {
   }
   if (ended) thread.resolvedAt = reply.at;
 
-  // An image uploaded while the assistant was replying is already stored; keep it.
-  const stored = await getThread(thread.id);
-  if (stored) thread.uploads = [...new Set([...thread.uploads, ...stored.uploads])];
+  // Fold in anything that arrived while the assistant was replying (an upload, the owner joining).
+  mergeConcurrent(thread, await getThread(thread.id));
   await saveThread(thread);
 
   if (ended) {

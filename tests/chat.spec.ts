@@ -15,7 +15,12 @@ test.describe.configure({ mode: "serial" });
 
 type View = {
   state: "none" | "open" | "cooldown" | "locked";
-  thread: { messages: { role: string; content: string }[]; ended: boolean; imagesLeft: number } | null;
+  thread: {
+    messages: { role: string; owner: boolean; content: string }[];
+    ended: boolean;
+    takeover: boolean;
+    imagesLeft: number;
+  } | null;
   error?: string;
 };
 
@@ -222,23 +227,91 @@ test("reference images need a conversation, are limited, and reach the model", a
   await a.context.close();
 });
 
-test("the chat window works from the contact section", async ({ page }) => {
+test("the floating bubble opens a full chat page that works", async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": freshIp() });
   await page.route("**/intro-loader-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 
-  await page.getByRole("button", { name: /BRIEF THE AI ASSISTANT/ }).click();
-  const dialog = page.getByRole("dialog", { name: "Brief your project." });
-  await expect(dialog).toBeVisible();
+  await page.getByRole("link", { name: "Brief your project with the AI assistant" }).click();
+  await expect(page).toHaveURL(/\/chat$/);
+  await expect(page.getByRole("heading", { name: "Brief your project." })).toBeVisible();
+  // The bubble is not shown on the chat page itself.
+  await expect(page.getByRole("link", { name: "Brief your project with the AI assistant" })).toHaveCount(0);
 
-  await dialog.getByRole("button", { name: "START CHAT" }).click();
-  await expect(dialog.getByText("What are you building?")).toBeVisible();
+  await page.getByRole("button", { name: "START CHAT" }).click();
+  await expect(page.getByText("What are you building?")).toBeVisible();
 
-  await dialog.getByLabel("Your message").fill("A shop menu for my game");
-  await dialog.getByRole("button", { name: "SEND" }).click();
-  await expect(dialog.getByText("Noted. What style are you after?")).toBeVisible();
-  await expect(dialog.getByText("A shop menu for my game")).toBeVisible();
+  await page.getByLabel("Your message").fill("A shop menu for my game");
+  await page.getByRole("button", { name: "SEND" }).click();
+  await expect(page.getByText("Noted. What style are you after?")).toBeVisible();
+  await expect(page.getByText("A shop menu for my game")).toBeVisible();
+});
+
+test("the chat page fits a phone", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 780 }, extraHTTPHeaders: { "x-forwarded-for": freshIp() } });
+  const page = await context.newPage();
+  await page.goto("/chat");
+  await page.getByRole("button", { name: "START CHAT" }).click();
+  await expect(page.getByLabel("Your message")).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(overflow).toBe(false);
+  await context.close();
+});
+
+test("the owner can take over, steer the assistant, hand back and end the chat", async ({ browser, request }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("takeover-test hello");
+
+  const find = async () => {
+    const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+    const { briefs } = (await res.json()) as { briefs: { id: string; messages: { content: string }[] }[] };
+    return briefs.find((brief) => brief.messages.some((message) => message.content === "takeover-test hello"))!;
+  };
+  const { id } = await find();
+  const post = (path: string, data: unknown) => admin.request.post(`/api/admin/briefs/${id}/${path}`, { data });
+
+  // Only the admin can do any of this.
+  expect((await request.post(`/api/admin/briefs/${id}/reply`, { data: { content: "hi" } })).status()).toBe(401);
+  expect((await request.post(`/api/admin/briefs/${id}/control`, { data: { action: "end" } })).status()).toBe(401);
+
+  // Steering: the note reaches the assistant on its next reply, and the customer never sees it.
+  expect((await post("control", { action: "steer", note: "Always mention the polish pass" })).ok()).toBe(true);
+  const guided = await a.say("steer-check please");
+  expect(a.lastReply(guided.body)).toBe("Guided: Always mention the polish pass");
+  expect(Object.keys(guided.body!.thread!)).not.toContain("steer");
+
+  // Replying as the owner takes the chat over, and the customer sees it as the owner.
+  const reply = await post("reply", { content: "Hi, it's Virguê, I'll pick this up." });
+  expect(reply.ok()).toBe(true);
+  const seen = await a.call("/api/chat");
+  expect(seen.body?.thread?.takeover).toBe(true);
+  expect(seen.body?.thread?.messages.at(-1)).toMatchObject({ owner: true, content: "Hi, it's Virguê, I'll pick this up." });
+
+  // While the owner is in control the assistant says nothing: the customer's message is kept for them.
+  const count = seen.body!.thread!.messages.length;
+  const quiet = await a.say("are you there?");
+  expect(quiet.body?.thread?.messages).toHaveLength(count + 1);
+  expect(quiet.body?.thread?.messages.at(-1)).toMatchObject({ role: "user", content: "are you there?" });
+
+  // Handing back lets the assistant answer again, with the guidance still in place.
+  expect((await post("control", { action: "release" })).ok()).toBe(true);
+  expect(a.lastReply((await a.say("steer-check again")).body)).toBe("Guided: Always mention the polish pass");
+
+  // The live page for the conversation renders.
+  const page = await admin.request.get(`/admin/briefs/${id}`);
+  expect(page.ok()).toBe(true);
+  expect(await page.text()).toContain("REPLY AS ME");
+
+  // Ending the chat closes it for the customer and starts their cooldown.
+  expect((await post("control", { action: "end" })).ok()).toBe(true);
+  const ended = await a.call("/api/chat");
+  expect(ended.body?.state).toBe("cooldown");
+  expect(ended.body?.thread?.ended).toBe(true);
+  expect((await post("reply", { content: "too late" })).status()).toBe(409);
+  expect((await a.say("one more")).res.status()).toBe(409);
+  await a.context.close();
 });
 
 test("the admin can poll for conversations changed since a time, and only the admin", async ({ browser, request }) => {

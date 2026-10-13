@@ -3,6 +3,8 @@ import type { QuoteStatus } from "@/types/portfolio";
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
+  /** Set when the owner wrote it personally, rather than the assistant. */
+  by?: "owner";
   content: string;
   /** Ids of uploaded reference images. */
   images?: string[];
@@ -47,6 +49,8 @@ export const EMPTY_BRIEF: ChatBrief = {
  */
 export type ChatStatus = "open" | "resolved" | "abandoned";
 
+export type ChatSteer = { id: string; note: string; at: string };
+
 export type ChatThread = {
   id: string;
   /** Salted hash of the visitor's IP. Never sent out. */
@@ -75,6 +79,10 @@ export type ChatThread = {
   styleOffer: number;
   lastStyleConcessionTurn: number;
   userTurns: number;
+  /** The owner has taken over: the assistant stays silent and the owner replies. */
+  takeover?: boolean;
+  /** Private guidance from the owner that the assistant follows on every reply. */
+  steer?: ChatSteer[];
   /** Overlapping requests on one conversation are refused until this time. */
   lockedUntil?: string;
   /** Model spend, when the provider reports it. */

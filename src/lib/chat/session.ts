@@ -84,6 +84,8 @@ export function newThread(ownerHash: string, token: string, greeting: string): C
     uploads: [],
     brief: { ...EMPTY_BRIEF },
     awaitingConfirm: false,
+    takeover: false,
+    steer: [],
     offer: CHAT_PRICE.list,
     lastConcessionTurn: 0,
     styleOffer: CHAT_PRICE.style.list,
@@ -109,6 +111,7 @@ export function threadView(thread: ChatThread) {
     messages: thread.messages.map((message) => ({
       id: message.id,
       role: message.role,
+      owner: message.by === "owner",
       content: message.content,
       images: (message.images ?? []).map((id) => ({ id, url: chatImageUrl(id) })),
       at: message.at,
@@ -116,6 +119,8 @@ export function threadView(thread: ChatThread) {
     messagesLeft: Math.max(0, CHAT_LIMITS.userMessages - thread.userTurns),
     imagesLeft: Math.max(0, CHAT_LIMITS.images - thread.uploads.length),
     ended: thread.status !== "open",
+    /** The owner is replying personally, so the assistant is paused. */
+    takeover: Boolean(thread.takeover),
   };
 }
 

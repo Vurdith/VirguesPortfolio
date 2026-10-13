@@ -1,5 +1,5 @@
 import { chatImageUrl } from "./images";
-import type { ChatBrief, ChatStatus, ChatThread } from "./types";
+import type { ChatBrief, ChatStatus, ChatSteer, ChatThread } from "./types";
 import type { QuoteStatus } from "@/types/portfolio";
 
 /** A conversation as the admin pages see it: no hashes, images resolved to addresses. */
@@ -15,8 +15,18 @@ export type AdminBrief = {
   styleOffer: number;
   userTurns: number;
   costUsd: number;
+  /** The owner is replying personally and the assistant is paused. */
+  takeover: boolean;
+  steer: ChatSteer[];
   images: { id: string; url: string }[];
-  messages: { id: string; role: "user" | "assistant"; content: string; images: { id: string; url: string }[]; at: string }[];
+  messages: {
+    id: string;
+    role: "user" | "assistant";
+    owner: boolean;
+    content: string;
+    images: { id: string; url: string }[];
+    at: string;
+  }[];
 };
 
 export function adminBrief(thread: ChatThread): AdminBrief {
@@ -32,10 +42,13 @@ export function adminBrief(thread: ChatThread): AdminBrief {
     styleOffer: thread.styleOffer,
     userTurns: thread.userTurns,
     costUsd: thread.costUsd,
+    takeover: Boolean(thread.takeover),
+    steer: thread.steer ?? [],
     images: thread.uploads.map((id) => ({ id, url: chatImageUrl(id) })),
     messages: thread.messages.map((message) => ({
       id: message.id,
       role: message.role,
+      owner: message.by === "owner",
       content: message.content,
       images: (message.images ?? []).map((id) => ({ id, url: chatImageUrl(id) })),
       at: message.at,

@@ -128,13 +128,14 @@ const clip = (value: unknown, max: number) => (typeof value === "string" ? value
 export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput | null {
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
-  if (start === -1 || end <= start) return null;
+  if (start === -1) return null;
+  if (end <= start) return salvageReply(raw, previous);
 
   let data: Record<string, unknown>;
   try {
     data = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
   } catch {
-    return null;
+    return salvageReply(raw, previous);
   }
 
   const reply = clip(data.reply, 2000);
@@ -185,4 +186,31 @@ export function holdPriceReply(thread: Pick<ChatThread, "offer" | "styleOffer" |
     ? ` For ${brief.frames} ${noun}${brief.frames === 1 ? "" : "s"} that comes to £${(brief.frames * unit).toLocaleString("en-GB")}.`
     : "";
   return `I can do £${unit} per ${noun}.${total} That's the best I can offer right now, and it covers custom design work with a clean handoff. What would you like to adjust, or is there anything else I should know about the project?`;
+}
+
+/**
+ * A long answer can be cut off before its closing brace (the brief's summary is last and the
+ * longest). The reply comes first, so if that arrived whole the customer still gets it; what the
+ * brief learned this turn is lost, and nothing about the price or closing changes.
+ */
+function salvageReply(raw: string, previous: ChatBrief): AgentOutput | null {
+  const match = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(raw);
+  if (!match) return null;
+  let reply = "";
+  try {
+    reply = clip(JSON.parse(`"${match[1]}"`), 2000);
+  } catch {
+    return null;
+  }
+  if (!reply) return null;
+  return {
+    reply,
+    brief: previous,
+    offer: Number.NaN,
+    concede: false,
+    styleOffer: Number.NaN,
+    concedeStyle: false,
+    awaitingConfirm: false,
+    resolved: false,
+  };
 }

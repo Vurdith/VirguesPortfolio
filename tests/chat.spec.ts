@@ -227,6 +227,15 @@ test("reference images need a conversation, are limited, and reach the model", a
   await a.context.close();
 });
 
+test("an answer cut off by the token limit still gets its reply to the customer", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const sent = await a.say("truncate this");
+  expect(sent.res.status()).toBe(200);
+  expect(a.lastReply(sent.body)).toBe("Cut off but readable.");
+  await a.context.close();
+});
+
 test("images the model cannot take do not stop the chat", async ({ browser }) => {
   const a = await visitor(browser);
   await a.start();

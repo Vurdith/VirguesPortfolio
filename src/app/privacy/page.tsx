@@ -5,7 +5,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: `What ${SITE.name} stores when you send a quote request or a review, and why.`,
+  description: `What ${SITE.name} stores when you send a quote request, a review or use the assistant, and why.`,
   alternates: { canonical: "/privacy" },
 };
 
@@ -24,6 +24,14 @@ const SECTIONS = [
       "If you leave a review, your name, rating, message and any images you attach are stored and shown on the site only after I approve them. Images are re-saved without their metadata (such as location data) and limited to 4 per review.",
       "You get a private key that stays in your browser, so only you can add replies to your review later. Only a scrambled copy of it is stored here. My replies and yours appear in the review's thread once approved.",
       "To stop spam, a scrambled (hashed) version of your IP address is kept next to a review for a day or two, then deleted.",
+    ],
+  },
+  {
+    title: "AI assistant",
+    body: [
+      "If you use the assistant to brief a project, your messages and any reference images you attach are stored so I can read the full brief, and they are sent to an AI model provider (through OpenRouter) to generate the replies. Do not share anything you would not want a service like that to process.",
+      "A conversation is kept with the contact details you give, the price discussed and the images. Images are re-saved without their metadata. Prices the assistant mentions are guides; I confirm the final price myself.",
+      "To allow one conversation at a time per connection, a scrambled (hashed) version of your IP address is kept next to the conversation, and a cookie in your browser links you back to it for up to a day.",
     ],
   },
   {

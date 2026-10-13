@@ -1,0 +1,82 @@
+import type { QuoteStatus } from "@/types/portfolio";
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  /** Ids of uploaded reference images. */
+  images?: string[];
+  at: string;
+};
+
+/** What the assistant has learned so far. It rewrites this every turn, so it is always complete. */
+export type ChatBrief = {
+  name: string;
+  contact: string;
+  project: string;
+  platform: string;
+  frames: number | null;
+  /** The customer wants an existing look matched, which is priced per task rather than per frame. */
+  styleReplication: boolean;
+  screens: string[];
+  style: string;
+  references: string;
+  deadline: string;
+  extras: string;
+  summary: string;
+};
+
+export const EMPTY_BRIEF: ChatBrief = {
+  name: "",
+  contact: "",
+  project: "",
+  platform: "",
+  frames: null,
+  styleReplication: false,
+  screens: [],
+  style: "",
+  references: "",
+  deadline: "",
+  extras: "",
+  summary: "",
+};
+
+/**
+ * open: still talking. resolved: the customer confirmed it is everything and it was sent on.
+ * abandoned: went quiet, or hit a limit, before that. The owner still sees all of them.
+ */
+export type ChatStatus = "open" | "resolved" | "abandoned";
+
+export type ChatThread = {
+  id: string;
+  /** Salted hash of the visitor's IP. Never sent out. */
+  ownerHash: string;
+  /** Hash of the secret in the visitor's cookie. Never sent out. */
+  tokenHash: string;
+  status: ChatStatus;
+  /** The owner's own follow-up state, same as quote requests. */
+  handled: QuoteStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  /** Why it ended without a confirmation, for the owner. */
+  endReason?: string;
+  messages: ChatMessage[];
+  /** Images this visitor uploaded. Messages may only reference these. */
+  uploads: string[];
+  brief: ChatBrief;
+  /** The assistant has asked "is that everything?" and is waiting for the answer. */
+  awaitingConfirm: boolean;
+  /** Price per frame currently on the table. */
+  offer: number;
+  /** Customer message number at which the price last came down (0 = never). */
+  lastConcessionTurn: number;
+  /** Price per task when matching an existing style, and when it last came down. */
+  styleOffer: number;
+  lastStyleConcessionTurn: number;
+  userTurns: number;
+  /** Overlapping requests on one conversation are refused until this time. */
+  lockedUntil?: string;
+  /** Model spend, when the provider reports it. */
+  costUsd: number;
+};

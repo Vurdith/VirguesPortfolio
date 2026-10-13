@@ -47,7 +47,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/og.jpg"],
+    // Discord takes this image over the Open Graph one, so it has to be the GIF as well.
+    images: ["/og-intro.gif"],
   },
 };
 

@@ -3,10 +3,15 @@ import Link from "next/link";
 
 import { SITE } from "@/lib/site";
 
+const TITLE = `Privacy — ${SITE.name}`;
+const DESCRIPTION = `What ${SITE.name} stores when you send a quote request, a review or use the assistant, and why.`;
+
 export const metadata: Metadata = {
   title: "Privacy",
-  description: `What ${SITE.name} stores when you send a quote request, a review or use the assistant, and why.`,
+  description: DESCRIPTION,
   alternates: { canonical: "/privacy" },
+  openGraph: { type: "website", url: `${SITE.url}/privacy`, siteName: SITE.name, title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 const SECTIONS = [

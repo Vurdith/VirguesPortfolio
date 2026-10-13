@@ -78,7 +78,12 @@ export function startStub() {
     req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
       try {
-        const { messages } = JSON.parse(body) as { messages: Msg[] };
+        const { messages, response_format } = JSON.parse(body) as { messages: Msg[]; response_format?: unknown };
+        const lastUser = [...messages].reverse().find((m) => m.role === "user");
+        const asked = lastUser ? textOf(lastUser.content) : "";
+        // Failure modes, so the tests can check what the customer and the owner see.
+        if (/boom/.test(asked)) return void res.writeHead(500).end("upstream exploded");
+        if (/no-json/.test(asked) && response_format) return void res.writeHead(400).end("response_format is not supported");
         const out = JSON.stringify({
           choices: [{ message: { content: JSON.stringify(answer(messages)) } }],
           usage: { cost: 0.0002 },

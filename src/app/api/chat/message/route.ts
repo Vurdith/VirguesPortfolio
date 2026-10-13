@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
+import { SITE } from "@/lib/site";
 
 import { chatEnabled, runAgentTurn } from "@/lib/chat/agent";
 import { emailOwner } from "@/lib/chat/email";
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const LOCK_MS = 60_000;
-const DAILY_TURN_LIMIT = () => Number(process.env.CHAT_DAILY_LIMIT) || 400;
+const DAILY_TURN_LIMIT = () => Number(process.env.CHAT_DAILY_LIMIT) || 5000;
 
 const Body = z.object({
   message: z.string().max(CHAT_LIMITS.messageChars * 2).default(""),
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
   }
 
   if ((await countTurnToday()) > DAILY_TURN_LIMIT()) {
-    return fail("The assistant is very busy today. Please use the quote form and I'll reply by email.", 503);
+    return fail(`The assistant has reached its limit for today. Email ${SITE.email} and I'll reply personally.`, 503);
   }
 
   thread.lockedUntil = new Date(Date.now() + LOCK_MS).toISOString();

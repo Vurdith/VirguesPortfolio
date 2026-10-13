@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { SITE } from "@/lib/site";
 
 import { chatEnabled } from "@/lib/chat/agent";
 import {
@@ -27,7 +28,7 @@ const fail = (error: string, status: number, headers: Record<string, string> = {
   NextResponse.json({ error }, { status, headers: { ...NO_STORE, ...headers } });
 
 export async function POST(req: Request) {
-  if (!chatEnabled()) return fail("The assistant is not available right now. Please use the quote form.", 503);
+  if (!chatEnabled()) return fail(`The assistant is not available right now. Email ${SITE.email} instead.`, 503);
 
   const limited = rateLimit("chat-start", clientKey(req), 6, 60 * 60 * 1000);
   if (!limited.ok) return fail("Too many attempts. Try again later.", 429, { "retry-after": String(limited.retryAfterSeconds) });
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
     await saveThread(thread);
   } catch (err) {
     console.error("Chat start failed:", err);
-    return fail("Could not start the conversation. Please use the quote form.", 503);
+    return fail(`Could not start the conversation. Try again, or email ${SITE.email}.`, 503);
   }
 
   const response = NextResponse.json(

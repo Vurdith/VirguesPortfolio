@@ -295,7 +295,7 @@ export function ChatPanel() {
       <>
         {header}
         <Notice title="The assistant is offline right now.">
-          Use the quote form on the home page, or email{" "}
+          Email{" "}
           <a className="underline underline-offset-4" href={`mailto:${SITE.email}`}>
             {SITE.email}
           </a>
@@ -321,7 +321,7 @@ export function ChatPanel() {
       <>
         {header}
         <Notice title="A conversation is already open from this connection.">
-          Only one chat can run at a time per connection. Try again in about {minutes(view.retryAfterMinutes)}, or use the quote form on the home page.
+          Only one chat can run at a time per connection. Try again in about {minutes(view.retryAfterMinutes)}, or email {SITE.email}.
         </Notice>
       </>
     );
@@ -331,7 +331,7 @@ export function ChatPanel() {
       <>
         {header}
         <Notice title="You have just finished a conversation.">
-          To keep the assistant fair for everyone, the next chat opens in about {minutes(view.retryAfterMinutes)}. The quote form is always available.
+          To keep the assistant fair for everyone, the next chat opens in about {minutes(view.retryAfterMinutes)}. For anything urgent, email {SITE.email}.
         </Notice>
       </>
     );

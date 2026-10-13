@@ -13,6 +13,9 @@ export function transcriptText(brief: AdminBrief): string {
     `Started ${stamp(brief.createdAt)} UTC · last activity ${stamp(brief.updatedAt)} UTC`,
     `Status: ${brief.status}${brief.endReason ? ` (${brief.endReason})` : ""} · handled: ${brief.handled}`,
     `Customer messages: ${brief.userTurns} · model cost: $${brief.costUsd.toFixed(4)}`,
+    ...(brief.usage
+      ? [`Tokens: ${brief.usage.input} in (${brief.usage.cached} read from cache) · ${brief.usage.output} out (${brief.usage.reasoning} of them reasoning)`]
+      : []),
     `Price on the table at the end: £${unit} per ${info.styleReplication ? "task" : "frame"}${info.frames ? ` × ${info.frames}` : ""}`,
     `Customer: ${info.name || "unknown"} · ${info.contact || "no contact"}`,
   ];

@@ -467,14 +467,73 @@ test("brief fields that run long are trimmed on a whole word, not mid-word", asy
   await a.context.close();
 });
 
-test("the summary is refreshed when the customer says something that changes the deal", async ({ browser }) => {
+test("the model only sends what changed, and the rest of the brief is kept", async ({ browser }) => {
   const a = await visitor(browser);
   await a.start();
-  await a.say("summary-check hello");
-  const quiet = await a.say("summary-check nothing special");
-  expect(a.lastReply(quiet.body)).toBe("Summary not due.");
-  const budget = await a.say("summary-check my budget is tight");
-  expect(a.lastReply(budget.body)).toBe("Summary due.");
+  await a.say("hello there delta-start");
+  await a.say("delta-check please");
+  const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const { briefs } = (await res.json()) as {
+    briefs: { brief: { name: string; contact: string; project: string; screens: string[] }; messages: { content: string }[] }[];
+  };
+  const mine = briefs.find((brief) => brief.messages.some((message) => message.content === "delta-check please"))!;
+  expect(mine.brief.project).toBe("Changed project");
+  expect(mine.brief.name).toBe("E2E Tester");
+  expect(mine.brief.contact).toBe("e2e@example.com");
+  expect(mine.brief.screens).toEqual(["Inventory"]);
+  await a.context.close();
+});
+
+test("the fixed prompt is marked for caching and the changing state follows it", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const sent = await a.say("cache-check");
+  expect(a.lastReply(sent.body)).toBe("Prompt marked, state separate.");
+  await a.context.close();
+});
+
+test("the model only reasons when price comes up", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const plain = await a.say("reasoning-check hello");
+  expect(a.lastReply(plain.body)).toBe('Reasoning {"enabled":false} temperature 0.6.');
+  const money = await a.say("reasoning-check my budget is £50");
+  expect(a.lastReply(money.body)).toBe('Reasoning {"effort":"low"} temperature none.');
+  await a.context.close();
+});
+
+test("the handover summary is written once, after the chat ends, and token use is recorded", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  for (const text of ["one", "two", "three", "four"]) await a.say(`details ${text}`);
+  await a.say("I am ready to wrap up");
+  const done = await a.say("Yes, that is everything");
+  expect(done.body?.thread?.ended).toBe(true);
+
+  const find = async () => {
+    const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+    const { briefs } = (await res.json()) as { briefs: { id: string; brief: { summary: string }; messages: { content: string }[] }[] };
+    return briefs.find((brief) => brief.messages.some((message) => message.content === "Yes, that is everything"))!;
+  };
+  // The summary is written just after the customer's last reply, so give it a moment.
+  await expect.poll(async () => (await find()).brief.summary, { timeout: 15_000 }).toContain("SUMMARY STUB covering 6 customer messages");
+
+  const text = await admin.request.get(`/api/admin/briefs/${(await find()).id}/transcript`);
+  expect(await text.text()).toMatch(/Tokens: \d+ in \(\d+ read from cache\)/);
+  await a.context.close();
+});
+
+test("a conversation that has cost too much is wrapped up", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const sent = await a.say("costly-turn");
+  expect(sent.body?.thread?.ended).toBe(true);
+  expect(a.lastReply(sent.body)).toContain("limit for this chat");
+  const again = await a.say("anything else");
+  expect(again.res.status()).toBe(409);
+  const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const { briefs } = (await res.json()) as { briefs: { endReason?: string; messages: { content: string }[] }[] };
+  expect(briefs.find((brief) => brief.messages.some((message) => message.content === "costly-turn"))?.endReason).toBe("Cost limit reached");
   await a.context.close();
 });
 

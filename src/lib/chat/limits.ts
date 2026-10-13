@@ -20,8 +20,8 @@ export const CHAT_LIMITS = {
   contextMessages: 16,
   /** The assistant may only ask "is that everything?" from this customer message on, so it digs first. */
   minTurnsToConfirm: 5,
-  /** A brief this short is not detailed enough to hand over. */
-  minSummaryChars: 200,
+  /** A conversation that has cost this much (USD) is wrapped up, a brake against a runaway chat. Normal ones cost a few cents. */
+  maxCostUsd: 0.25,
 } as const;
 
 /** Per-frame pricing. The customer starts at LIST and can only be moved down one rung at a time. */

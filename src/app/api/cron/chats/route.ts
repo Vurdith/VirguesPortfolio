@@ -4,6 +4,8 @@ import { sweepQuietChats } from "@/lib/chat/sweep";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Writing summaries calls the model.
+export const maxDuration = 60;
 
 /** Daily sweep (Vercel Cron): emails the owner about chats that went quiet. */
 export async function GET(req: Request) {

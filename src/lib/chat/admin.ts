@@ -1,4 +1,5 @@
 import { chatImageUrl } from "./images";
+import type { Usage } from "./model";
 import type { ChatBrief, ChatStatus, ChatSteer, ChatThread } from "./types";
 import type { QuoteStatus } from "@/types/portfolio";
 
@@ -15,6 +16,7 @@ export type AdminBrief = {
   styleOffer: number;
   userTurns: number;
   costUsd: number;
+  usage?: Usage;
   /** The owner is replying personally and the assistant is paused. */
   takeover: boolean;
   steer: ChatSteer[];
@@ -46,6 +48,7 @@ export function adminBrief(thread: ChatThread): AdminBrief {
     styleOffer: thread.styleOffer,
     userTurns: thread.userTurns,
     costUsd: thread.costUsd,
+    ...(thread.usage ? { usage: thread.usage } : {}),
     takeover: Boolean(thread.takeover),
     steer: thread.steer ?? [],
     working: Boolean(thread.lockedUntil && Date.parse(thread.lockedUntil) > Date.now()),

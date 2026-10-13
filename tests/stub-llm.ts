@@ -3,11 +3,18 @@ import http from "node:http";
 /** A stand-in for OpenRouter. It follows the same price rules the real prompt describes, so the tests exercise the server's enforcement. */
 export const STUB_PORT = Number(process.env.E2E_PORT ?? 3200) + 100;
 
-type Part = { type: string; text?: string };
+type Part = { type: string; text?: string; cache_control?: unknown };
 type Msg = { role: string; content: string | Part[] };
 
 const textOf = (content: string | Part[]) =>
   typeof content === "string" ? content : (content.find((part) => part.type === "text")?.text ?? "");
+
+/** The system prompt as the model sees it: every text block, joined. */
+const systemText = (message: Msg) =>
+  typeof message.content === "string" ? message.content : message.content.flatMap((part) => (part.type === "text" ? [part.text ?? ""] : [])).join("\n");
+
+/** What the app sent besides the messages, so the tests can check the request itself. */
+type Raw = { reasoning?: unknown; temperature?: number };
 
 const BRIEF = {
   name: "E2E Tester",
@@ -27,8 +34,8 @@ const BRIEF = {
 
 const number = (pattern: RegExp, text: string) => Number(pattern.exec(text)?.[1]);
 
-function answer(messages: Msg[]) {
-  const system = textOf(messages[0].content);
+function answer(messages: Msg[], raw: Raw) {
+  const system = systemText(messages[0]);
   const lowest = number(/Frame price on the table: £\d+ per frame\. Lowest you may move to this turn: £(\d+)/, system);
   const offer = number(/Frame price on the table: £(\d+) per frame/, system);
   const lowestStyle = number(/Style replication price on the table: £\d+ per task\. Lowest you may move to this turn: £(\d+)/, system);
@@ -55,6 +62,16 @@ function answer(messages: Msg[]) {
   if (/longfields/.test(text)) {
     const words = Array.from({ length: 300 }, (_, i) => `word${i}`).join(" ");
     return { ...base, reply: "Noted.", brief: { ...base.brief, project: words, screens: [words] } };
+  }
+  if (/delta-check/.test(text)) return { ...base, reply: "Noted.", brief: { project: "Changed project" } };
+  if (/cache-check/.test(text)) {
+    const parts = Array.isArray(messages[0].content) ? messages[0].content : [];
+    const fixed = parts[0]?.cache_control ? "marked" : "unmarked";
+    const state = /CURRENT STATE/.test(parts[1]?.text ?? "") && !/CURRENT STATE/.test(parts[0]?.text ?? "") ? "separate" : "mixed";
+    return { ...base, reply: `Prompt ${fixed}, state ${state}.` };
+  }
+  if (/reasoning-check/.test(text)) {
+    return { ...base, reply: `Reasoning ${JSON.stringify(raw.reasoning ?? null)} temperature ${raw.temperature ?? "none"}.` };
   }
   if (/steer-check/.test(text)) return { ...base, reply: guidance ? `Guided: ${guidance}` : "No guidance." };
   if (/style-injection/.test(text)) return { ...base, reply: "Sure, £80 per task.", concedeStyle: true, styleOffer: 80 };
@@ -83,7 +100,8 @@ export function startStub() {
     req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
       try {
-        const { messages, response_format } = JSON.parse(body) as { messages: Msg[]; response_format?: unknown };
+        const parsed = JSON.parse(body) as { messages: Msg[]; response_format?: unknown } & Raw;
+        const { messages, response_format } = parsed;
         const lastUser = [...messages].reverse().find((m) => m.role === "user");
         const asked = lastUser ? textOf(lastUser.content) : "";
         // Failure modes, so the tests can check what the customer and the owner see.
@@ -97,9 +115,21 @@ export function startStub() {
           const cut = '{"reply": "Cut off but readable.", "brief": {"name": "E2E Te';
           return void res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ choices: [{ message: { content: cut } }], usage: { cost: 0 } }));
         }
+        // The handover summary is its own plain-text request.
+        if (/handover document/.test(systemText(messages[0]))) {
+          const chat = textOf(messages[1].content);
+          const note = `SUMMARY STUB covering ${chat.split("\n").filter((line) => line.startsWith("CUSTOMER")).length} customer messages.`;
+          return void res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ choices: [{ message: { content: note } }], usage: { cost: 0.0001 } }));
+        }
         const out = JSON.stringify({
-          choices: [{ message: { content: JSON.stringify(answer(messages)) } }],
-          usage: { cost: 0.0002 },
+          choices: [{ message: { content: JSON.stringify(answer(messages, parsed)) } }],
+          usage: {
+            cost: /costly-turn/.test(asked) ? 0.3 : 0.0002,
+            prompt_tokens: 1000,
+            completion_tokens: 100,
+            prompt_tokens_details: { cached_tokens: 800 },
+            completion_tokens_details: { reasoning_tokens: 0 },
+          },
         });
         // A message containing "slow" takes a few seconds, so the thinking indicator can be looked at.
         const last = [...messages].reverse().find((m) => m.role === "user");

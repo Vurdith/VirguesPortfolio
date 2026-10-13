@@ -191,17 +191,17 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                     setOverId(null);
                   }}
                   className={cn(
-                    "grid gap-4 px-5 py-5 transition-colors duration-200 hover:bg-white/[0.025] md:grid-cols-12 md:items-center md:gap-3 md:py-4",
+                    "grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 px-4 py-4 transition-colors duration-200 hover:bg-white/[0.025] md:grid-cols-12 md:items-center md:gap-3 md:px-5",
                     overId === work.id && dragId !== work.id && "bg-white/[0.05]",
                   )}
                 >
-                  <div className="flex items-center gap-3 md:col-span-2">
+                  <div className="row-span-3 flex items-start gap-2 md:col-span-2 md:row-span-1 md:items-center md:gap-3">
                     {canReorder ? (
                       <>
-                        <span aria-hidden="true" className="cursor-grab select-none text-fog/40">
+                        <span aria-hidden="true" className="hidden cursor-grab select-none text-fog/40 md:inline">
                           ⋮⋮
                         </span>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 max-md:order-last max-md:gap-0 max-md:self-center [&>button]:max-md:grid [&>button]:max-md:size-8 [&>button]:max-md:place-items-center">
                           <button
                             type="button"
                             aria-label={`Move ${work.title} up`}
@@ -259,9 +259,9 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                     </div>
                   </div>
 
-                  <div className="break-all text-xs text-fog/80 md:col-span-2">{work.slug}</div>
+                  <div className="break-all text-xs text-fog/80 max-md:col-start-2 md:col-span-2">/{work.slug}</div>
 
-                  <div className="md:col-span-2">
+                  <div className="max-md:col-start-2 md:col-span-2">
                     <button
                       type="button"
                       role="switch"
@@ -283,7 +283,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 md:col-span-3 md:justify-end">
+                  <div className="col-span-2 flex items-center gap-2 max-md:mt-1 md:col-span-3 md:justify-end">
                     <Link href={`/admin/works/${work.id}/edit`} className={SMALL_BUTTON}>
                       EDIT
                     </Link>

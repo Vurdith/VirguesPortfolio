@@ -176,7 +176,7 @@ export function BriefsInbox({ initialBriefs, initialId }: { initialBriefs: Admin
   const unread = (brief: AdminBrief) => brief.id !== selectedId && brief.updatedAt > (seen[brief.id] ?? openedAt.current);
 
   return (
-    <div className="flex h-[calc(100dvh-4.75rem)] lg:h-dvh lg:gap-3 lg:p-3">
+    <div className="flex h-[calc(100dvh-3.5rem)] lg:h-dvh lg:gap-3 lg:p-3">
       {/* Conversations */}
       <section className={cn("flex w-full min-w-0 flex-col lg:w-[22rem] lg:shrink-0", panel, selected && "hidden lg:flex")}>
         <div className="shrink-0 space-y-3 px-4 pb-3 pt-5">

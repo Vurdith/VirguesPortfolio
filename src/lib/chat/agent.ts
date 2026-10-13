@@ -223,17 +223,13 @@ async function complete(messages: ModelMessage[], deadline: number): Promise<Com
 
   const started = Date.now();
   let last: unknown;
-  const slow = new Set<string>();
   for (const [model, jsonMode] of plan) {
-    // A model that just timed out will not do better a second time; move on to the next one.
-    if (slow.has(model)) continue;
     if (last && Date.now() - started > OUT_OF_ATTEMPTS_MS) break;
     if (deadline - Date.now() < 3000) break;
     try {
       return await request(messages, model, jsonMode, deadline);
     } catch (err) {
       last = err;
-      if (err instanceof Error && err.name === "TimeoutError") slow.add(model);
       if (err instanceof ModelError && [401, 402, 403].includes(err.status)) throw err;
     }
   }

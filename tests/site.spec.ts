@@ -77,3 +77,16 @@ test("invalid quote requests are rejected", async ({ request }) => {
   const res = await request.post("/api/quotes", { data: { name: "x" } });
   expect(res.status()).toBe(400);
 });
+
+test("each page has its own link preview, and the home page's is the animated one", async ({ request }) => {
+  const image = async (path: string, tag: string) => new RegExp(`<meta (?:property|name)="${tag}" content="([^"]+)"`).exec(await (await request.get(path)).text())?.[1];
+  expect(await image("/", "og:image")).toContain("/og-intro.gif");
+  expect(await image("/", "twitter:image")).toContain("/og-intro.gif");
+  for (const page of ["chat", "privacy"]) {
+    expect(await image(`/${page}`, "og:image")).toContain(`/${page}/opengraph-image`);
+    expect(await image(`/${page}`, "twitter:image")).toContain(`/${page}/twitter-image`);
+    const res = await request.get(`/${page}/opengraph-image`);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("image/png");
+  }
+});

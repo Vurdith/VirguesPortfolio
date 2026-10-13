@@ -397,7 +397,7 @@ test("the owner's inbox shows a conversation, takes it over and replies", async 
   // Replying as the owner takes the chat over; the customer sees it.
   await page.getByLabel("Reply to the customer").fill("Hi, Virguê here.");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText("Hi, Virguê here.")).toBeVisible();
+  await expect(page.getByText("Hi, Virguê here.", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "You", exact: true })).toHaveAttribute("aria-pressed", "true");
   const seen = await a.call("/api/chat");
   expect(seen.body?.thread?.takeover).toBe(true);

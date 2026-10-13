@@ -26,6 +26,9 @@ export async function generateMetadata({
   const description =
     work.summary || `${work.title}: UI design and development by ${SITE.name}.`;
 
+  // A link to a piece of work shows that work: its first image, or the site's picture when it has none.
+  const cover = workPieces(work).find((piece) => piece.kind === "image" && piece.src)?.src ?? "/og.jpg";
+
   return {
     title: work.title,
     description,
@@ -33,10 +36,12 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
       url: `${SITE.url}/work/${work.slug}`,
+      siteName: SITE.name,
       title: `${work.title} — ${SITE.name}`,
       description,
+      images: [{ url: cover, alt: work.title }],
     },
-    twitter: { card: "summary_large_image", title: `${work.title} — ${SITE.name}`, description },
+    twitter: { card: "summary_large_image", title: `${work.title} — ${SITE.name}`, description, images: [cover] },
   };
 }
 

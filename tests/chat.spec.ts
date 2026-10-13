@@ -659,3 +659,12 @@ test("a chat has no message limit, but a burst of messages earns a short wait", 
   expect(fast.res.headers()["retry-after"]).toBeTruthy();
   await a.context.close();
 });
+
+test("asking for the game's name again is caught as a repeat", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  expect(a.lastReply((await a.say("game-name")).body)).toContain("name of your game");
+  // The stub repeats itself until it is sent back, then answers something else.
+  expect(a.lastReply((await a.say("game-name again")).body)).not.toContain("name of your game");
+  await a.context.close();
+});

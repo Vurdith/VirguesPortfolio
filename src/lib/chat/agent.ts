@@ -45,24 +45,18 @@ CHARACTER
 - No compliments or praise ("great", "distinctive", "sounds like a strong..."). Never open with "Got it", "Noted", "Thanks", "Great", "Happy to help", "Understood", "Sounds like" or their name, and never repeat back what they just told you.
 - Say "Virguê confirms the final price" once, the first time you quote, then never again unless they ask for a firm commitment.
 
-DISCOVERY: ASK A LOT
-Your brief is only as good as your questions. Work through the areas below, one question per message, in short messages. Do not recap along the way; only at the end.
-- NEVER ask something they already answered or that an image already shows (read the conversation first). If you need to confirm, do it in a few words, not a repeated question.
-- Do not ask why they are not answering, and never defend a question. NEVER decide for the customer or say "I'll assume". If they say "idk" or "not sure", make it easier instead: offer two or three concrete options to choose from in one short question (and as "suggest"), or say ${NAME} will advise on that part, record it in "extras" as "Open: ..." and move to a different area. Do not come back to an area they could not answer.
-- Skip areas that do not matter for the job. For a confirmed 1:1 replication you only need: the screens, how many, the source to copy, platform, deadline, budget, name and contact. Skip genre, logo, brand guide and gameplay questions.
-- Ask for their budget early, right after you quote, not at the end. Expect a full conversation of at least ten exchanges for a real project.
-1. The product: what it is, genre, audience, core loop, what makes it special, how far along it is, who else is on the team.
-2. Goal: what the interface must achieve (retention, clarity, monetisation, trust, a launch moment) and what is wrong with the current UI if there is one.
-3. Platform and input: Roblox, PC, mobile, console, web, app; mouse, touch or controller; target screen sizes and aspect ratios.
-4. Screens: list every screen or UI element needed. For each one, ask its purpose, what content and components it holds, the states it needs (empty, hover, locked, error, loading), what the player does there, and how it connects to the other screens. Also ask about HUD elements, popups, notifications, shops, inventory, settings, onboarding.
-5. Visual direction: mood, genre feel, colour palette, typography, shapes, texture, level of detail, motion and animation expectations, things to avoid.
-6. How references should be used (see pricing). Ask which games or products they admire and exactly what they like about each.
-7. References: invite them to attach images with the paperclip. For every image ask what to take from it (layout, colours, mood, a specific element) and what not to copy. When images arrive, say in under 15 words what you will take from each, then ask your next question, and record each in the brief as "Ref 1: ..." in the brief's references field.
-8. Existing assets: logo, brand guide, UI kit, icons, fonts, 3D or concept art, an existing build to design over.
-9. Deliverables: design files only, or also exported assets, or importing into Roblox Studio, or a final polish pass.
-10. Timeline: deadline, launch or reveal date, how flexible it is, how many revision rounds they expect, who approves the work.
-11. Budget: ask what they have in mind for the project, once you understand the scope (not before).
-12. Their name and how ${NAME} should reach them (email, Discord or X). Ask at most once every three messages; if they ignore it, drop it until they agree a price or look about to leave.
+DISCOVERY: ASK ONLY WHAT MATTERS
+Your job is to give ${NAME} enough to quote and start, not to design the interface with the customer. One question per message. Most chats need six to ten questions in total: stop asking as soon as you have the essentials. Do not recap along the way; only at the end.
+- The essentials, roughly in this order: what the product is and its platform; which screens they need (names and how many); the visual direction or references, and how references should be used (see pricing); the deadline; their budget (right after you quote); their name and how ${NAME} should reach them (email, Discord or X).
+- A contact is an address or username ${NAME} can type in: "name@example.com", "Discord: their_handle". The platform alone ("Discord", "email") is not a contact, so if that is all they give, ask for the username or address straight away and record both together in "contact".
+- Worth one question each, only when it matters for this job and is not already clear: what a screen must show or do, existing assets (logo, UI kit, an existing build), deliverables (design files only, or importing into Roblox Studio too), anything to avoid.
+- Design decisions are ${NAME}'s job. Never ask the customer to make them: layout, placement, grid or slot counts, bars versus icons, panel versus pop-up, states, animation, icon style. If they volunteer one, record it; otherwise leave it to ${NAME}.
+- NEVER ask something they already answered or that an image already shows (read the conversation and "Known so far" first). That includes asking it in different words, asking them to confirm it, and asking "is there anything else?" about a part they already closed.
+- Do not ask why they are not answering, and never defend a question. NEVER decide for the customer or say "I'll assume". If they say "idk", "not sure" or "let ${NAME} decide", that part is settled: record it in "extras" as "Open: ..." for ${NAME} and never return to it. After two such answers in a row, stop asking about details altogether: ask for whichever essential is still missing, or go to the recap.
+- Skip what does not matter for the job. For a confirmed 1:1 replication you only need: the screens, how many, the source to copy, platform, deadline, budget, name and contact.
+- When images arrive, say in under 15 words what you will take from each, then ask your next question, and record each in the brief's references field as "Ref 1: ...".
+- Ask for name and contact at most once every three messages; if they ignore it, drop it until they agree a price or look about to leave. If they ignore any other question twice, drop it.
+- Record every essential in "brief" in the same message you learn it, even when the customer changes it later (send the new value).
 
 PRICING
 - Original UI design: £${CHAT_PRICE.list} per frame. A frame is one screen or layout (main menu, inventory, shop, HUD, settings). Total is frames multiplied by price.
@@ -89,9 +83,10 @@ SELLING
 - Never pressure, guilt or deceive. Be honest about what is and is not included.
 
 CLOSING
-- Only when you have covered the areas above, have the customer's name, contact and deadline (or know they have none), and have had at least ${CHAT_LIMITS.minTurnsToConfirm} exchanges, give a clear recap (scope, style, references, timeline, price) and ask: "Is that everything, or is there anything else you want to add? If that is all, I will send it to ${NAME}." Set "awaitingConfirm" to true.
-- Set "resolved" to true only if you asked that question in an earlier turn and the customer's latest message clearly confirms there is nothing to add. If they add anything, keep gathering, set "awaitingConfirm" to false and ask again later. Never set "resolved" in the same turn you first ask.
-- When resolved, thank them, say ${NAME} will reply through the contact they gave, usually within a day or two, and that this chat is now closed.
+- As soon as you have the essentials, including the customer's name, contact and deadline (or know they have none), and have had at least ${CHAT_LIMITS.minTurnsToConfirm} exchanges, give a clear recap (scope, style, references, timeline, price) and ask: "Is that everything, or is there anything else you want to add? If that is all, I will send it to ${NAME}." Set "awaitingConfirm" to true. Ask this once; do not circle back to details first.
+- Once you have asked it, if the customer's next message confirms in any words ("yes", "send it", "that's everything", "no, nothing else"), set "resolved" to true in that same reply. Do not ask anything more, not even a detail you still wanted: put it in "extras" as "Open: ...". If they add something instead, record it, set "awaitingConfirm" to false and ask the closing question again in your next reply. Never set "resolved" in the same turn you first ask.
+- If you are told the brief is missing something the customer already told you in this chat, write it into "brief" from the conversation. Never ask them for it again.
+- When resolved, thank them, say ${NAME} will reply through the contact they gave, usually within a day or two, and that this chat is now closed. The closing reply never contains a question.
 
 BOUNDARIES
 - Stay on this project. Politely decline anything else (code, essays, other topics) and steer back.
@@ -145,19 +140,26 @@ function known(brief: ChatBrief): string {
  * customer message, the last thing the model reads, and ends by asking for the JSON, because a model
  * left to it answers in plain words, which used to cost a second call on almost every message.
  */
-function siteNote(thread: ChatThread, turn: number): string {
+function siteNote(thread: ChatThread, newest: ChatMessage, turn: number): string {
   const lowest = lowestAllowedOffer(thread, turn);
   const lowestStyle = lowestAllowedStyleOffer(thread, turn);
   const none = (low: number, current: number) => (low === current ? " (no concession is possible this turn)" : "");
   const blocked = closingBlockedReason(thread.brief, turn);
+  const lastTwo = [...thread.messages.filter((message) => message.role === "user"), newest].slice(-2);
+  const deferring = lastTwo.length === 2 && lastTwo.every((message) => UNSURE.test(message.content));
   return [
     NOTE,
     "CURRENT STATE (not visible to the customer):",
     `- Customer message number: ${turn}`,
     `- Frame price on the table: £${thread.offer} per frame. Next step down if you concede this turn: £${lowest}${none(lowest, thread.offer)}`,
     `- Style replication price on the table: £${thread.styleOffer} per task. Next step down if you concede this turn: £${lowestStyle}${none(lowestStyle, thread.styleOffer)}`,
-    `- You have ${thread.awaitingConfirm ? "already" : "not yet"} asked the customer "is that everything?"`,
-    blocked ? `- You may not ask "is that everything?" yet: ${blocked}` : "- You may ask \"is that everything?\" once you have nothing left to ask.",
+    thread.awaitingConfirm
+      ? '- You have already asked the customer "is that everything?". If their newest message confirms, set "resolved" to true and close now, with no question. Only if they added something new, record it and ask the closing question again.'
+      : '- You have not yet asked the customer "is that everything?"',
+    blocked ? `- You may not ask "is that everything?" yet: ${blocked}` : "- You have the essentials. Recap and ask \"is that everything?\" now unless something essential is truly unknown.",
+    ...(deferring
+      ? [`- The customer could not answer your last two questions. Ask no more detail questions: leave those parts open for ${NAME} and move to a missing essential or the recap.`]
+      : []),
     `- Known so far (kept for you; only send changes in "brief"): ${known(thread.brief)}`,
     ...(thread.messages.some((message) => message.by === "owner")
       ? [`- ${NAME} (the owner) has personally written some messages in this chat, marked [${NAME.toUpperCase()}]. Stay consistent with anything they said, including prices.`]
@@ -168,10 +170,14 @@ function siteNote(thread: ChatThread, turn: number): string {
           ...thread.steer.map((item) => `- ${item.note}`),
         ]
       : []),
-    "REMINDER: under 40 words. Do not open with an acknowledgement or a compliment, do not repeat back what they said, and do not ask anything already answered in \"Known so far\" or earlier in this chat. One question.",
+    "REMINDER: under 40 words. Do not open with an acknowledgement or a compliment, do not repeat back what they said, and do not ask anything already answered in \"Known so far\" or earlier in this chat. Never ask the customer to make a design decision. One question.",
     "Reply with the JSON object described in OUTPUT, and nothing else.",
   ].join("\n");
 }
+
+/** Answers that hand the decision back: "idk", "not sure", "let Virguê decide". */
+const UNSURE =
+  /^\s*(?:not sure|unsure|idk|i ?don'?t know|dunno|no idea|no clue|whatever|you decide|up to (?:you|him|them|virgu\S*)|let (?:virgu\S*|him|them|you) (?:decide|suggest|choose|pick))\b/i;
 
 const CACHED = { type: "ephemeral" } as const;
 
@@ -212,7 +218,7 @@ async function toModelMessages(thread: ChatThread, newest: ChatMessage, turn: nu
     const url = await chatImageForModel(id);
     if (url) parts.push({ type: "image_url", image_url: { url } });
   }
-  parts.push({ type: "text", text: `\n\n${siteNote(thread, turn)}` });
+  parts.push({ type: "text", text: `\n\n${siteNote(thread, newest, turn)}` });
   messages.push({ role: "user", content: parts });
   return messages;
 }
@@ -259,6 +265,10 @@ export type AgentTurn = {
   costUsd: number;
   usage: Usage;
 };
+
+/** Sent when the model closes the chat with a question the customer could never answer. */
+const closedReply = (brief: ChatBrief) =>
+  `Thanks${brief.name ? `, ${brief.name.split(/\s+/)[0]}` : ""}. That's everything I need, so the brief is on its way to ${NAME}, who will reply through the contact you gave, usually within a day or two. This chat is now closed.`;
 
 const ATTEMPTS = 3;
 const KEEP_GOING =
@@ -327,7 +337,7 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
     const blocked = closingBlockedReason(output.brief, turn);
     if ((output.awaitingConfirm || output.resolved) && blocked) {
       early = output;
-      correction = `You may not ask "is that everything?" or close yet. ${blocked} Ask more questions instead, and do not set awaitingConfirm or resolved.`;
+      correction = `You may not ask "is that everything?" or close yet. ${blocked} Do not set awaitingConfirm or resolved in this reply.`;
       continue;
     }
     if (output.resolved && !thread.awaitingConfirm) {
@@ -343,6 +353,9 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
       correction = `You already asked "${again}" and they did not answer it. Do not ask it again. Do not assume an answer for them. Offer two or three options to pick from, or move on to a different topic.`;
       continue;
     }
+
+    // A chat that closes on a question leaves the customer unable to answer it.
+    if (output.resolved && output.reply.includes("?")) return done(closedReply(output.brief), output);
 
     return done(tidyReply(output.reply, earlier), output);
   }

@@ -700,3 +700,24 @@ test("payment buttons show only when the assistant offers them", async ({ browse
   expect((other.body?.thread?.messages.at(-1) as { pay?: boolean }).pay).toBe(false);
   await a.context.close();
 });
+
+test("a chat never closes on a question the customer cannot answer", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  for (const text of ["one", "two", "three", "four"]) await a.say(`details ${text}`);
+  await a.say("I am ready to wrap up");
+  const done = await a.say("close-question");
+  expect(done.body?.thread?.ended).toBe(true);
+  expect(a.lastReply(done.body)).not.toContain("?");
+  expect(a.lastReply(done.body)).toContain("This chat is now closed");
+  await a.context.close();
+});
+
+test("a platform with no username is not a contact", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  for (const text of ["one", "two", "three", "four"]) await a.say(`bare-contact ${text}`);
+  expect(a.lastReply((await a.say("bare-contact ready to wrap up")).body)).toContain("anything about the screens");
+  expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("Is that everything");
+  await a.context.close();
+});

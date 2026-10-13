@@ -60,6 +60,7 @@ function answer(messages: Msg[], raw: Raw) {
       ...BRIEF,
       styleReplication: replicating,
       ...(/nodeadline/.test(text) ? { deadline: "" } : {}),
+      ...(/bare-contact/.test(text) ? { contact: "Discord" } : {}),
       ...(/discord-contact/.test(text) ? { contact: "Discord: e2e_handle", budget: "£35-40, firm" } : {}),
     },
     offer,
@@ -129,6 +130,7 @@ function answer(messages: Msg[], raw: Raw) {
       : { ...base, reply: `The standard is £${offer} per frame.` };
   }
   if (/ready/.test(text)) return { ...base, reply: "Is that everything, or is there anything else you want to add?", awaitingConfirm: true };
+  if (/close-question/.test(text)) return { ...base, reply: "Two frames at £60 each. Shall I send the brief now?", resolved: true };
   if (/that is everything/.test(text)) return { ...base, reply: "Thanks, I've sent it to Virguê.", resolved: true };
   if (images) return { ...base, reply: `Saw ${images} image${images === 1 ? "" : "s"}.` };
   return { ...base, reply: "Which visual style are you after?" };

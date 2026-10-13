@@ -81,6 +81,15 @@ export async function listThreads(): Promise<ChatThread[]> {
   return (await readFile()).threads.sort(newest);
 }
 
+/** Conversations touched after `since`. One cheap query, so the admin page can poll it often. */
+export async function listThreadsSince(since: string): Promise<ChatThread[]> {
+  if (hasFirebaseAdminConfig()) {
+    const snapshot = await chats().where("updatedAt", ">", since).get();
+    return snapshot.docs.map((doc) => doc.data() as ChatThread).sort(newest);
+  }
+  return (await readFile()).threads.filter((thread) => thread.updatedAt > since).sort(newest);
+}
+
 export async function deleteThread(id: string): Promise<ChatThread | null> {
   const existing = await getThread(id);
   if (!existing) return null;

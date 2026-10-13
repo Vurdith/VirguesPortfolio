@@ -240,3 +240,22 @@ test("the chat window works from the contact section", async ({ page }) => {
   await expect(dialog.getByText("Noted. What style are you after?")).toBeVisible();
   await expect(dialog.getByText("A shop menu for my game")).toBeVisible();
 });
+
+test("the admin can poll for conversations changed since a time, and only the admin", async ({ browser, request }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const before = new Date().toISOString();
+  await a.say("hello there");
+
+  expect((await request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z")).status()).toBe(401);
+
+  const changed = await admin.request.get(`/api/admin/briefs?since=${encodeURIComponent(before)}`);
+  const { briefs } = (await changed.json()) as { briefs: { messages: { content: string }[] }[] };
+  expect(briefs.length).toBeGreaterThanOrEqual(1);
+  expect(briefs.some((brief) => brief.messages.some((message) => message.content === "hello there"))).toBe(true);
+
+  const none = await admin.request.get(`/api/admin/briefs?since=${encodeURIComponent(new Date(Date.now() + 60_000).toISOString())}`);
+  expect(((await none.json()) as { briefs: unknown[] }).briefs).toHaveLength(0);
+  expect((await admin.request.get("/api/admin/briefs?since=garbage")).status()).toBe(400);
+  await a.context.close();
+});

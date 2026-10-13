@@ -39,6 +39,46 @@ export function BriefsTable({ initialBriefs }: { initialBriefs: AdminBrief[] }) 
 
   React.useEffect(() => setBriefs(initialBriefs), [initialBriefs]);
 
+  // Stay live: ask for anything that changed since the newest conversation we have, every few seconds
+  // while this tab is visible. New messages appear in open chats without a refresh.
+  const [live, setLive] = React.useState(true);
+  const sinceRef = React.useRef("");
+  const busyRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    busyRef.current = busyId;
+  }, [busyId]);
+  React.useEffect(() => {
+    sinceRef.current = briefs.reduce((latest, brief) => (brief.updatedAt > latest ? brief.updatedAt : latest), "");
+  }, [briefs]);
+  React.useEffect(() => {
+    let stopped = false;
+    const poll = async () => {
+      if (document.hidden || busyRef.current) return;
+      try {
+        const res = await fetch(`/api/admin/briefs?since=${encodeURIComponent(sinceRef.current)}`, { cache: "no-store" });
+        if (!res.ok) throw new Error();
+        const { briefs: changed } = (await res.json()) as { briefs: AdminBrief[] };
+        if (stopped) return;
+        setLive(true);
+        if (!changed.length) return;
+        setBriefs((current) => {
+          const byId = new Map(current.map((brief) => [brief.id, brief]));
+          for (const brief of changed) byId.set(brief.id, brief);
+          return [...byId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        });
+      } catch {
+        if (!stopped) setLive(false);
+      }
+    };
+    const timer = window.setInterval(() => void poll(), 3000);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", poll);
+    };
+  }, []);
+
   const counts = React.useMemo(() => {
     const result = {} as Record<Filter, number>;
     for (const item of FILTERS) result[item] = briefs.filter((brief) => matches(brief, item)).length;
@@ -97,6 +137,14 @@ export function BriefsTable({ initialBriefs }: { initialBriefs: AdminBrief[] }) 
             <span className="tabular-nums text-fog/60">{counts[item]}</span>
           </button>
         ))}
+        <span
+          className="ml-auto inline-flex h-9 items-center gap-2 text-[11px] tracking-[0.22em] text-fog/65"
+          role="status"
+          title={live ? "Updates appear automatically" : "Connection lost, retrying"}
+        >
+          <span aria-hidden="true" className={cn("size-1.5 rounded-full", live ? "animate-pulse bg-emerald-300" : "bg-red-300")} />
+          {live ? "LIVE" : "RECONNECTING"}
+        </span>
       </div>
 
       <div className="mt-4 overflow-hidden border border-line/12 bg-void/30">

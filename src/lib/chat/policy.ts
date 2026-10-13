@@ -18,6 +18,8 @@ export type AgentOutput = {
   concedeStyle: boolean;
   awaitingConfirm: boolean;
   resolved: boolean;
+  /** Short answers the customer could tap instead of typing. */
+  suggest: string[];
 };
 
 type Track = { ladder: readonly number[]; floor: number };
@@ -255,7 +257,23 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
     concedeStyle: data.concedeStyle === true,
     awaitingConfirm: data.awaitingConfirm === true,
     resolved: data.resolved === true,
+    suggest: suggestions(data.suggest),
   };
+}
+
+/** Up to four short, distinct answers. "Not sure" is left out, since the site always offers it. */
+function suggestions(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value
+    .flatMap((item) => (typeof item === "string" ? [item.replace(/\s+/g, " ").trim()] : []))
+    .filter((item) => {
+      const key = item.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      if (!key || item.length > 48 || /^(notsure|idk|idontknow)$/.test(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 4);
 }
 
 /** An answer written as plain words instead of JSON. Null when it is empty or looks like broken JSON. */
@@ -300,5 +318,6 @@ function salvageReply(raw: string, previous: ChatBrief): AgentOutput | null {
     concedeStyle: false,
     awaitingConfirm: false,
     resolved: false,
+    suggest: [],
   };
 }

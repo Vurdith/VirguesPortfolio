@@ -20,6 +20,7 @@ type View = {
     ended: boolean;
     takeover: boolean;
     imagesLeft: number;
+    suggestions?: string[];
   } | null;
   error?: string;
 };
@@ -666,5 +667,15 @@ test("asking for the game's name again is caught as a repeat", async ({ browser 
   expect(a.lastReply((await a.say("game-name")).body)).toContain("name of your game");
   // The stub repeats itself until it is sent back, then answers something else.
   expect(a.lastReply((await a.say("game-name again")).body)).not.toContain("name of your game");
+  await a.context.close();
+});
+
+test("the assistant's question comes with answers to tap, always including Not sure", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const sent = await a.say("suggest-check");
+  expect(sent.body?.thread?.suggestions).toEqual(["Roblox", "PC", "Mobile", "Console", "Not sure"]);
+  // A question without any from the model still offers the way out.
+  expect((await a.say("calls-check")).body?.thread?.suggestions).toEqual(["Not sure"]);
   await a.context.close();
 });

@@ -6,8 +6,15 @@ export const STUB_PORT = Number(process.env.E2E_PORT ?? 3200) + 100;
 type Part = { type: string; text?: string; cache_control?: unknown };
 type Msg = { role: string; content: string | Part[] };
 
+/** The customer's words in a message: its first text block. */
 const textOf = (content: string | Part[]) =>
   typeof content === "string" ? content : (content.find((part) => part.type === "text")?.text ?? "");
+
+/** What the site added after the customer's words: the last text block. */
+const noteOf = (content: string | Part[]) =>
+  typeof content === "string" ? content : ([...content].reverse().find((part) => part.type === "text")?.text ?? "");
+
+const CORRECTION = "[SITE NOTE] Your last reply";
 
 /** The system prompt as the model sees it: every text block, joined. */
 const systemText = (message: Msg) =>
@@ -36,14 +43,15 @@ const BRIEF = {
 const number = (pattern: RegExp, text: string) => Number(pattern.exec(text)?.[1]);
 
 function answer(messages: Msg[], raw: Raw) {
-  const system = systemText(messages[0]);
-  const lowest = number(/Frame price on the table: £\d+ per frame\. Next step down if you concede this turn: £(\d+)/, system);
-  const offer = number(/Frame price on the table: £(\d+) per frame/, system);
-  const lowestStyle = number(/Style replication price on the table: £\d+ per task\. Next step down if you concede this turn: £(\d+)/, system);
-  const styleOffer = number(/Style replication price on the table: £(\d+) per task/, system);
-  const userMessages = messages.filter((m) => m.role === "user" && !textOf(m.content).startsWith("Your last reply"));
+  const userMessages = messages.filter((m) => m.role === "user" && !textOf(m.content).startsWith(CORRECTION));
   const last = userMessages[userMessages.length - 1];
   const text = textOf(last.content);
+  // The prices, the state and the owner's guidance arrive after the newest customer message.
+  const note = noteOf(last.content);
+  const lowest = number(/Frame price on the table: £\d+ per frame\. Next step down if you concede this turn: £(\d+)/, note);
+  const offer = number(/Frame price on the table: £(\d+) per frame/, note);
+  const lowestStyle = number(/Style replication price on the table: £\d+ per task\. Next step down if you concede this turn: £(\d+)/, note);
+  const styleOffer = number(/Style replication price on the table: £(\d+) per task/, note);
   const images = Array.isArray(last.content) ? last.content.filter((part) => part.type === "image_url").length : 0;
   const replicating = userMessages.some((m) => /replicate/.test(textOf(m.content)));
 
@@ -62,9 +70,8 @@ function answer(messages: Msg[], raw: Raw) {
     resolved: false,
   };
 
-  // Guidance from the owner shows up in the system prompt; echo it so the tests can see it arrive.
-  const guidance = /OWNER GUIDANCE[^\n]*\n- ([^\n]+)/.exec(system)?.[1];
-  if (/summary-check/.test(text)) return { ...base, reply: /WRITE the full summary/.test(system) ? "Summary due." : "Summary not due." };
+  // Guidance from the owner shows up in the site's note; echo it so the tests can see it arrive.
+  const guidance = /OWNER GUIDANCE[^\n]*\n- ([^\n]+)/.exec(note)?.[1];
   if (/longfields/.test(text)) {
     const words = Array.from({ length: 300 }, (_, i) => `word${i}`).join(" ");
     return { ...base, reply: "Noted.", brief: { ...base.brief, project: words, screens: [words] } };
@@ -75,10 +82,22 @@ function answer(messages: Msg[], raw: Raw) {
   }
   if (/delta-check/.test(text)) return { ...base, reply: "Noted.", brief: { project: "Changed project" } };
   if (/cache-check/.test(text)) {
-    const parts = Array.isArray(messages[0].content) ? messages[0].content : [];
-    const fixed = parts[0]?.cache_control ? "marked" : "unmarked";
-    const state = /CURRENT STATE/.test(parts[1]?.text ?? "") && !/CURRENT STATE/.test(parts[0]?.text ?? "") ? "separate" : "mixed";
-    return { ...base, reply: `Prompt ${fixed}, state ${state}.` };
+    const system = Array.isArray(messages[0].content) ? messages[0].content : [];
+    const fixed = system.length === 1 && system[0].cache_control && !/CURRENT STATE/.test(system[0].text ?? "") ? "marked" : "unmarked";
+    const unmarked = Array.isArray(last.content) && last.content.every((part) => !part.cache_control);
+    const state = /^\s*\[SITE NOTE\]\nCURRENT STATE/.test(note) && unmarked ? "last" : "misplaced";
+    const marked = userMessages.filter((m) => m !== last && Array.isArray(m.content) && m.content.some((part) => part.cache_control)).length;
+    return { ...base, reply: `Prompt ${fixed}, state ${state}, ${marked} earlier messages marked.` };
+  }
+  if (/note-check/.test(text)) return { ...base, reply: `Customer said: ${text}` };
+  if (/envelope-check/.test(text)) {
+    const turns = messages.filter((m) => m.role === "assistant").map((m) => JSON.parse(textOf(m.content)) as { reply?: string; brief?: unknown });
+    const bare = turns.filter((turn) => turn.reply && !turn.brief).length;
+    return { ...base, reply: `Earlier turns: ${bare} bare, ${turns.filter((turn) => turn.reply && turn.brief).length} with changes.` };
+  }
+  // A different question each time, so nothing is sent back for repeating itself.
+  if (/calls-check/.test(text)) {
+    return { ...base, reply: ["Which platform is it for?", "Who plays it most?", "When do you need it by?"][(userMessages.length - 1) % 3] };
   }
   if (/reasoning-check/.test(text)) {
     return { ...base, reply: `Reasoning ${JSON.stringify(raw.reasoning ?? null)} temperature ${raw.temperature ?? "none"}.` };
@@ -134,13 +153,22 @@ export function startStub() {
           const note = `SUMMARY STUB covering ${chat.split("\n").filter((line) => line.startsWith("CUSTOMER")).length} customer messages.`;
           return void res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ choices: [{ message: { content: note } }], usage: { cost: 0.0001 } }));
         }
+        // Like the real model, it answers in JSON only when its own earlier turns are JSON and the
+        // request ends by asking for it, or when it has been sent back. Otherwise it answers in plain
+        // words, and the app has to pay for a second call.
+        const stubborn = messages.some((m) => m.role === "user" && /plain-words/.test(textOf(m.content)));
+        const primed =
+          asked.startsWith(CORRECTION) ||
+          (messages.filter((m) => m.role === "assistant").every((m) => textOf(m.content).startsWith("{")) &&
+            /JSON object/.test(lastUser ? noteOf(lastUser.content) : ""));
+        const content = stubborn ? "Plain words only." : primed ? JSON.stringify(answer(messages, parsed)) : "Which visual style are you after?";
         const out = JSON.stringify({
-          choices: [{ message: { content: JSON.stringify(answer(messages, parsed)) } }],
+          choices: [{ message: { content } }],
           usage: {
             cost: /costly-turn/.test(asked) ? 0.3 : 0.0002,
             prompt_tokens: 1000,
             completion_tokens: 100,
-            prompt_tokens_details: { cached_tokens: 800 },
+            prompt_tokens_details: { cached_tokens: 800, cache_write_tokens: 100 },
             completion_tokens_details: { reasoning_tokens: 0 },
           },
         });

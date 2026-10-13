@@ -16,8 +16,6 @@ export const CHAT_LIMITS = {
   cooldownMs: 60 * 60 * 1000,
   /** Model replies are capped, which also caps cost per turn. */
   maxOutputTokens: 4000,
-  /** Customer messages that fit in the model's context. Older ones are summarised by the brief. */
-  contextMessages: 16,
   /** The assistant may only ask "is that everything?" from this customer message on, so it digs first. */
   minTurnsToConfirm: 5,
   /** A conversation that has cost this much (USD) is wrapped up, a brake against a runaway chat. Normal ones cost a few cents. */

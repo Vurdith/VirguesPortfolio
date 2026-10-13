@@ -255,6 +255,13 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
   };
 }
 
+/** An answer written as plain words instead of JSON. Null when it is empty or looks like broken JSON. */
+export function plainReply(raw: string): string | null {
+  const text = raw.replace(/^\s*```\w*\s*|\s*```\s*$/g, "").trim();
+  if (!text || /[{}]|"reply"/.test(text)) return null;
+  return clip(text, 2000) || null;
+}
+
 /** A safe line to send when the model keeps quoting a price it may not offer. */
 export function holdPriceReply(thread: Pick<ChatThread, "offer" | "styleOffer" | "brief">): string {
   const { brief } = thread;

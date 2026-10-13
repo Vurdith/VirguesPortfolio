@@ -1,8 +1,17 @@
 import type { AdminBrief } from "./admin";
+import type { Usage } from "./model";
 
 const who = (message: AdminBrief["messages"][number]) => (message.role === "user" ? "CUSTOMER" : message.owner ? "OWNER" : "AI");
 
 const stamp = (iso: string) => new Date(iso).toISOString().replace("T", " ").slice(0, 16);
+
+/** Where the spend went. One model call per customer message is normal; more means replies were sent back. */
+const tokens = (usage: Usage) =>
+  [
+    `Tokens: ${usage.input} in (${usage.cached} read from cache${usage.written === undefined ? "" : `, ${usage.written} written to it`})`,
+    `${usage.output} out (${usage.reasoning} of them reasoning)`,
+    ...(usage.calls === undefined ? [] : [`${usage.calls} model calls`]),
+  ].join(" · ");
 
 /** A conversation as plain text, for reading back and tuning the assistant. */
 export function transcriptText(brief: AdminBrief): string {
@@ -13,9 +22,7 @@ export function transcriptText(brief: AdminBrief): string {
     `Started ${stamp(brief.createdAt)} UTC · last activity ${stamp(brief.updatedAt)} UTC`,
     `Status: ${brief.status}${brief.endReason ? ` (${brief.endReason})` : ""} · handled: ${brief.handled}`,
     `Customer messages: ${brief.userTurns} · model cost: $${brief.costUsd.toFixed(4)}`,
-    ...(brief.usage
-      ? [`Tokens: ${brief.usage.input} in (${brief.usage.cached} read from cache) · ${brief.usage.output} out (${brief.usage.reasoning} of them reasoning)`]
-      : []),
+    ...(brief.usage ? [tokens(brief.usage)] : []),
     `Price on the table at the end: £${unit} per ${info.styleReplication ? "task" : "frame"}${info.frames ? ` × ${info.frames}` : ""}`,
     `Customer: ${info.name || "unknown"} · ${info.contact || "no contact"}`,
   ];

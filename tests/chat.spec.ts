@@ -754,3 +754,14 @@ test("the first price on a Roblox job mentions Robux once, and a chat cannot clo
   expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("Is that everything");
   await a.context.close();
 });
+
+test("a kind of work chosen on the home page is sent as the first message", async ({ browser }) => {
+  const context = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": freshIp() } });
+  const page = await context.newPage();
+  await page.goto("/chat?about=game");
+  await page.getByRole("button", { name: "START CHAT" }).click();
+  await expect(page.getByText("A game UI", { exact: true })).toBeVisible();
+  await expect(page.getByText("Which visual style are you after?")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  await context.close();
+});

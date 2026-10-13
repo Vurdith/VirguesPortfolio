@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ThinkingOrb, type OrbState } from "thinking-orbs";
 
 import { AgentIcon, OwnerIcon, TypingDots, YouIcon, type AgentMode } from "@/components/chat/Avatars";
+import { openerMessage } from "@/components/chat/openers";
 import { TurnstileWidget, turnstileConfigured } from "@/components/TurnstileWidget";
 import { prepareImage, uploadImage } from "@/components/reviews/reviewClient";
 import { cn } from "@/lib/cn";
@@ -246,6 +247,23 @@ export function ChatPanel() {
 
   const thread = view?.thread ?? null;
   const open = view?.state === "open" && thread && !thread.ended;
+
+  // A choice made on the home page arrives as ?about=... and is sent as the first message of a new chat.
+  const opener = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    const about = new URLSearchParams(window.location.search).get("about");
+    if (!about) return;
+    opener.current = openerMessage(about);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+  const fresh = Boolean(open) && messages.length <= 1;
+  React.useEffect(() => {
+    if (!fresh || !opener.current) return;
+    const first = opener.current;
+    opener.current = null;
+    void send(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fresh]);
   const unavailable = loadError || (view && !view.enabled);
   const nearLimit = text.length > CHAT_LIMITS.messageChars - 150;
   const withOwner = Boolean(thread?.takeover);

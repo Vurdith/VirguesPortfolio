@@ -538,3 +538,93 @@ html[data-motion="reduced"] .hero-fade {
 html[data-motion="reduced"] .deck-layer {
   animation: none;
 }
+
+/* Chat avatars: the assistant blinks and scans while it works, the customer's ring ripples while they type. */
+.agent-icon svg,
+.agent-icon .agent-antenna,
+.agent-icon .agent-eye,
+.agent-icon .agent-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.agent-icon .agent-body {
+  animation: agent-float 4s ease-in-out infinite;
+}
+.agent-icon .agent-eye {
+  animation: agent-blink 5s infinite;
+}
+.agent-icon .agent-antenna {
+  animation: agent-antenna 2.4s ease-in-out infinite;
+}
+.agent-icon[data-mode="thinking"] .agent-eyes {
+  animation: agent-scan 1.1s ease-in-out infinite;
+}
+.agent-icon[data-mode="thinking"] .agent-antenna {
+  animation-duration: 0.7s;
+}
+.agent-icon[data-mode="away"] .agent-body {
+  animation: none;
+  opacity: 0.45;
+}
+.agent-halo,
+.you-ring {
+  animation: you-ring 1.6s ease-out infinite;
+}
+.you-ring-late {
+  animation-delay: 0.8s;
+}
+.you-icon[data-typing="true"] .you-body {
+  animation: agent-float 0.9s ease-in-out infinite;
+}
+.typing-dot {
+  animation: typing-dot 1.1s ease-in-out infinite;
+}
+@keyframes agent-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes agent-antenna {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+@keyframes agent-scan {
+  0%, 100% { transform: translateX(-1.4px); }
+  50% { transform: translateX(1.4px); }
+}
+@keyframes agent-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.2px); }
+}
+@keyframes you-ring {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.bubble-in {
+  animation: bubble-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-icon *,
+  .agent-halo,
+  .you-ring,
+  .you-icon *,
+  .typing-dot,
+  .bubble-in {
+    animation: none !important;
+  }
+}
+html[data-motion="reduced"] .agent-icon *,
+html[data-motion="reduced"] .agent-halo,
+html[data-motion="reduced"] .you-ring,
+html[data-motion="reduced"] .you-icon *,
+html[data-motion="reduced"] .typing-dot,
+html[data-motion="reduced"] .bubble-in {
+  animation: none !important;
+}

@@ -650,3 +650,13 @@ test("the daily chat sweep only runs with the cron secret", async ({ request }) 
   expect((await request.get("/api/cron/chats")).status()).toBe(401);
   expect((await request.get("/api/cron/chats", { headers: { authorization: "Bearer nope" } })).status()).toBe(401);
 });
+
+test("a chat has no message limit, but a burst of messages earns a short wait", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  for (let i = 1; i <= 12; i++) expect((await a.say(`calls-check ${i}`)).res.status()).toBe(200);
+  const fast = await a.say("calls-check 13");
+  expect(fast.res.status()).toBe(429);
+  expect(fast.res.headers()["retry-after"]).toBeTruthy();
+  await a.context.close();
+});

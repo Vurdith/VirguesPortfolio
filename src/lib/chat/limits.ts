@@ -2,8 +2,9 @@
 export const CHAT_LIMITS = {
   /** Longest single message. */
   messageChars: 1200,
-  /** Customer messages per conversation. Reaching it ends the conversation and sends what exists. */
-  userMessages: 40,
+  /** A conversation has no message limit, but this many customer messages inside the window means a short wait. */
+  burstMessages: 12,
+  burstWindowMs: 60 * 1000,
   /** Reference images per conversation. */
   images: 20,
   /** Images that can ride on one message. */

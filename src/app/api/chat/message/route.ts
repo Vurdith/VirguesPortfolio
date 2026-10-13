@@ -54,8 +54,13 @@ export async function POST(req: Request) {
 
   const images = [...new Set(body.data.images)];
   if (!images.every((id) => thread.uploads.includes(id))) return fail("Unknown image.", 400);
-  if (thread.userTurns >= CHAT_LIMITS.userMessages || thread.costUsd >= CHAT_LIMITS.maxCostUsd) {
-    return fail("This conversation has reached its limit.", 409);
+  if (thread.costUsd >= CHAT_LIMITS.maxCostUsd) return fail("This conversation has reached its limit.", 409);
+
+  // No cap on how long a chat runs, only on how fast: a burst of messages earns a short wait.
+  const recent = thread.messages.filter((message) => message.role === "user" && Date.now() - Date.parse(message.at) < CHAT_LIMITS.burstWindowMs);
+  if (recent.length >= CHAT_LIMITS.burstMessages) {
+    const wait = Math.max(1, Math.ceil((CHAT_LIMITS.burstWindowMs - (Date.now() - Date.parse(recent[0].at))) / 1000));
+    return fail(`You're sending messages very quickly. Try again in ${wait} seconds.`, 429, { "retry-after": String(wait) });
   }
 
   // The owner has taken over: keep the customer's message for them and leave the reply to the owner.
@@ -132,10 +137,10 @@ export async function POST(req: Request) {
   if (result.resolved) {
     thread.status = "resolved";
     ended = "confirmed";
-  } else if (turn >= CHAT_LIMITS.userMessages || thread.costUsd >= CHAT_LIMITS.maxCostUsd) {
+  } else if (thread.costUsd >= CHAT_LIMITS.maxCostUsd) {
     thread.messages.push({ id: crypto.randomUUID(), role: "assistant", content: LIMIT_NOTE, at: reply.at });
     thread.status = thread.brief.contact ? "resolved" : "abandoned";
-    thread.endReason = turn >= CHAT_LIMITS.userMessages ? "Message limit reached" : "Cost limit reached";
+    thread.endReason = "Cost limit reached";
     ended = "limit";
   }
   if (ended) thread.resolvedAt = reply.at;

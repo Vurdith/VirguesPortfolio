@@ -116,7 +116,6 @@ export function threadView(thread: ChatThread) {
       images: (message.images ?? []).map((id) => ({ id, url: chatImageUrl(id) })),
       at: message.at,
     })),
-    messagesLeft: Math.max(0, CHAT_LIMITS.userMessages - thread.userTurns),
     imagesLeft: Math.max(0, CHAT_LIMITS.images - thread.uploads.length),
     ended: thread.status !== "open",
     /** The owner is replying personally, so the assistant is paused. */

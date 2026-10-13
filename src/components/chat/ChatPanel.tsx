@@ -496,9 +496,7 @@ export function ChatPanel() {
             {error ??
               (nearLimit
                 ? `${CHAT_LIMITS.messageChars - text.length} characters left`
-                : (thread?.messagesLeft ?? 0) <= 5
-                  ? `${thread?.messagesLeft} messages left in this chat`
-                  : withOwner
+                : withOwner
                     ? `You're chatting with ${SITE.name}.`
                     : "AI assistant: prices are guides, final price confirmed by Virguê.")}
           </p>

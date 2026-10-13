@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
+import { adminBrief } from "@/lib/chat/admin";
 import { deleteChatImages } from "@/lib/chat/images";
 import { deleteThread, getThread, saveThread } from "@/lib/chat/store";
 
@@ -10,6 +11,17 @@ export const dynamic = "force-dynamic";
 
 const NO_STORE = { "cache-control": "no-store" };
 const PatchSchema = z.object({ handled: z.enum(["new", "replied", "closed"]) });
+
+/** One conversation, for the live view. */
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const session = await requireAdmin(req);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await ctx.params;
+  const thread = await getThread(id);
+  if (!thread) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ brief: adminBrief(thread) }, { headers: NO_STORE });
+}
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await requireAdmin(req);

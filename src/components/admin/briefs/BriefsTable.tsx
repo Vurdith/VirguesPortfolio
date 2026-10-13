@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { adminButton } from "@/components/admin/ui";
@@ -223,6 +224,9 @@ export function BriefsTable({ initialBriefs }: { initialBriefs: AdminBrief[] }) 
                           REPLY
                         </a>
                       ) : null}
+                      <Link href={`/admin/briefs/${brief.id}`} className={adminButton}>
+                        {brief.status === "open" ? "OPEN LIVE" : "OPEN"}
+                      </Link>
                       <button type="button" onClick={() => setOpen(expanded ? null : brief.id)} className={adminButton}>
                         {expanded ? "HIDE CHAT" : "SHOW CHAT"}
                       </button>

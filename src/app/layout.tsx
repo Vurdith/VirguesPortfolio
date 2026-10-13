@@ -6,6 +6,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 import { ClientChrome } from "@/components/ClientChrome";
+import { chatEnabled } from "@/lib/chat/enabled";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/lib/site";
 
@@ -90,7 +91,7 @@ export default function RootLayout({
           }}
         />
         <Providers>
-          <ClientChrome />
+          <ClientChrome chat={chatEnabled()} />
           {children}
         </Providers>
         <Analytics />

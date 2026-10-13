@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 
 import { AnimationGate } from "@/components/AnimationGate";
+import { ChatBubble } from "@/components/chat/ChatBubble";
 import { CursorSpotlight } from "@/components/CursorSpotlight";
 import { CustomCursor } from "@/components/CustomCursor";
 import { FloatingHeader } from "@/components/FloatingHeader";
@@ -11,11 +12,12 @@ import { ParticleField } from "@/components/ParticleField";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { TapRipple } from "@/components/TapRipple";
 
-export function ClientChrome() {
+export function ClientChrome({ chat = false }: { chat?: boolean }) {
   const pathname = usePathname() ?? "/";
 
   if (pathname.startsWith("/admin")) return null;
-  if (pathname.startsWith("/work/")) return <CustomCursor />;
+  if (pathname.startsWith("/chat")) return <CustomCursor />;
+  if (pathname.startsWith("/work/")) return <><CustomCursor />{chat ? <ChatBubble /> : null}</>;
 
   return (
     <>
@@ -27,6 +29,7 @@ export function ClientChrome() {
       <ParticleField />
       <FloatingHeader />
       {pathname === "/" ? <ScrollProgress /> : null}
+      {chat ? <ChatBubble /> : null}
     </>
   );
 }

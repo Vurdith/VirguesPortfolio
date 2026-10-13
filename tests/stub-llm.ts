@@ -111,6 +111,7 @@ function answer(messages: Msg[], raw: Raw) {
   if (/reasoning-check/.test(text)) {
     return { ...base, reply: `Reasoning ${JSON.stringify(raw.reasoning ?? null)} temperature ${raw.temperature ?? "none"}.` };
   }
+  if (/comma-check/.test(text)) return { ...base, reply: "Got it, Roblox it is. Thanks, Reece, which screens do you need?", brief: { ...base.brief, extras: "Open: none" } };
   if (/tidy-check/.test(text)) {
     return { ...base, reply: "Happy to help. Solum sounds like a great pick for that. Which platform is it for? Virguê confirms the final price." };
   }

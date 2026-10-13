@@ -721,3 +721,14 @@ test("a platform with no username is not a contact", async ({ browser }) => {
   expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("Is that everything");
   await a.context.close();
 });
+
+test("openers that end in a comma are stripped too, and an empty open point is not recorded", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const sent = await a.say("comma-check");
+  expect(a.lastReply(sent.body)).toBe("Roblox it is. Thanks, Reece, which screens do you need?");
+  const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const { briefs } = (await res.json()) as { briefs: { brief: { extras: string }; messages: { content: string }[] }[] };
+  expect(briefs.find((brief) => brief.messages.some((message) => message.content === "comma-check"))!.brief.extras).toBe("");
+  await a.context.close();
+});

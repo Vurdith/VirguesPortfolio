@@ -39,6 +39,7 @@ export function emailFor(thread: ChatThread, reason: OwnerEmailReason): string {
     `Type: ${replica ? "Style replication (matching an existing look)" : "Original design"}`,
     `${replica ? "Tasks" : "Frames"}: ${brief.frames ?? "—"}  ·  Price discussed: £${unit} per ${replica ? "task" : "frame"}  ·  Total: ${total}`,
     `Deadline: ${brief.deadline || "—"}`,
+    `Budget: ${brief.budget || "—"}`,
     "",
     "SUMMARY",
     brief.summary || "—",

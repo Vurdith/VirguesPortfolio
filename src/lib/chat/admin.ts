@@ -17,6 +17,8 @@ export type AdminBrief = {
   userTurns: number;
   costUsd: number;
   usage?: Usage;
+  /** The summary was written before the latest messages, so it is out of date. */
+  summaryStale: boolean;
   /** The owner is replying personally and the assistant is paused. */
   takeover: boolean;
   steer: ChatSteer[];
@@ -49,6 +51,7 @@ export function adminBrief(thread: ChatThread): AdminBrief {
     userTurns: thread.userTurns,
     costUsd: thread.costUsd,
     ...(thread.usage ? { usage: thread.usage } : {}),
+    summaryStale: Boolean(thread.brief.summary) && thread.summaryTurn !== thread.userTurns,
     takeover: Boolean(thread.takeover),
     steer: thread.steer ?? [],
     working: Boolean(thread.lockedUntil && Date.parse(thread.lockedUntil) > Date.now()),

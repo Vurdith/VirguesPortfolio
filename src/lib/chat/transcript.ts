@@ -31,7 +31,7 @@ export function transcriptText(brief: AdminBrief): string {
     lines.push("");
   }
 
-  lines.push("---", "", "BRIEF AS THE AI SAW IT", `Project: ${info.project || "—"}`, `Platform: ${info.platform || "—"}`, `Deadline: ${info.deadline || "—"}`);
+  lines.push("---", "", "BRIEF AS THE AI SAW IT", `Project: ${info.project || "—"}`, `Platform: ${info.platform || "—"}`, `Deadline: ${info.deadline || "—"}`, `Budget: ${info.budget || "—"}`);
   lines.push(`Screens: ${info.screens.join(", ") || "—"}`, `Style: ${info.style || "—"}`, `References: ${info.references || "—"}`, `Extras: ${info.extras || "—"}`);
   if (info.summary) lines.push("", "Summary:", info.summary);
   return lines.join("\n");

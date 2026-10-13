@@ -29,7 +29,7 @@ function fields(thread: ChatThread): string {
   const unit = brief.styleReplication ? thread.styleOffer : thread.offer;
   return [
     `Name: ${brief.name || "-"} | Contact: ${brief.contact || "-"} | Platform: ${brief.platform || "-"}`,
-    `Type: ${brief.styleReplication ? "style replication, per task" : "original design, per frame"} | Price on the table: £${unit}${brief.frames ? ` x ${brief.frames}` : ""} | Deadline: ${brief.deadline || "-"}`,
+    `Type: ${brief.styleReplication ? "style replication, per task" : "original design, per frame"} | Price on the table: £${unit}${brief.frames ? ` x ${brief.frames}` : ""} | Deadline: ${brief.deadline || "-"} | Budget: ${brief.budget || "-"}`,
     `Screens: ${brief.screens.join(", ") || "-"}`,
     `Style: ${brief.style || "-"} | References: ${brief.references || "-"} | Extras: ${brief.extras || "-"}`,
   ].join("\n");
@@ -53,24 +53,22 @@ export async function writeSummary(thread: ChatThread): Promise<{ text: string; 
 }
 
 /**
- * Brings a conversation's summary up to date and saves it, unless it is already current. The chat
- * model never writes it, since that was the single most expensive thing it did each turn.
+ * Brings a conversation's summary up to date and saves it, unless it is already current (or `force`).
+ * The chat model never writes it, since that was the single most expensive thing it did each turn.
+ * Returns the saved conversation, or null when nothing was written.
  */
-export async function refreshSummary(thread: ChatThread): Promise<boolean> {
-  if (!thread.userTurns || (thread.summaryTurn === thread.userTurns && thread.brief.summary)) return false;
+export async function refreshSummary(thread: ChatThread, force = false): Promise<ChatThread | null> {
+  if (!thread.userTurns || (!force && thread.summaryTurn === thread.userTurns && thread.brief.summary)) return null;
   const made = await writeSummary(thread);
-  if (!made) return false;
+  if (!made) return null;
 
   const latest = (await getThread(thread.id)) ?? thread;
   latest.brief.summary = made.text;
   latest.summaryTurn = thread.userTurns;
   latest.costUsd = Number((latest.costUsd + made.costUsd).toFixed(6));
   latest.usage = addUsage(latest.usage, made.usage);
+  // The owner's live view only fetches what changed. A finished chat has no idle timer to disturb.
+  if (latest.status !== "open") latest.updatedAt = new Date().toISOString();
   await saveThread(latest);
-
-  thread.brief.summary = latest.brief.summary;
-  thread.summaryTurn = latest.summaryTurn;
-  thread.costUsd = latest.costUsd;
-  thread.usage = latest.usage;
-  return true;
+  return latest;
 }

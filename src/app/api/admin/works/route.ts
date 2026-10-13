@@ -1,14 +1,17 @@
 import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb, writeDb } from "@/lib/db";
+import { announceWork } from "@/lib/discordNotify";
 import { WorkInputSchema } from "@/lib/validation/work";
 import { normalizePieces } from "@/lib/work";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Telling Discord subscribers about a new work runs after the reply and can take a while.
+export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   const session = await requireAdmin(req);
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath("/");
+  if (work.published) after(() => announceWork(work));
   return NextResponse.json({ ok: true, id: work.id }, { status: 201 });
 }
 

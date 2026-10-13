@@ -9,6 +9,7 @@ import { ContactFooter } from "@/sections/ContactFooter";
 
 import { getContributions } from "@/lib/contributions";
 import { getPublicPortfolioData } from "@/lib/db";
+import { discordSubscribeUrl } from "@/lib/discordNotify";
 
 // Served from the cache and refreshed at most once a minute; admin edits refresh it at once.
 export const revalidate = 60;
@@ -22,7 +23,7 @@ export default async function Home() {
   return (
     <main id="main" tabIndex={-1} className="film-grain vignette outline-none">
       <Hero />
-      <WorkGallery works={works} />
+      <WorkGallery works={works} subscribeUrl={discordSubscribeUrl()} />
       <ContributionsSection items={contributions} />
       <OfferingsSection />
       <ProcessBlueprint />

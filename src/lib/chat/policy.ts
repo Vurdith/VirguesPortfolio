@@ -173,7 +173,7 @@ const STOP_WORDS = new Set(
   "the a an is are was do does did you your yours it its this that these those to of for on in at as by with and or but what which how any about me my i so if can could would should have has be been there also just some roughly more other else then than from will want need like such first".split(" "),
 );
 /** Questions about who they are or what they will pay are worth asking again; the rest should not be. */
-const PERSISTENT = /\b(name|contact|reach|email|discord|budget|price|afford)\b/i;
+const PERSISTENT = /\b(your name|call you|contact|reach|email|discord|budget|price|afford)\b/i;
 
 type Clause = { text: string; words: Set<string> };
 

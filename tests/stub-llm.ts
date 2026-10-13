@@ -89,6 +89,10 @@ function answer(messages: Msg[], raw: Raw) {
     const marked = userMessages.filter((m) => m !== last && Array.isArray(m.content) && m.content.some((part) => part.cache_control)).length;
     return { ...base, reply: `Prompt ${fixed}, state ${state}, ${marked} earlier messages marked.` };
   }
+  if (/game-name/.test(text)) {
+    const corrected = /already asked/.test(textOf(messages[messages.length - 1].content));
+    return { ...base, reply: corrected ? "Which screens do you need?" : "What is the name of your game, and what genre is it?" };
+  }
   if (/note-check/.test(text)) return { ...base, reply: `Customer said: ${text}` };
   if (/envelope-check/.test(text)) {
     const turns = messages.filter((m) => m.role === "assistant").map((m) => JSON.parse(textOf(m.content)) as { reply?: string; brief?: unknown });

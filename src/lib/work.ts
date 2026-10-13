@@ -28,8 +28,8 @@ export function mergeWork(stored: Work, patch: Partial<Work>): Work {
   return normalizePieces(merged);
 }
 
-/** A link to one post on X (or its old twitter.com address). */
-export const X_POST_PATTERN = /^https:\/\/(?:www\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/status\/\d{5,25}(?:[/?#].*)?$/;
+/** A link to one post on X: x.com, its old twitter.com address, or one of the mirrors that embed better in Discord. */
+export const X_POST_PATTERN = /^https:\/\/(?:(?:www|mobile)\.)?(?:x|twitter|vxtwitter|fxtwitter|fixupx|fixvx)\.com\/[A-Za-z0-9_]{1,15}\/status\/\d{5,25}(?:[/?#].*)?$/;
 
 /**
  * The pieces a save added to a work, judged by their files. Empty unless the work grew: swapping

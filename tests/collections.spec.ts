@@ -117,6 +117,10 @@ test("a piece can carry an X post link, and only a real one", async () => {
     const bad = await page.request.patch(`/api/admin/works/${work.id}`, { data: { media: { ...PIECES[0], xUrl } } });
     expect(bad.status(), xUrl).toBe(400);
   }
+  for (const xUrl of ["https://vxtwitter.com/lumiereui/status/2108916921328414830", "https://fxtwitter.com/a/status/123456?s=20", "https://mobile.twitter.com/a/status/123456"]) {
+    const good = await page.request.patch(`/api/admin/works/${work.id}`, { data: { media: { ...PIECES[0], xUrl } } });
+    expect(good.status(), xUrl).toBe(200);
+  }
   // Adding a piece to a public work saves as usual: telling subscribers happens afterwards and cannot fail the save.
   const grow = await page.request.patch(`/api/admin/works/${work.id}`, { data: { media: withPost, items: [withPost, PIECES[1], PIECES[2]] } });
   expect(grow.ok()).toBeTruthy();

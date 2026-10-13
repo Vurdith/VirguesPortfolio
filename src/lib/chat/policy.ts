@@ -74,12 +74,24 @@ export function undercutsPrice(reply: string, lowestFrame: number, lowestStyle: 
   );
 }
 
+/** True when the contact is something Virguê can actually use: an address or a handle, not just "Discord". */
+export function reachable(contact: string): boolean {
+  const rest = contact
+    .toLowerCase()
+    .replace(/\b(?:discord|e-?mail|twitter|x|dm|dms|on|via|by|at|through|my|me|is|username|user|handle|tag|contact|message|him|them|you|can|reach)\b/g, " ")
+    .replace(/[^a-z0-9@._#-]+/g, "");
+  return rest.replace(/[^a-z0-9]/g, "").length >= 2;
+}
+
 /** Why the assistant may not ask "is that everything?" or close yet, or null when it may. */
 export function closingBlockedReason(brief: ChatBrief, turn: number): string | null {
   if (turn < CHAT_LIMITS.minTurnsToConfirm) {
-    return "You have not asked enough questions yet. Keep digging into the screens, style, references, platform, deliverables and timeline.";
+    return "It is too early. Ask for the essentials you do not have yet.";
   }
-  if (!brief.contact.trim()) return "You still need the customer's name and a way to reach them.";
+  if (!brief.contact.trim()) return "The brief has no name and contact. If they gave them earlier in this chat, write them into \"brief\" now; otherwise ask.";
+  if (!reachable(brief.contact)) {
+    return `The contact is only "${brief.contact.trim()}", which Virguê cannot use. Ask for their actual username or address there, and record it in "brief".`;
+  }
   const missing = [
     !brief.project.trim() && "what the project is",
     !brief.platform.trim() && "the platform",
@@ -87,7 +99,9 @@ export function closingBlockedReason(brief: ChatBrief, turn: number): string | n
     !brief.screens.length && "the screens",
     !(brief.style.trim() || brief.references.trim()) && "the style direction or references",
   ].filter(Boolean);
-  if (missing.length) return `The brief is still missing ${missing.join(", ")}. Ask about those until it could stand alone.`;
+  if (missing.length) {
+    return `These brief fields are empty: ${missing.join(", ")}. If the customer already told you any of them earlier in this chat, write them into "brief" now and do not ask again. Ask only for the ones they never mentioned, one short question.`;
+  }
   return null;
 }
 

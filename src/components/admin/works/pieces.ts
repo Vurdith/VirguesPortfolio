@@ -8,6 +8,8 @@ export type PieceDraft = {
   src: string;
   poster: string;
   alt: string;
+  /** Link to the X post this piece was shared in, or empty. */
+  xUrl: string;
   focusX: number;
   focusY: number;
   status: "ready" | "uploading" | "error";
@@ -45,6 +47,7 @@ export function emptyDraft(overrides: Partial<PieceDraft> = {}): PieceDraft {
     src: "",
     poster: "",
     alt: "",
+    xUrl: "",
     focusX: 50,
     focusY: 50,
     status: "ready",
@@ -60,6 +63,7 @@ export function draftFromMedia(media: Media): PieceDraft {
     src: media.src,
     poster: media.poster ?? "",
     alt: media.alt ?? "",
+    xUrl: media.xUrl ?? "",
     focusX: media.focus?.x ?? 50,
     focusY: media.focus?.y ?? 50,
   });
@@ -73,6 +77,8 @@ export function mediaFromDraft(piece: PieceDraft): Media {
     poster: piece.kind === "video" && piece.poster.trim() ? piece.poster.trim() : undefined,
     focus: { x: Math.round(piece.focusX), y: Math.round(piece.focusY) },
     alt: piece.alt.trim(),
+    // Empty (not undefined) so a cleared link is actually cleared on save.
+    xUrl: piece.xUrl.trim(),
   };
 }
 

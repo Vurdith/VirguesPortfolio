@@ -9,7 +9,7 @@ import type { Work } from "@/types/portfolio";
 import { CornerMarks } from "@/components/CornerMarks";
 import { cn } from "@/lib/cn";
 import { slugify } from "@/lib/slug";
-import { workPieces } from "@/lib/work";
+import { workPieces, X_POST_PATTERN } from "@/lib/work";
 
 import { PiecesManager } from "./PiecesManager";
 import { draftFromMedia, looksLikeSource, mediaFromDraft, type PieceDraft } from "./pieces";
@@ -157,6 +157,8 @@ function validate(state: FormState, pieces: PieceDraft[]): Issues {
       byPiece[piece.key] = "Add a file or a URL, or remove this piece.";
     } else if (piece.srcType === "url" && piece.src.trim() && !looksLikeSource(piece.src)) {
       byPiece[piece.key] = "Enter a full https:// link or a path starting with /.";
+    } else if (piece.xUrl.trim() && !X_POST_PATTERN.test(piece.xUrl.trim())) {
+      byPiece[piece.key] = "The X post link should look like https://x.com/name/status/123.";
     }
   });
   if (state.published && pieces.length === 0) general = "Add at least one piece before publishing.";

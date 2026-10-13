@@ -3,14 +3,14 @@ import { after, NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { readDb, writeDb } from "@/lib/db";
-import { announceWork } from "@/lib/discordNotify";
+import { announcePieces, announceWork } from "@/lib/discordNotify";
 import { MISSING_MEDIA_MESSAGE, WorkPatchSchema } from "@/lib/validation/work";
-import { mergeWork, missingPieceIndex } from "@/lib/work";
-import type { Work } from "@/types/portfolio";
+import { addedPieces, mergeWork, missingPieceIndex } from "@/lib/work";
+import type { Media, Work } from "@/types/portfolio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Telling Discord subscribers about a newly published work runs after the reply and can take a while.
+// Telling Discord subscribers about new work runs after the reply and can take a while.
 export const maxDuration = 60;
 
 export async function GET(
@@ -46,7 +46,9 @@ export async function PATCH(
   const now = new Date().toISOString();
 
   // Validated against the stored work inside the write, so concurrent edits cannot slip past.
-  const result: { outcome: "ok" | "missing" | "slug_taken" | "no_media"; published?: Work } = { outcome: "ok" };
+  const result: { outcome: "ok" | "missing" | "slug_taken" | "no_media"; published?: Work; grown?: { work: Work; added: Media[] } } = {
+    outcome: "ok",
+  };
   await writeDb((db) => {
     const index = db.works.findIndex((w) => w.id === id);
     if (index === -1) {
@@ -64,8 +66,12 @@ export async function PATCH(
       return;
     }
 
-    // A draft going live is news; an edit to something already public is not.
+    // A draft going live is news, and so are pieces added to a public work. Any other edit is not.
     if (candidate.published && !db.works[index].published) result.published = candidate;
+    else if (candidate.published) {
+      const added = addedPieces(db.works[index], candidate);
+      if (added.length) result.grown = { work: candidate, added };
+    }
     db.works[index] = candidate;
   });
 
@@ -78,8 +84,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Slug already exists." }, { status: 409 });
     default: {
       revalidatePath("/");
-      const { published } = result;
+      const { published, grown } = result;
       if (published) after(() => announceWork(published));
+      if (grown) after(() => announcePieces(grown.work, grown.added));
       return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
     }
   }

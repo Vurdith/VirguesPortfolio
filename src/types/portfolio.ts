@@ -7,6 +7,8 @@ export type Media = {
   alt?: string;
   /** Focal point (0-100) used when the image is cropped into a card. */
   focus?: { x: number; y: number };
+  /** The X post this piece was shared in. Discord subscribers are sent it in place of the usual message. */
+  xUrl?: string;
 };
 
 export type Work = {

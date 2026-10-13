@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { MAX_PIECES, missingPieceIndex } from "@/lib/work";
+import { MAX_PIECES, missingPieceIndex, X_POST_PATTERN } from "@/lib/work";
 
 export const MediaSchema = z.object({
   kind: z.enum(["image", "video"]),
@@ -11,6 +11,7 @@ export const MediaSchema = z.object({
   focus: z
     .object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) })
     .optional(),
+  xUrl: z.union([z.literal(""), z.string().trim().max(300).regex(X_POST_PATTERN, "Not an X post link.")]).optional(),
 });
 
 const SlugSchema = z

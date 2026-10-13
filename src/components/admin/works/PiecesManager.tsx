@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { cn } from "@/lib/cn";
 import { optimizedImage } from "@/lib/images";
-import { MAX_PIECES } from "@/lib/work";
+import { MAX_PIECES, X_POST_PATTERN } from "@/lib/work";
 
 import { uploadFile } from "./upload";
 import {
@@ -677,6 +677,23 @@ function PieceEditor({
               className={cn(INPUT, "mt-2")}
               placeholder="Describe this piece for screen readers"
             />
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] tracking-[0.22em] text-fog/70">X POST (OPTIONAL)</span>
+            <input
+              value={piece.xUrl}
+              onChange={(event) => onPatch({ xUrl: event.target.value })}
+              inputMode="url"
+              maxLength={300}
+              aria-label={`Piece ${index + 1} X post link`}
+              aria-invalid={Boolean(piece.xUrl.trim()) && !X_POST_PATTERN.test(piece.xUrl.trim())}
+              className={cn(INPUT, "mt-2")}
+              placeholder="https://x.com/virgueui/status/…"
+            />
+            <span className="mt-2 block text-xs leading-relaxed text-fog/60">
+              Discord subscribers are sent this post when the piece is announced.
+            </span>
           </label>
 
           {piece.kind === "video" ? (

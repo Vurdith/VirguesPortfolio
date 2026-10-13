@@ -82,7 +82,10 @@ test("each page has its own link preview, and the home page's is the animated on
   const image = async (path: string, tag: string) => new RegExp(`<meta (?:property|name)="${tag}" content="([^"]+)"`).exec(await (await request.get(path)).text())?.[1];
   expect(await image("/", "og:image")).toContain("/og-intro.gif");
   expect(await image("/", "twitter:image")).toContain("/og-intro.gif");
-  for (const page of ["chat", "privacy"]) {
+  expect(await image("/chat", "og:image")).toContain("/og-chat.gif");
+  expect(await image("/chat", "twitter:image")).toContain("/og-chat.gif");
+  expect((await request.get("/og-chat.gif")).headers()["content-type"]).toContain("image/gif");
+  for (const page of ["privacy"]) {
     expect(await image(`/${page}`, "og:image")).toContain(`/${page}/opengraph-image`);
     expect(await image(`/${page}`, "twitter:image")).toContain(`/${page}/twitter-image`);
     const res = await request.get(`/${page}/opengraph-image`);

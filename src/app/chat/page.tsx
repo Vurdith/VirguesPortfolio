@@ -10,9 +10,16 @@ export const metadata: Metadata = {
   title: "Brief your project",
   description: DESCRIPTION,
   alternates: { canonical: "/chat" },
-  // The image comes from opengraph-image.tsx, so a link to the chat does not look like the home page.
-  openGraph: { type: "website", url: `${SITE.url}/chat`, siteName: SITE.name, title: TITLE, description: DESCRIPTION },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+  // Its own animated card (built by scripts/og-chat-card.py), so a link to the chat does not look like the home page.
+  openGraph: {
+    type: "website",
+    url: `${SITE.url}/chat`,
+    siteName: SITE.name,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: "/og-chat.gif", width: 1200, height: 630, type: "image/gif", alt: "Brief your project." }],
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/og-chat.gif"] },
   // A tool for customers, not a page to find in search results.
   robots: { index: false, follow: false },
 };

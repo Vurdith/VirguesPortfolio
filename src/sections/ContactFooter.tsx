@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { AnimatePresence } from "framer-motion";
 
+import { BriefChat } from "@/components/chat/BriefChat";
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { QuoteForm } from "@/components/QuoteForm";
@@ -10,8 +12,10 @@ import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
 
-export function ContactFooter({ className }: { className?: string }) {
+export function ContactFooter({ className, briefChat = false }: { className?: string; briefChat?: boolean }) {
   const [copied, setCopied] = React.useState(false);
+  const [chatOpen, setChatOpen] = React.useState(false);
+  const closeChat = React.useCallback(() => setChatOpen(false), []);
   const resetTimer = React.useRef<number | null>(null);
 
   React.useEffect(() => {
@@ -115,6 +119,22 @@ export function ContactFooter({ className }: { className?: string }) {
                 <span className="text-fog/72 transition-colors group-hover:text-ink">↗</span>
               </Link>
             </div>
+
+            {briefChat ? (
+              <button
+                type="button"
+                onClick={() => setChatOpen(true)}
+                className="group relative mt-3 flex w-full items-center justify-between gap-4 border border-line/12 bg-void/35 px-4 py-3 text-left hover:border-line/25"
+              >
+                <span className="min-w-0">
+                  <span className="block text-xs tracking-[0.22em] text-ink">BRIEF THE AI ASSISTANT</span>
+                  <span className="mt-1 block text-xs leading-snug text-fog/70">
+                    Scope your UI, add references, get a price per frame.
+                  </span>
+                </span>
+                <span className="shrink-0 text-fog/72 transition-colors group-hover:text-ink">→</span>
+              </button>
+            ) : null}
           </div>
 
           <div id="quote" className="relative z-[41] min-w-0 scroll-mt-24 md:col-span-7">
@@ -129,6 +149,7 @@ export function ContactFooter({ className }: { className?: string }) {
           </Link>
         </div>
       </div>
+      <AnimatePresence>{chatOpen ? <BriefChat onClose={closeChat} /> : null}</AnimatePresence>
     </footer>
   );
 }

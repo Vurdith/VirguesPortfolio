@@ -83,10 +83,11 @@ export function uploadImage(
   file: File,
   onProgress: (fraction: number) => void,
   signal: AbortSignal,
+  endpoint = "/api/reviews/upload",
 ): Promise<UploadedImage> {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open("POST", "/api/reviews/upload");
+    request.open("POST", endpoint);
     request.responseType = "json";
 
     request.upload.onprogress = (event) => {

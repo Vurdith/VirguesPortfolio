@@ -7,6 +7,7 @@ import { ReviewsSection } from "@/sections/ReviewsSection";
 import { PaymentSection } from "@/sections/PaymentSection";
 import { ContactFooter } from "@/sections/ContactFooter";
 
+import { chatEnabled } from "@/lib/chat/enabled";
 import { getContributions } from "@/lib/contributions";
 import { getPublicPortfolioData } from "@/lib/db";
 
@@ -28,7 +29,7 @@ export default async function Home() {
       <ProcessBlueprint />
       <PaymentSection />
       <ReviewsSection reviews={reviews} />
-      <ContactFooter />
+      <ContactFooter briefChat={chatEnabled()} />
     </main>
   );
 }

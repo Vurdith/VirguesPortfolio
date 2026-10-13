@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 3200);
+const STUB_PORT = PORT + 100;
 
 // Tests run against a production build (so the real CSP and headers apply) with a throwaway
 // database, never the developer's data/db.json.
@@ -28,6 +29,9 @@ export default defineConfig({
       DB_PATH: "./.e2e/db.json",
       ADMIN_SETUP_TOKEN: "e2e-setup-token",
       ADMIN_AUTH_SECRET: "e2e-auth-secret",
+      // The assistant talks to a local stand-in, never to OpenRouter.
+      OPENROUTER_API_KEY: "e2e-key",
+      OPENROUTER_BASE_URL: `http://127.0.0.1:${STUB_PORT}/v1`,
     },
   },
 });

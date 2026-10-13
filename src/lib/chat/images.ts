@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
 import { getR2BucketName, getR2Client, getR2PublicUrl, hasR2Config } from "@/lib/r2/client";
 import { ATTACHMENT_ID } from "@/lib/reviewLimits";
@@ -54,10 +54,25 @@ export async function readLocalChatImage(id: string): Promise<Buffer | null> {
   }
 }
 
-/** What the model is given for an image: the public URL, or the bytes inline when stored locally. */
+/**
+ * What the model is given for an image: the bytes inline. Handing a provider a public address
+ * means it has to fetch it, and storage addresses are often blocked, slow or rate limited for
+ * that, which fails the whole reply. The images are small (re-encoded on upload).
+ */
 export async function chatImageForModel(id: string): Promise<string | null> {
-  if (hasR2Config()) return chatImageUrl(id);
-  const bytes = await readLocalChatImage(id);
+  if (!isChatImageId(id)) return null;
+  let bytes: Buffer | null = null;
+  if (hasR2Config()) {
+    try {
+      const object = await getR2Client().send(new GetObjectCommand({ Bucket: getR2BucketName(), Key: `${R2_PREFIX}${id}` }));
+      bytes = object.Body ? Buffer.from(await object.Body.transformToByteArray()) : null;
+    } catch (err) {
+      console.error("Could not read chat image from storage:", err);
+      return chatImageUrl(id);
+    }
+  } else {
+    bytes = await readLocalChatImage(id);
+  }
   return bytes ? `data:image/webp;base64,${bytes.toString("base64")}` : null;
 }
 

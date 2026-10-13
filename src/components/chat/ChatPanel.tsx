@@ -179,8 +179,11 @@ export function ChatPanel() {
       return;
     }
 
+    // The attachments leave the composer as soon as they are sent; they come back if the send fails.
+    const sent = drafts;
     setSending(true);
     setError(null);
+    setDrafts([]);
     setPending({
       id: "pending",
       role: "user",
@@ -201,14 +204,15 @@ export function ChatPanel() {
       if (!res.ok || !data?.thread) {
         // Nothing was added to the conversation: give the customer their message back.
         setText(content);
+        setDrafts(sent);
         setError(data?.error ?? "Something went wrong. Try again.");
         return;
       }
       setView(data as ChatView);
-      drafts.forEach((draft) => URL.revokeObjectURL(draft.preview));
-      setDrafts([]);
+      sent.forEach((draft) => URL.revokeObjectURL(draft.preview));
     } catch {
       setText(content);
+      setDrafts(sent);
       setError("Could not reach the server. Try again.");
     } finally {
       setPending(null);
@@ -460,6 +464,13 @@ export function ChatPanel() {
                 // Grow with the text, up to a few lines.
                 event.target.style.height = "auto";
                 event.target.style.height = `${Math.min(event.target.scrollHeight, 150)}px`;
+              }}
+              onPaste={(event) => {
+                // Pasting a screenshot or a copied image attaches it.
+                const files = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith("image/"));
+                if (!files.length) return;
+                event.preventDefault();
+                void attach(files);
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {

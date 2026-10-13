@@ -49,7 +49,7 @@ export function LiveChat({ initial }: { initial: AdminBrief }) {
         const { brief } = (await res.json()) as { brief: AdminBrief };
         if (stopped || busyRef.current) return;
         setLive(true);
-        setChat((current) => (current.updatedAt === brief.updatedAt && current.takeover === brief.takeover ? current : brief));
+        setChat((current) => (current.updatedAt === brief.updatedAt && current.takeover === brief.takeover && current.lastError?.at === brief.lastError?.at ? current : brief));
       } catch {
         if (!stopped) setLive(false);
       }
@@ -129,6 +129,12 @@ export function LiveChat({ initial }: { initial: AdminBrief }) {
             </span>
           </div>
         </header>
+
+        {chat.lastError ? (
+          <p role="alert" className="border-b border-red-300/20 bg-red-300/[0.05] px-5 py-3 text-xs leading-relaxed text-red-200">
+            The assistant could not reply ({time(chat.lastError.at)}): {chat.lastError.message}
+          </p>
+        ) : null}
 
         <div
           ref={listRef}

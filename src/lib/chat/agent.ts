@@ -15,6 +15,7 @@ import type { ChatMessage, ChatThread } from "./types";
 
 // Cheap, follows instructions closely, reads images. Any OpenRouter model id can replace it.
 const DEFAULT_MODEL = "anthropic/claude-haiku-5.5";
+const FALLBACK_MODEL = "google/gemini-2.5-flash-lite";
 const REQUEST_TIMEOUT_MS = 40_000;
 
 export { chatEnabled } from "./enabled";
@@ -129,7 +130,17 @@ async function toModelMessages(thread: ChatThread, newest: ChatMessage, turn: nu
 
 type Completion = { text: string; costUsd: number };
 
-async function complete(messages: ModelMessage[]): Promise<Completion> {
+/** A failed call to OpenRouter, with the status and what it said, so the owner can see why. */
+class ModelError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+async function request(messages: ModelMessage[], model: string, jsonMode: boolean): Promise<Completion> {
   const base = (process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/$/, "");
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
@@ -141,21 +152,50 @@ async function complete(messages: ModelMessage[]): Promise<Completion> {
       "x-title": SITE.name,
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
+      model,
       messages,
       max_tokens: CHAT_LIMITS.maxOutputTokens,
       temperature: 0.6,
-      response_format: { type: "json_object" },
+      ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
       usage: { include: true },
     }),
   });
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}`);
+  if (!res.ok) {
+    const detail = (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 300);
+    throw new ModelError(`OpenRouter ${res.status} (${model}): ${detail}`, res.status);
+  }
 
   const data = (await res.json()) as {
     choices?: { message?: { content?: string } }[];
     usage?: { cost?: number };
   };
   return { text: data.choices?.[0]?.message?.content ?? "", costUsd: Number(data.usage?.cost) || 0 };
+}
+
+const OUT_OF_ATTEMPTS_MS = 30_000;
+
+/**
+ * One call with fallbacks: the chosen model with JSON mode, then without it (some models reject it),
+ * then a second model. A bad key or no credit fails at once, since nothing else would work either.
+ */
+async function complete(messages: ModelMessage[]): Promise<Completion> {
+  const primary = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+  const fallback = process.env.OPENROUTER_FALLBACK_MODEL || FALLBACK_MODEL;
+  const plan: [string, boolean][] = [[primary, true], [primary, false]];
+  if (fallback !== primary) plan.push([fallback, true]);
+
+  const started = Date.now();
+  let last: unknown;
+  for (const [model, jsonMode] of plan) {
+    if (last && Date.now() - started > OUT_OF_ATTEMPTS_MS) break;
+    try {
+      return await request(messages, model, jsonMode);
+    } catch (err) {
+      last = err;
+      if (err instanceof ModelError && [401, 402, 403].includes(err.status)) throw err;
+    }
+  }
+  throw last;
 }
 
 export type AgentTurn = {
@@ -186,6 +226,7 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
   let costUsd = 0;
   let undercut = false;
   let early: ReturnType<typeof parseAgentOutput> = null;
+  let lastText = "";
   let correction = "";
 
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
@@ -194,6 +235,7 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
       : messages;
     const result = await complete(attemptMessages);
     costUsd += result.costUsd;
+    lastText = result.text;
 
     const output = parseAgentOutput(result.text, thread.brief);
     if (!output) {
@@ -226,7 +268,7 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
   if (early) {
     return { reply: KEEP_GOING, brief: early.brief, ...applyTurn(thread, early, turn), costUsd };
   }
-  if (!undercut) throw new Error("The model returned no usable reply.");
+  if (!undercut) throw new Error(`The model returned no usable reply: ${lastText.replace(/\s+/g, " ").slice(0, 200) || "(empty)"}`);
 
   // The model would not stay within the price rules. Hold the price rather than risk quoting below it.
   return {

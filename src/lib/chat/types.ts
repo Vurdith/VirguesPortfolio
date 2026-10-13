@@ -85,6 +85,8 @@ export type ChatThread = {
   steer?: ChatSteer[];
   /** Overlapping requests on one conversation are refused until this time. */
   lockedUntil?: string;
+  /** The last time the assistant could not reply, and why. For the owner; cleared on the next success. */
+  lastError?: { at: string; message: string };
   /** Model spend, when the provider reports it. */
   costUsd: number;
 };

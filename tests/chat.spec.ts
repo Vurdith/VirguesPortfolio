@@ -314,6 +314,35 @@ test("the owner can take over, steer the assistant, hand back and end the chat",
   await a.context.close();
 });
 
+test("a model that rejects JSON mode still works, and a failing model is reported to the owner", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+
+  // JSON mode rejected (400): the call is retried without it.
+  const retried = await a.say("no-json please");
+  expect(retried.res.status()).toBe(200);
+  expect(a.lastReply(retried.body)).toContain("What style");
+
+  // Everything failing: the customer gets a retryable error, nothing is added, and the owner sees why.
+  const failed = await a.say("boom");
+  expect(failed.res.status()).toBe(502);
+  const seen = await a.call("/api/chat");
+  expect(seen.body?.thread?.messages.some((message) => message.content === "boom")).toBe(false);
+
+  const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const { briefs } = (await res.json()) as { briefs: { lastError?: { message: string }; messages: { content: string }[] }[] };
+  const mine = briefs.find((brief) => brief.messages.some((message) => message.content === "no-json please"));
+  expect(mine?.lastError?.message).toContain("OpenRouter 500");
+  expect(mine?.lastError?.message).toContain("upstream exploded");
+
+  // The next message that works clears it.
+  expect(a.lastReply((await a.say("hello again")).body)).toContain("What style");
+  const after = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const list = (await after.json()) as { briefs: { lastError?: unknown; messages: { content: string }[] }[] };
+  expect(list.briefs.find((brief) => brief.messages.some((m) => m.content === "hello again"))?.lastError).toBeUndefined();
+  await a.context.close();
+});
+
 test("the admin can poll for conversations changed since a time, and only the admin", async ({ browser, request }) => {
   const a = await visitor(browser);
   await a.start();

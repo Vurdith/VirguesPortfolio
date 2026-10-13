@@ -137,8 +137,11 @@ export async function POST(req: Request) {
     result = await runAgentTurn(thread, userMessage, turn);
   } catch (err) {
     console.error("Chat turn failed:", err);
-    // Nothing was added to the conversation, so the customer can simply send it again.
+    // Nothing was added to the conversation, so the customer can simply send it again. The owner
+    // can see what went wrong on the conversation's page.
     thread.lockedUntil = undefined;
+    thread.lastError = { at: new Date().toISOString(), message: (err instanceof Error ? err.message : String(err)).slice(0, 400) };
+    thread.updatedAt = thread.lastError.at;
     await saveThread(thread);
     return fail("The assistant could not reply. Please try again in a moment.", 502);
   }
@@ -155,6 +158,7 @@ export async function POST(req: Request) {
   thread.costUsd = Number((thread.costUsd + result.costUsd).toFixed(6));
   thread.updatedAt = reply.at;
   thread.lockedUntil = undefined;
+  thread.lastError = undefined;
 
   let ended: "confirmed" | "limit" | null = null;
   if (result.resolved) {

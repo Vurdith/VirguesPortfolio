@@ -18,6 +18,8 @@ export type AdminBrief = {
   /** The owner is replying personally and the assistant is paused. */
   takeover: boolean;
   steer: ChatSteer[];
+  /** Why the assistant last failed to reply, if it did. */
+  lastError?: { at: string; message: string };
   images: { id: string; url: string }[];
   messages: {
     id: string;
@@ -44,6 +46,7 @@ export function adminBrief(thread: ChatThread): AdminBrief {
     costUsd: thread.costUsd,
     takeover: Boolean(thread.takeover),
     steer: thread.steer ?? [],
+    ...(thread.lastError ? { lastError: thread.lastError } : {}),
     images: thread.uploads.map((id) => ({ id, url: chatImageUrl(id) })),
     messages: thread.messages.map((message) => ({
       id: message.id,

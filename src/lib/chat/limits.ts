@@ -15,7 +15,7 @@ export const CHAT_LIMITS = {
   /** Model replies are capped, which also caps cost per turn. */
   maxOutputTokens: 4000,
   /** Customer messages that fit in the model's context. Older ones are summarised by the brief. */
-  contextMessages: 36,
+  contextMessages: 24,
   /** The assistant may only ask "is that everything?" from this customer message on, so it digs first. */
   minTurnsToConfirm: 5,
   /** A brief this short is not detailed enough to hand over. */

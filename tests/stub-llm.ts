@@ -90,9 +90,14 @@ function answer(messages: Msg[], raw: Raw) {
     const marked = userMessages.filter((m) => m !== last && Array.isArray(m.content) && m.content.some((part) => part.cache_control)).length;
     return { ...base, reply: `Prompt ${fixed}, state ${state}, ${marked} earlier messages marked.` };
   }
+  if (/who-check/.test(text)) return { ...base, reply: "What is your Discord username?", suggest: ["Nolan", "My handle"] };
+  if (/about-check/.test(text)) {
+    const corrected = /already asked/.test(textOf(messages[messages.length - 1].content));
+    return { ...base, reply: corrected ? "When do you need it by?" : "What is the game about, and when do you need it by?" };
+  }
   if (/pay-check/.test(text)) return { ...base, reply: "The ways to pay are below.", pay: true };
   if (/suggest-check/.test(text)) {
-    return { ...base, reply: "Which platform is it for?", suggest: ["Roblox", "PC", "Not sure", "roblox", "Mobile", "Console", "Web"] };
+    return { ...base, reply: "Which platform is it for?", suggest: ["Share my platform", "Roblox", "PC", "Not sure", "roblox", "Mobile", "Console", "Web"] };
   }
   if (/game-name/.test(text)) {
     const corrected = /already asked/.test(textOf(messages[messages.length - 1].content));

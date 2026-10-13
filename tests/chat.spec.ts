@@ -732,3 +732,12 @@ test("openers that end in a comma are stripped too, and an empty open point is n
   expect(briefs.find((brief) => brief.messages.some((message) => message.content === "comma-check"))!.brief.extras).toBe("");
   await a.context.close();
 });
+
+test("a question about who they are offers nothing to tap but Not sure, and a short question is still caught as a repeat", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  expect((await a.say("who-check")).body?.thread?.suggestions).toEqual(["Not sure"]);
+  expect(a.lastReply((await a.say("about-check")).body)).toContain("game about");
+  expect(a.lastReply((await a.say("about-check")).body)).toBe("When do you need it by?");
+  await a.context.close();
+});

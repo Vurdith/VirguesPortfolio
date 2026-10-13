@@ -204,7 +204,7 @@ function questionClauses(text: string): Clause[] {
       text: clause.replace(/^\s*[?,;:]+\s*/, "").trim(),
       words: new Set((clause.toLowerCase().match(/[a-z0-9£']+/g) ?? []).filter((word) => !STOP_WORDS.has(word))),
     }))
-    .filter((clause) => clause.words.size >= 2);
+    .filter((clause) => clause.words.size >= 1);
 }
 
 const similar = (a: Set<string>, b: Set<string>) => {
@@ -289,6 +289,8 @@ function suggestions(value: unknown): string[] {
     .flatMap((item) => (typeof item === "string" ? [item.replace(/\s+/g, " ").trim()] : []))
     .filter((item) => {
       const key = item.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      // "Share my name" describes an answer without giving one, so tapping it wastes a turn.
+      if (/^(?:share|send|give|tell|provide|describe|explain|enter|type)\b/i.test(item)) return false;
       if (!key || item.length > 48 || /^(notsure|idk|idontknow)$/.test(key) || seen.has(key)) return false;
       seen.add(key);
       return true;

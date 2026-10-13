@@ -44,3 +44,6 @@ next-env.d.ts
 
 # review image uploads (local storage)
 /data/review-uploads
+
+# model comparison transcripts
+bench-*.txt

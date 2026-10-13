@@ -16,6 +16,8 @@ const HANDLED: { key: QuoteStatus; label: string }[] = [
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+const menuLink = "flex h-10 w-full items-center rounded-xl px-3 text-left text-sm text-fog/85 transition-colors hover:bg-white/[0.06]";
+
 /** What the conversation has established, and what you can do about it. The actions stay pinned at the bottom. */
 export function BriefDetails({
   brief,
@@ -220,8 +222,14 @@ export function BriefDetails({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
                     transition={{ duration: 0.16, ease: EASE }}
-                    className="absolute bottom-full right-0 z-20 mb-2 w-52 origin-bottom-right overflow-hidden rounded-2xl border border-line/15 bg-[#121214] p-1.5 shadow-[0_20px_50px_-12px_rgb(0_0_0/0.8)]"
+                    className="absolute bottom-full right-0 z-20 mb-2 w-56 origin-bottom-right overflow-hidden rounded-2xl border border-line/15 bg-[#121214] p-1.5 shadow-[0_20px_50px_-12px_rgb(0_0_0/0.8)]"
                   >
+                    <a href={`/api/admin/briefs/${brief.id}/transcript`} className={menuLink}>
+                      Download transcript
+                    </a>
+                    <a href={`/api/admin/briefs/${brief.id}/transcript?format=json`} className={menuLink}>
+                      Download as JSON
+                    </a>
                     {open ? (
                       <MenuItem
                         busy={busy}

@@ -8,6 +8,7 @@ import { CountUpText } from "@/components/CountUpText";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
+import { inRobux } from "@/lib/payments";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 const TASK_DISCOUNTS = [
@@ -98,6 +99,7 @@ const PERKS = [
 export function OfferingsSection({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement>(null);
   const scrollYProgress = useSectionProgress(ref, "enter-exit");
+  const [inRobuxMode, setInRobuxMode] = React.useState(false);
 
   const lineScale = useSpring(useTransform(scrollYProgress, [0.12, 0.8], [0, 1]), {
     stiffness: 120,
@@ -133,12 +135,41 @@ export function OfferingsSection({ className }: { className?: string }) {
           </p>
         </header>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
+        <div className="mt-8 flex items-center justify-between gap-4 border-y border-line/10 py-3">
+          <p className="text-[11px] tracking-[0.22em] text-fog/60">SHOW PRICES IN</p>
+          <div role="radiogroup" aria-label="Currency" className="relative grid grid-cols-2 rounded-full border border-line/20 bg-void/40 p-1">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-ink transition-transform duration-300 ease-[cubic-bezier(0.34,1.3,0.64,1)]",
+                inRobuxMode && "translate-x-full",
+              )}
+            />
+            {(["GBP £", "ROBUX R$"] as const).map((label, index) => {
+              const on = (index === 1) === inRobuxMode;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setInRobuxMode(index === 1)}
+                  className={cn("relative h-9 min-w-24 rounded-full px-4 text-[11px] tracking-[0.2em] transition-colors duration-300", on ? "text-void" : "text-fog/75 hover:text-ink")}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
           {OFFERINGS.map((offering, index) => (
             <OfferingCard
               key={offering.title}
               offering={offering}
               spanClass={OFFERING_SPANS[index]}
+              robux={inRobuxMode}
             />
           ))}
         </div>
@@ -184,10 +215,13 @@ function SupportPanel({
 function OfferingCard({
   offering,
   spanClass,
+  robux,
 }: {
   offering: (typeof OFFERINGS)[number];
   spanClass: string;
+  robux: boolean;
 }) {
+  const price = (text: string) => (robux ? inRobux(text) : text);
   const [extras, setExtras] = React.useState(false);
   const extra = "extra" in offering ? offering.extra : null;
 
@@ -302,11 +336,11 @@ function OfferingCard({
               <span className={cn("transition-colors duration-300", extras && "text-ink")}>
                 {extra.label.toUpperCase()}
               </span>
-              <span className="text-fog/55">{extra.delta}</span>
+              <span className="text-fog/55">{price(extra.delta)}</span>
             </button>
           )}
           <span className="inline-flex max-w-full items-center border border-line/15 bg-white/[0.035] px-3 py-2 text-[11px] tracking-[0.2em] text-fog/75">
-            <CountUpText text={(extra && extras ? extra.badge : offering.badge).toUpperCase()} />
+            <CountUpText text={price(extra && extras ? extra.badge : offering.badge).toUpperCase()} />
           </span>
         </div>
       </div>

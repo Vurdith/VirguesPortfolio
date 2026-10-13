@@ -20,6 +20,8 @@ export type AgentOutput = {
   resolved: boolean;
   /** Short answers the customer could tap instead of typing. */
   suggest: string[];
+  /** The customer asked how to pay, so the payment buttons should show. */
+  pay: boolean;
 };
 
 type Track = { ladder: readonly number[]; floor: number };
@@ -258,6 +260,7 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
     awaitingConfirm: data.awaitingConfirm === true,
     resolved: data.resolved === true,
     suggest: suggestions(data.suggest),
+    pay: data.pay === true,
   };
 }
 
@@ -319,5 +322,6 @@ function salvageReply(raw: string, previous: ChatBrief): AgentOutput | null {
     awaitingConfirm: false,
     resolved: false,
     suggest: [],
+    pay: false,
   };
 }

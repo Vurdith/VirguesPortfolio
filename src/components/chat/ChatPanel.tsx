@@ -9,8 +9,10 @@ import { AgentIcon, OwnerIcon, TypingDots, YouIcon, type AgentMode } from "@/com
 import { TurnstileWidget, turnstileConfigured } from "@/components/TurnstileWidget";
 import { prepareImage, uploadImage } from "@/components/reviews/reviewClient";
 import { cn } from "@/lib/cn";
+import { BrandLogo } from "@/components/BrandLogo";
 import { CHAT_LIMITS } from "@/lib/chat/limits";
 import type { ChatView } from "@/lib/chat/session";
+import { PAYMENT_METHODS } from "@/lib/payments";
 import { SITE } from "@/lib/site";
 
 type Message = NonNullable<ChatView["thread"]>["messages"][number];
@@ -52,6 +54,24 @@ export function ChatPanel() {
   const [pending, setPending] = React.useState<Message | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  // When the customer has been asked to slow down: the moment they may send again, and the seconds left.
+  const [waitUntil, setWaitUntil] = React.useState<number | null>(null);
+  const [waitLeft, setWaitLeft] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!waitUntil) return;
+    const tick = () => {
+      const left = Math.ceil((waitUntil - Date.now()) / 1000);
+      setWaitLeft(Math.max(0, left));
+      if (left <= 0) {
+        setWaitUntil(null);
+        setError(null);
+      }
+    };
+    tick();
+    const timer = window.setInterval(tick, 250);
+    return () => window.clearInterval(timer);
+  }, [waitUntil]);
 
   const sendingRef = React.useRef(false);
   React.useEffect(() => {
@@ -173,7 +193,7 @@ export function ChatPanel() {
   const send = async (quick?: string) => {
     const content = (quick ?? text).trim();
     const images = drafts.flatMap((draft) => (draft.status === "done" && draft.id ? [draft.id] : []));
-    if (sending || uploading || (!content && !images.length)) return;
+    if (sending || uploading || waitUntil || (!content && !images.length)) return;
     if (failed) {
       setError("Remove the image that failed to upload, or try it again.");
       return;
@@ -188,6 +208,7 @@ export function ChatPanel() {
       id: "pending",
       role: "user",
       owner: false,
+      pay: false,
       content,
       images: drafts.filter((draft) => draft.id).map((draft) => ({ id: draft.id as string, url: draft.preview })),
       at: new Date().toISOString(),
@@ -206,6 +227,8 @@ export function ChatPanel() {
         setText(content);
         setDrafts(sent);
         setError(data?.error ?? "Something went wrong. Try again.");
+        const retry = Number(res.headers.get("retry-after"));
+        if (res.status === 429 && retry > 0) setWaitUntil(Date.now() + retry * 1000);
         return;
       }
       setView(data as ChatView);
@@ -353,6 +376,15 @@ export function ChatPanel() {
     );
   }
 
+  const footnote = error
+    ? waitUntil
+      ? `${error} Try again in ${waitLeft} second${waitLeft === 1 ? "" : "s"}.`
+      : error
+    : nearLimit
+      ? `${CHAT_LIMITS.messageChars - text.length} characters left`
+      : withOwner
+        ? `You're chatting with ${SITE.name}.`
+        : null;
   const quickStarts = open && !text && !drafts.length && messages.length <= 1 ? STARTERS : [];
   const suggestions = open && !sending && !text && !drafts.length ? (thread?.suggestions ?? []) : [];
 
@@ -388,10 +420,7 @@ export function ChatPanel() {
                 <button
                   key={starter}
                   type="button"
-                  onClick={() => {
-                    setText(starter);
-                    inputRef.current?.focus();
-                  }}
+                  onClick={() => void send(starter)}
                   className="shrink-0 rounded-full border border-line/20 bg-white/[0.03] px-3.5 py-2 text-xs text-fog/85 transition-colors hover:border-line/40 hover:text-ink"
                 >
                   {starter}
@@ -508,14 +537,11 @@ export function ChatPanel() {
               </svg>
             </button>
           </div>
-          <p className={cn("mt-2 px-2 text-[11px]", error ? "text-red-200" : "text-fog/55")} role={error ? "alert" : undefined}>
-            {error ??
-              (nearLimit
-                ? `${CHAT_LIMITS.messageChars - text.length} characters left`
-                : withOwner
-                    ? `You're chatting with ${SITE.name}.`
-                    : "AI assistant: prices are guides, final price confirmed by Virguê.")}
-          </p>
+          {footnote ? (
+            <p className={cn("mt-2 px-2 text-[11px]", error ? "text-red-200" : "text-fog/55")} role={error ? "alert" : undefined}>
+              {footnote}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </>
@@ -622,6 +648,23 @@ function Bubble({ message, grouped }: { message: Message; grouped: boolean }) {
             </span>
           ) : null}
         </div>
+        {message.pay ? (
+          <div className="mt-2 flex flex-wrap gap-2" aria-label="Ways to pay">
+            {PAYMENT_METHODS.map((method) => (
+              <a
+                key={method.title}
+                href={method.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group/pay inline-flex h-11 items-center gap-2.5 rounded-full border border-line/25 bg-white/[0.04] pl-3.5 pr-4 text-xs text-ink transition-[border-color,background-color,transform] hover:border-line/50 hover:bg-white/[0.08] active:scale-[0.97]"
+              >
+                <BrandLogo name={method.logo} className="size-4" />
+                {method.title}
+                <span aria-hidden="true" className="text-fog/60 transition-transform group-hover/pay:-translate-y-0.5 group-hover/pay:translate-x-0.5">↗</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
         {message.id !== "pending" && clock(message.at) ? <span className="mt-1 px-1 text-[10px] text-fog/45">{clock(message.at)}</span> : null}
       </div>
       {mine ? <span className={cn(grouped && "invisible")}><YouIcon size={28} /></span> : null}

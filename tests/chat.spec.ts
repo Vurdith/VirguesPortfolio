@@ -679,3 +679,24 @@ test("the assistant's question comes with answers to tap, always including Not s
   expect((await a.say("calls-check")).body?.thread?.suggestions).toEqual(["Not sure"]);
   await a.context.close();
 });
+
+test("images uploaded at the same moment are all kept", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const done = await Promise.all(Array.from({ length: 6 }, () => a.upload()));
+  const ids = await Promise.all(done.map(async (res) => ((await res.json()) as { id: string }).id));
+  const sent = await a.say("six references", ids);
+  expect(sent.res.status()).toBe(200);
+  expect(a.lastReply(sent.body)).toBe("Saw 6 images.");
+  await a.context.close();
+});
+
+test("payment buttons show only when the assistant offers them", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const asked = await a.say("pay-check");
+  expect((asked.body?.thread?.messages.at(-1) as { pay?: boolean }).pay).toBe(true);
+  const other = await a.say("calls-check");
+  expect((other.body?.thread?.messages.at(-1) as { pay?: boolean }).pay).toBe(false);
+  await a.context.close();
+});

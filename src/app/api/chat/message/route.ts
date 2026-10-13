@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   const recent = thread.messages.filter((message) => message.role === "user" && Date.now() - Date.parse(message.at) < CHAT_LIMITS.burstWindowMs);
   if (recent.length >= CHAT_LIMITS.burstMessages) {
     const wait = Math.max(1, Math.ceil((CHAT_LIMITS.burstWindowMs - (Date.now() - Date.parse(recent[0].at))) / 1000));
-    return fail(`You're sending messages very quickly. Try again in ${wait} seconds.`, 429, { "retry-after": String(wait) });
+    return fail("You're sending messages very quickly.", 429, { "retry-after": String(wait) });
   }
 
   // The owner has taken over: keep the customer's message for them and leave the reply to the owner.
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     return fail("The assistant could not reply. Please try again in a moment.", 502);
   }
 
-  const reply: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: result.reply, json: result.json, ...(result.suggest.length ? { suggest: result.suggest } : {}), at: new Date().toISOString() };
+  const reply: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: result.reply, json: result.json, ...(result.suggest.length ? { suggest: result.suggest } : {}), ...(result.pay ? { pay: true } : {}), at: new Date().toISOString() };
   thread.messages.push(userMessage, reply);
   thread.userTurns = turn;
   thread.brief = result.brief;

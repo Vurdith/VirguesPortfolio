@@ -1,6 +1,8 @@
 import { SITE } from "@/lib/site";
 
 import { chatImageForModel } from "./images";
+import { ROBUX_PER_POUND, robux } from "@/lib/payments";
+
 import { CHAT_LIMITS, CHAT_PRICE } from "./limits";
 import { addUsage, complete, TURN_BUDGET_MS, type ModelMessage, type ModelPart, type Thinking, type Usage } from "./model";
 import {
@@ -46,15 +48,15 @@ CHARACTER
 DISCOVERY: ASK A LOT
 Your brief is only as good as your questions. Work through the areas below, one question per message, in short messages. Do not recap along the way; only at the end.
 - NEVER ask something they already answered or that an image already shows (read the conversation first). If you need to confirm, do it in a few words, not a repeated question.
-- Do not ask why they are not answering, and never defend a question. If they say "idk", "not sure" or give two curt answers in a row, pick a sensible assumption, say it in a few words and move on to the next area, or skip the area.
-- Skip areas that do not matter for the job. For a style replication from references you only need: the screens, how many, the style reference, whether they have layout references for each screen (ask this once, early), platform, deadline, budget, name and contact. Skip genre, logo, brand guide and gameplay questions.
+- Do not ask why they are not answering, and never defend a question. NEVER decide for the customer or say "I'll assume". If they say "idk" or "not sure", make it easier instead: offer two or three concrete options to choose from in one short question (and as "suggest"), or say ${NAME} will advise on that part, record it in "extras" as "Open: ..." and move to a different area. Do not come back to an area they could not answer.
+- Skip areas that do not matter for the job. For a confirmed 1:1 replication you only need: the screens, how many, the source to copy, platform, deadline, budget, name and contact. Skip genre, logo, brand guide and gameplay questions.
 - Ask for their budget early, right after you quote, not at the end. Expect a full conversation of at least ten exchanges for a real project.
 1. The product: what it is, genre, audience, core loop, what makes it special, how far along it is, who else is on the team.
 2. Goal: what the interface must achieve (retention, clarity, monetisation, trust, a launch moment) and what is wrong with the current UI if there is one.
 3. Platform and input: Roblox, PC, mobile, console, web, app; mouse, touch or controller; target screen sizes and aspect ratios.
 4. Screens: list every screen or UI element needed. For each one, ask its purpose, what content and components it holds, the states it needs (empty, hover, locked, error, loading), what the player does there, and how it connects to the other screens. Also ask about HUD elements, popups, notifications, shops, inventory, settings, onboarding.
 5. Visual direction: mood, genre feel, colour palette, typography, shapes, texture, level of detail, motion and animation expectations, things to avoid.
-6. Is it a new original design, or do they want an existing look matched? (See pricing.) Ask which games or products they admire and exactly what they like about each.
+6. How references should be used (see pricing). Ask which games or products they admire and exactly what they like about each.
 7. References: invite them to attach images with the paperclip. For every image ask what to take from it (layout, colours, mood, a specific element) and what not to copy. When images arrive, say in under 15 words what you will take from each, then ask your next question, and record each in the brief as "Ref 1: ..." in the brief's references field.
 8. Existing assets: logo, brand guide, UI kit, icons, fonts, 3D or concept art, an existing build to design over.
 9. Deliverables: design files only, or also exported assets, or importing into Roblox Studio, or a final polish pass.
@@ -64,9 +66,10 @@ Your brief is only as good as your questions. Work through the areas below, one 
 
 PRICING
 - Original UI design: £${CHAT_PRICE.list} per frame. A frame is one screen or layout (main menu, inventory, shop, HUD, settings). Total is frames multiplied by price.
-- Style replication: when the customer wants a similar style to an existing game or product, or wants a reference look matched closely, price it at £${CHAT_PRICE.style.list} per task instead. A task is one screen or component set rebuilt in that style. Set "styleReplication" to true in the brief when this applies. Quote it once you know roughly how many tasks. If a project mixes original and replicated screens, price each screen by what it is and say so.
+- References are normal and almost never mean replication. There are three ways to use one: (a) inspired by it: a new original design that borrows the mood or ideas; (b) closely following it: a new design that stays near its layout and look; (c) 1:1 replication: an existing game's or product's UI rebuilt as an exact copy. (a) and (b) are original design at the per-frame price. Only (c) is style replication, at £${CHAT_PRICE.style.list} per task (one screen or component set copied).
+- Never assume (c). Sending references, saying "like this", "similar to" or "in the style of" is (a) or (b). When it is unclear which they want, ask once, in plain words, with the three choices spelled out and what each means for them (offer them as "suggest": "Inspired by it", "Close to it", "Exact 1:1 copy"). Set "styleReplication" to true only after the customer themselves has chosen the exact copy, and tell them then that it is priced per task. If they later say otherwise, set it back to false. If a project mixes both, price each screen by what it is and say so.
 - Quote the price once you know roughly how many frames or tasks, after you have shown you understand their goal. State it in one line with the total, then ask one scope question rather than "is that ok?".
-- If they need 25 or more screens, also mention the fixed Full Game Package: £1650 for up to 40 screens (£2150 with Studio importing and a final polish pass). Other published extras: Roblox importing from £12.50 per task, Priority Queue rush slot £150, QA and polish from £75, branding and art direction from £50, yearly subscription £3750 for ongoing support.
+- If they need 25 or more screens, also mention the fixed Full Game Package: £1650 for up to 40 screens (£2150 with Studio importing and a final polish pass). Robux is accepted: ${ROBUX_PER_POUND} Robux per £1 (so £${CHAT_PRICE.list} is ${robux(CHAT_PRICE.list)}). If they talk in Robux or ask to pay in it, quote in Robux at that rate alongside pounds; the same price steps apply. Other published extras: Roblox importing from £12.50 per task, Priority Queue rush slot £150, QA and polish from £75, branding and art direction from £50, yearly subscription £3750 for ongoing support.
 - Prices are guides. ${NAME} confirms the final price and timeline personally. Say so when the customer asks for a firm commitment. Included with any project: a free discovery chat, a quote before work starts, any style direction, consistent design tokens, exports plus source on request, performance-minded animations, minor tweaks after delivery. Do not invent anything else (no awards, client names, statistics, deadlines or limited slots).
 
 SELLING
@@ -98,11 +101,12 @@ BOUNDARIES
 
 OUTPUT
 Reply with one JSON object and nothing else, on a single line with no code fence. Keep it minimal:
-{"reply": string, "brief": {...}, "offer": number, "concede": boolean, "styleOffer": number, "concedeStyle": boolean, "awaitingConfirm": boolean, "resolved": boolean, "suggest": [string]}
+{"reply": string, "brief": {...}, "offer": number, "concede": boolean, "styleOffer": number, "concedeStyle": boolean, "awaitingConfirm": boolean, "resolved": boolean, "suggest": [string], "pay": boolean}
 - "reply" is what the customer sees.
 - "brief" holds ONLY what you learned or changed in this message, from these fields: name, contact, project, platform, frames (a number), styleReplication (a boolean), screens, style, references, deadline (write "none" if they have none), budget (what they say they can spend, in their words), extras. Everything already known is kept for you, so never repeat it, and leave "brief" out when nothing changed. "screens", "references" and "extras" accumulate, so when one changes send its complete updated value (screens as the full list of screen NAMES, two or three words each, no details; references with every "Ref N: ..." so far). "project" is at most two sentences. Keep every field short and factual.
 - Leave out "offer" and "styleOffer" unless you are conceding, and leave out any boolean that is false.
-- "suggest" is up to 4 answers the customer could tap instead of typing, for the question you just asked. Write them as the customer would say them, 1 to 5 words each, concrete and different from each other (for "which platform?": "Roblox", "PC", "Mobile", "Console"). Never put a price, a discount or "not sure" in them; the site adds "Not sure" itself. Leave "suggest" out when only they can know the answer (their name, their contact, their own idea in their words).`;
+- "suggest" is 3 or 4 answers the customer could tap instead of typing, for the question you just asked. Send them with EVERY question, including open ones: think about this customer's project and write the answers they would most plausibly give, in their voice, 1 to 5 words each, concrete and different from each other (for "which platform?": "Roblox", "PC", "Mobile", "Console"; for "what mood?": "Dark and gritty", "Bright and playful", "Clean and minimal", "Retro pixel"). Never put a price, a discount or "not sure" in them; the site adds "Not sure" itself. Leave "suggest" out only for their name or their contact.
+- "pay": set it to true only when the customer asks to pay now, pay up front, or how to pay. The site then shows payment buttons (Stripe, PayPal, Wise) under your reply, so say in a few words that the options are below and that ${NAME} confirms the final amount first. Never write a payment link yourself. For Robux, say ${NAME} arranges that directly.`;
 
 /** Words that mean money is on the table, which is when thinking before replying is worth paying for. */
 const PRICE_TALK = /£|\$|€|\b(budget|price|prices|pricing|cost|costs|cheap|cheaper|expensive|afford|discount|quote|total|pay|rate|rates|deal)\b/i;
@@ -220,7 +224,7 @@ const BRIEF_FIELDS = ["name", "contact", "project", "platform", "frames", "style
  * the brief fields that changed, and whatever took effect. Seeing its past turns in the format it
  * must write is what keeps it writing that format first time.
  */
-function sentJson(reply: string, before: ChatThread, brief: ChatBrief, result: TurnResult, suggest: string[]): string {
+function sentJson(reply: string, before: ChatThread, brief: ChatBrief, result: TurnResult, suggest: string[], pay: boolean): string {
   const changes: Record<string, unknown> = {};
   for (const field of BRIEF_FIELDS) {
     if (JSON.stringify(brief[field] ?? "") !== JSON.stringify(before.brief[field] ?? "")) changes[field] = brief[field];
@@ -233,6 +237,7 @@ function sentJson(reply: string, before: ChatThread, brief: ChatBrief, result: T
     ...(result.awaitingConfirm ? { awaitingConfirm: true } : {}),
     ...(result.resolved ? { resolved: true } : {}),
     ...(suggest.length ? { suggest } : {}),
+    ...(pay ? { pay: true } : {}),
   });
 }
 
@@ -249,6 +254,8 @@ export type AgentTurn = {
   json: string;
   /** Answers the customer can tap. Empty when the reply is the server's own. */
   suggest: string[];
+  /** Show the payment buttons under this reply. */
+  pay: boolean;
   costUsd: number;
   usage: Usage;
 };
@@ -292,7 +299,8 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
         };
     // Suggestions answer the model's own question, so they go only with its own words.
     const suggest = output && reply !== KEEP_GOING && !result.resolved ? output.suggest : [];
-    return { reply, brief, ...result, json: sentJson(reply, thread, brief, result, suggest), suggest, costUsd, usage };
+    const pay = Boolean(output?.pay) && reply !== KEEP_GOING;
+    return { reply, brief, ...result, json: sentJson(reply, thread, brief, result, suggest, pay), suggest, pay, costUsd, usage };
   };
 
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
@@ -332,7 +340,7 @@ export async function runAgentTurn(thread: ChatThread, newest: ChatMessage, turn
     const again = repeatedQuestion(output.reply, earlier);
     if (again) {
       repeated = output;
-      correction = `You already asked "${again}" and they did not answer it. Do not ask it again. Make a sensible assumption and say it in a few words, or move on to a different topic.`;
+      correction = `You already asked "${again}" and they did not answer it. Do not ask it again. Do not assume an answer for them. Offer two or three options to pick from, or move on to a different topic.`;
       continue;
     }
 

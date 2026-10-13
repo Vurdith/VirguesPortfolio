@@ -87,6 +87,11 @@ export function startStub() {
         if (/badimg/.test(asked) && sawImages) return void res.writeHead(400).end("could not fetch image");
         if (/boom/.test(asked)) return void res.writeHead(500).end("upstream exploded");
         if (/no-json/.test(asked) && response_format) return void res.writeHead(400).end("response_format is not supported");
+        // A long answer cut off by the token limit: the reply arrived whole, the rest did not.
+        if (/truncate/.test(asked)) {
+          const cut = '{"reply": "Cut off but readable.", "brief": {"name": "E2E Te';
+          return void res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ choices: [{ message: { content: cut } }], usage: { cost: 0 } }));
+        }
         const out = JSON.stringify({
           choices: [{ message: { content: JSON.stringify(answer(messages)) } }],
           usage: { cost: 0.0002 },

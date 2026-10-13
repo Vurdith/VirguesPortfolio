@@ -13,7 +13,7 @@ export const CHAT_LIMITS = {
   /** After a conversation is resolved, the same visitor waits this long for another. */
   cooldownMs: 60 * 60 * 1000,
   /** Model replies are capped, which also caps cost per turn. */
-  maxOutputTokens: 1800,
+  maxOutputTokens: 4000,
   /** Customer messages that fit in the model's context. Older ones are summarised by the brief. */
   contextMessages: 36,
   /** The assistant may only ask "is that everything?" from this customer message on, so it digs first. */

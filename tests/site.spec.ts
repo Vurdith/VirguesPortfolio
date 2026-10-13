@@ -46,37 +46,15 @@ test("privacy page renders", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText("What I keep");
 });
 
-test("quote request can be completed through all four steps", async ({ page }) => {
+test("the contact section opens the chat with the chosen kind of work", async ({ page }) => {
   const problems = watchPage(page);
   await openHome(page);
 
-  const form = page.getByRole("form", { name: "Request a quote" });
-  await form.scrollIntoViewIfNeeded();
-
-  // Step 1: choose a service (advances on its own).
-  await form.locator("label", { hasText: "Game UI" }).click();
-  const details = page.locator("#quote-details");
-  await expect(details).toBeVisible();
-
-  // Step 2: details must be long enough before continuing.
-  await form.getByRole("button", { name: /CONTINUE/ }).click();
-  await expect(page.getByText(/A little more detail/i).first()).toBeVisible();
-  await details.fill("A full inventory and crafting menu for a survival game, controller friendly.");
-  await form.getByRole("button", { name: /CONTINUE/ }).click();
-
-  // Step 3: budget and timeline have defaults.
-  await expect(form.getByRole("heading", { name: "Budget and timing." })).toBeVisible();
-  await form.getByRole("button", { name: /CONTINUE/ }).click();
-
-  // Step 4: contact; needs a name and one valid method.
-  await page.locator("#quote-name").fill("E2E Tester");
-  await form.getByRole("button", { name: /SEND REQUEST/ }).click();
-  await expect(page.getByRole("alert").first()).toBeVisible();
-
-  await page.locator("#quote-email").fill("e2e@example.com");
-  await form.getByRole("button", { name: /SEND REQUEST/ }).click();
-
-  await expect(page.getByRole("heading", { name: /Got it, E2E/ })).toBeVisible();
+  const invite = page.getByRole("navigation", { name: "Start a brief" });
+  await invite.scrollIntoViewIfNeeded();
+  await expect(invite.getByRole("link")).toHaveCount(5);
+  await expect(invite.getByRole("link", { name: /Game UI/ })).toHaveAttribute("href", "/chat?about=game");
+  await expect(invite.getByRole("link", { name: /Something else/ })).toHaveAttribute("href", "/chat");
   expect(problems, problems.join(" | ")).toEqual([]);
 });
 

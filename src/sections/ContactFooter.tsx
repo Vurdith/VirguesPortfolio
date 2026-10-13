@@ -3,9 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { ChatInvite } from "@/components/chat/ChatInvite";
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
-import { QuoteForm } from "@/components/QuoteForm";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
@@ -118,7 +118,7 @@ export function ContactFooter({ className }: { className?: string }) {
           </div>
 
           <div id="quote" className="relative z-[41] min-w-0 scroll-mt-24 md:col-span-7">
-            <QuoteForm />
+            <ChatInvite />
           </div>
         </div>
 

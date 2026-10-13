@@ -4,7 +4,7 @@ import { chatEnabled } from "@/lib/chat/agent";
 import { chatImageUrl, storeChatImage } from "@/lib/chat/images";
 import { CHAT_LIMITS } from "@/lib/chat/limits";
 import { NO_STORE, readSession } from "@/lib/chat/session";
-import { saveThread } from "@/lib/chat/store";
+import { addUpload } from "@/lib/chat/store";
 import { clientKey, rateLimit } from "@/lib/rateLimit";
 import { ImageRejected, reencodeImage } from "@/lib/reviewImages";
 import { REVIEW_ATTACHMENTS } from "@/lib/reviewLimits";
@@ -56,10 +56,7 @@ export async function POST(req: Request) {
 
   try {
     const id = await storeChatImage(data);
-    // Re-read before writing so an upload that raced a message does not overwrite it.
-    const latest = (await readSession(req)).thread ?? thread;
-    latest.uploads = [...latest.uploads, id];
-    await saveThread(latest);
+    await addUpload(thread.id, id);
     return NextResponse.json({ ok: true, id, url: chatImageUrl(id) }, { status: 201, headers: NO_STORE });
   } catch (err) {
     console.error("Chat image storage failed:", err);

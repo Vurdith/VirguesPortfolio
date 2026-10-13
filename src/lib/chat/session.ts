@@ -117,6 +117,7 @@ export function threadView(thread: ChatThread) {
       role: message.role,
       owner: message.by === "owner",
       content: message.content,
+      pay: Boolean(message.pay),
       images: (message.images ?? []).map((id) => ({ id, url: chatImageUrl(id) })),
       at: message.at,
     })),

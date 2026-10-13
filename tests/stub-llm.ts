@@ -89,6 +89,7 @@ function answer(messages: Msg[], raw: Raw) {
     const marked = userMessages.filter((m) => m !== last && Array.isArray(m.content) && m.content.some((part) => part.cache_control)).length;
     return { ...base, reply: `Prompt ${fixed}, state ${state}, ${marked} earlier messages marked.` };
   }
+  if (/pay-check/.test(text)) return { ...base, reply: "The ways to pay are below.", pay: true };
   if (/suggest-check/.test(text)) {
     return { ...base, reply: "Which platform is it for?", suggest: ["Roblox", "PC", "Not sure", "roblox", "Mobile", "Console", "Web"] };
   }

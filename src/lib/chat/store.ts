@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { FieldValue } from "firebase-admin/firestore";
+
 import { getFirebaseDb, hasFirebaseAdminConfig } from "@/lib/firebase/admin";
 import { createMutex } from "@/lib/db/mutex";
 
@@ -60,6 +62,24 @@ export async function saveThread(thread: ChatThread): Promise<void> {
     const index = data.threads.findIndex((existing) => existing.id === thread.id);
     if (index === -1) data.threads.unshift(thread);
     else data.threads[index] = thread;
+    await writeFile(data);
+  });
+}
+
+/**
+ * Adds one uploaded image to a conversation without rewriting the rest of it. Several images are
+ * uploaded at once, and saving the whole conversation from each upload let them overwrite one another.
+ */
+export async function addUpload(id: string, imageId: string): Promise<void> {
+  if (hasFirebaseAdminConfig()) {
+    await chats().doc(id).update({ uploads: FieldValue.arrayUnion(imageId) });
+    return;
+  }
+  await runExclusive(async () => {
+    const data = await readFile();
+    const thread = data.threads.find((existing) => existing.id === id);
+    if (!thread) throw new Error("Conversation not found.");
+    if (!thread.uploads.includes(imageId)) thread.uploads.push(imageId);
     await writeFile(data);
   });
 }

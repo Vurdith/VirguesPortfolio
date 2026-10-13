@@ -3,7 +3,7 @@
 import * as React from "react";
 import { animate, useInView, useReducedMotion } from "framer-motion";
 
-const NUMBER = /\d+(?:\.\d+)?/;
+const NUMBER = /\d[\d,]*(?:\.\d+)?/;
 
 /**
  * Renders `text` and counts its first number up from zero the first time it scrolls into view
@@ -15,7 +15,8 @@ export function CountUpText({ text, className }: { text: string; className?: str
   const reduceMotion = useReducedMotion();
 
   const match = NUMBER.exec(text);
-  const target = match ? Number(match[0]) : null;
+  const target = match ? Number(match[0].replace(/,/g, "")) : null;
+  const grouped = Boolean(match?.[0].includes(","));
   const decimals = match?.[0].split(".")[1]?.length ?? 0;
   const [value, setValue] = React.useState(target);
 
@@ -39,7 +40,7 @@ export function CountUpText({ text, className }: { text: string; className?: str
   return (
     <span ref={ref} className={className}>
       {text.slice(0, match.index)}
-      <span className="tabular-nums">{value.toFixed(decimals)}</span>
+      <span className="tabular-nums">{grouped ? value.toLocaleString("en-GB", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : value.toFixed(decimals)}</span>
       {text.slice(match.index + match[0].length)}
     </span>
   );

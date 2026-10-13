@@ -12,6 +12,8 @@ export type ChatMessage = {
   json?: string;
   /** Answers the customer can tap in reply to this message. */
   suggest?: string[];
+  /** Payment buttons are shown under this message. */
+  pay?: boolean;
   /** Ids of uploaded reference images. */
   images?: string[];
   at: string;

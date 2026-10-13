@@ -4,46 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { motion, useSpring, useTransform } from "framer-motion";
 
-import { BrandLogo, type BrandName } from "@/components/BrandLogo";
+import { BrandLogo } from "@/components/BrandLogo";
 import { CornerMarks } from "@/components/CornerMarks";
 import { MonoIcon } from "@/components/MonoIcon";
 import { RevealHeading } from "@/components/RevealHeading";
 import { cn } from "@/lib/cn";
+import { PAYMENT_METHODS } from "@/lib/payments";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
-
-const STRIPE_URL = "https://buy.stripe.com/6oUaEZ9geg0p0Qm3X7aMU00";
-const WISE_URL = "https://wise.com/pay/me/reeceluisl";
-const PAYPAL_EMAIL = "reeceleneveubusiness@gmail.com";
-const PAYPAL_URL = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(
-  PAYPAL_EMAIL
-)}&item_name=${encodeURIComponent("Virgue project payment")}&currency_code=GBP`;
-
-const PAYMENT_METHODS = [
-  {
-    title: "Stripe",
-    logo: "stripe",
-    description:
-      "Fast encrypted checkout for cards and supported wallets. Confirmation is handled immediately after payment.",
-    cta: "Pay with Stripe",
-    href: STRIPE_URL,
-  },
-  {
-    title: "PayPal",
-    logo: "paypal",
-    description:
-      "Prefer PayPal? Pay through PayPal once the project scope and quote are confirmed.",
-    cta: "Pay with PayPal",
-    href: PAYPAL_URL,
-  },
-  {
-    title: "Wise",
-    logo: "wise",
-    description:
-      "Pay in your own currency with a low-fee Wise transfer once the project scope and quote are confirmed.",
-    cta: "Pay with Wise",
-    href: WISE_URL,
-  },
-] as const satisfies readonly { title: string; logo: BrandName; description: string; cta: string; href: string }[];
 
 export function PaymentSection({ className }: { className?: string }) {
   const ref = React.useRef<HTMLElement>(null);

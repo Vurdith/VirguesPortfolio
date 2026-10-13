@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/admin/ui";
 import { ReviewsModerationTable } from "@/components/admin/reviews/ReviewsModerationTable";
 import { readDb } from "@/lib/db";
 import { adminReview } from "@/lib/db/reviews";
@@ -10,16 +11,7 @@ export default async function AdminReviewsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-      <div>
-        <p className="text-xs tracking-[0.22em] text-fog/70">REVIEWS</p>
-        <h1 className="mt-3 font-serif text-4xl leading-[0.95] tracking-[-0.05em] md:text-5xl">
-          Moderation.
-        </h1>
-        <p className="mt-4 max-w-xl text-sm leading-relaxed text-fog/75">
-          Nothing is public until you approve it. A review shows its approved images and replies; a
-          reviewer&apos;s follow-ups wait here for you, and your own replies go live with an OWNER badge.
-        </p>
-      </div>
+      <PageHeader title="Reviews" description="Nothing is public until you approve it. Your own replies go live with an OWNER badge." />
 
       <div className="mt-8">
         <ReviewsModerationTable initialReviews={reviews} />

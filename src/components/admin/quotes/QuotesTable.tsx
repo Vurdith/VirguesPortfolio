@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import type { QuoteRequest, QuoteStatus } from "@/types/portfolio";
+import { FilterTabs } from "@/components/admin/FilterTabs";
 import { adminButton } from "@/components/admin/ui";
 import { cn } from "@/lib/cn";
 
@@ -81,28 +82,14 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
 
   return (
     <div>
-      <div role="tablist" aria-label="Filter quotes" className="flex flex-wrap gap-2">
-        {FILTERS.map((item) => (
-          <button
-            key={item}
-            type="button"
-            role="tab"
-            aria-selected={filter === item}
-            onClick={() => setFilter(item)}
-            className={cn(
-              "inline-flex h-9 items-center gap-2 border px-3 text-[11px] tracking-[0.22em] transition-colors duration-200",
-              filter === item
-                ? "border-line/35 bg-white/[0.05] text-ink"
-                : "border-line/12 text-fog/65 hover:border-line/25 hover:text-ink",
-            )}
-          >
-            {item.toUpperCase()}
-            <span className="tabular-nums text-fog/60">{counts[item]}</span>
-          </button>
-        ))}
-      </div>
+      <FilterTabs
+        label="Filter quotes"
+        value={filter}
+        onChange={setFilter}
+        items={FILTERS.map((item) => ({ key: item, label: item[0].toUpperCase() + item.slice(1), count: counts[item] }))}
+      />
 
-      <div className="mt-4 overflow-hidden border border-line/12 bg-void/30">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-line/10 bg-white/[0.02]">
         {visible.length ? (
           <ul className="divide-y divide-line/10">
             <AnimatePresence initial={false}>
@@ -164,14 +151,7 @@ export function QuotesTable({ initialQuotes }: { initialQuotes: QuoteRequest[] }
                   </p>
 
                   <div className="flex flex-wrap items-start gap-2 md:col-span-2 md:flex-col md:items-end">
-                    <span
-                      className={cn(
-                        "inline-flex items-center border bg-void/35 px-2 py-1 text-[11px] tracking-[0.22em]",
-                        quote.status === "new" ? "border-line/35 text-ink" : "border-line/12 text-fog/70",
-                      )}
-                    >
-                      {quote.status.toUpperCase()}
-                    </span>
+                    {quote.status === "new" ? <span className="inline-flex items-center rounded-full bg-ink px-2.5 py-1 text-[11px] text-void">New</span> : null}
                     {quote.email ? (
                       <a
                         href={`mailto:${quote.email}?subject=${encodeURIComponent("Your quote request")}`}

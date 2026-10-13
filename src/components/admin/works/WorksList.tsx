@@ -13,7 +13,7 @@ import { optimizedImage } from "@/lib/images";
 import { workPieces } from "@/lib/work";
 
 const SMALL_BUTTON =
-  "inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex items-center rounded-full border border-line/10 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
 
 type Filter = "all" | "published" | "draft";
 
@@ -136,7 +136,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                 "inline-flex items-center gap-2 border px-3 py-1.5 text-[11px] tracking-[0.22em] transition-colors duration-200",
                 filter === item.id
                   ? "border-line/35 bg-white/[0.05] text-ink"
-                  : "border-line/12 text-fog/70 hover:border-line/25 hover:text-ink",
+                  : "border-line/10 text-fog/70 hover:border-line/25 hover:text-ink",
               )}
             >
               {item.label}
@@ -150,7 +150,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
           onChange={(event) => setQuery(event.target.value)}
           aria-label="Search works"
           placeholder="Search title or slug"
-          className="w-full border border-line/12 bg-void/35 px-3 py-2 text-xs tracking-[0.1em] text-ink placeholder:text-fog/40 transition-colors duration-200 hover:border-line/25 focus:border-line/40 md:w-64"
+          className="w-full rounded-xl border border-line/10 bg-void/35 px-3 py-2 text-xs tracking-[0.1em] text-ink placeholder:text-fog/40 transition-colors duration-200 hover:border-line/25 focus:border-line/40 md:w-64"
         />
       </div>
 
@@ -227,10 +227,10 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                       {pieces.length > 1 ? (
                         <span
                           aria-hidden="true"
-                          className="absolute inset-x-1 -top-1 h-full border border-line/15 bg-void/60"
+                          className="absolute inset-x-1 -top-1 h-full rounded-lg border border-line/15 bg-void/60"
                         />
                       ) : null}
-                      <div className="relative size-full overflow-hidden border border-line/10 bg-void/40">
+                      <div className="relative size-full overflow-hidden rounded-2xl border border-line/10 bg-void/40">
                         {thumb ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -244,7 +244,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                         ) : null}
                       </div>
                       {pieces.length > 1 ? (
-                        <span className="absolute -bottom-1.5 -right-1.5 border border-line/25 bg-void px-1 text-[10px] leading-4 tracking-[0.1em] text-ink">
+                        <span className="absolute -bottom-1.5 -right-1.5 rounded-md border border-line/25 bg-void px-1 text-[10px] leading-4 tracking-[0.1em] text-ink">
                           {pieces.length}
                         </span>
                       ) : null}
@@ -272,7 +272,7 @@ export function WorksList({ initialWorks }: { initialWorks: Work[] }) {
                         "inline-flex items-center gap-2 border px-2 py-1 text-[11px] tracking-[0.22em] transition-colors duration-200",
                         work.published
                           ? "border-line/30 bg-white/[0.05] text-ink hover:border-line/50"
-                          : "border-line/12 bg-void/35 text-fog/70 hover:border-line/30",
+                          : "border-line/10 bg-void/35 text-fog/70 hover:border-line/30",
                       )}
                     >
                       <span

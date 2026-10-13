@@ -120,6 +120,8 @@ export async function POST(req: Request) {
   }
 
   thread.lockedUntil = new Date(Date.now() + LOCK_MS).toISOString();
+  // Touching it lets the owner's live view see that the assistant has started working.
+  thread.updatedAt = new Date().toISOString();
   await saveThread(thread);
 
   const now = new Date().toISOString();

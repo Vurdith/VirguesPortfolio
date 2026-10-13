@@ -341,7 +341,7 @@ export function WorkForm({ mode, work }: { mode: Mode; work?: Work }) {
             <Link
               href={`/work/${work.slug}`}
               target="_blank"
-              className="inline-flex items-center border border-line/12 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink"
+              className="inline-flex items-center rounded-full border border-line/10 bg-void/35 px-3 py-2 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink"
             >
               VIEW LIVE ↗
             </Link>
@@ -483,7 +483,7 @@ export function WorkForm({ mode, work }: { mode: Mode; work?: Work }) {
             role="switch"
             aria-checked={state.published}
             onClick={() => set("published", !state.published)}
-            className="inline-flex items-center gap-3 border border-line/12 bg-void/40 px-3 py-2.5 text-[11px] tracking-[0.22em] text-fog/80 transition-colors duration-200 hover:border-line/30"
+            className="inline-flex items-center gap-3 rounded-full border border-line/10 bg-void/40 px-3 py-2.5 text-[11px] tracking-[0.22em] text-fog/80 transition-colors duration-200 hover:border-line/30"
           >
             <span
               aria-hidden="true"
@@ -504,14 +504,14 @@ export function WorkForm({ mode, work }: { mode: Mode; work?: Work }) {
 
           <Link
             href="/admin/works"
-            className="inline-flex items-center border border-line/12 px-4 py-2.5 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink"
+            className="inline-flex items-center rounded-full border border-line/10 px-4 py-2.5 text-[11px] tracking-[0.22em] text-fog/70 transition-colors duration-200 hover:border-line/30 hover:text-ink"
           >
             CANCEL
           </Link>
           <button
             type="submit"
             disabled={busy || uploading > 0}
-            className="inline-flex items-center gap-3 border border-line/40 bg-white/[0.07] px-5 py-2.5 text-xs tracking-[0.22em] text-ink transition-[border-color,background-color,transform,opacity] duration-200 hover:-translate-y-px hover:border-line/60 hover:bg-white/[0.12] active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            className="inline-flex items-center gap-3 rounded-full border border-line/40 bg-white/[0.07] px-5 py-2.5 text-xs tracking-[0.22em] text-ink transition-[border-color,background-color,transform,opacity] duration-200 hover:-translate-y-px hover:border-line/60 hover:bg-white/[0.12] active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
           >
             <span>{busy ? "SAVING" : "SAVE"}</span>
             <span aria-hidden="true" className="hidden text-[10px] text-fog/60 md:inline">
@@ -542,7 +542,7 @@ function Section({
       id={id}
       variants={reveal}
       aria-label={title}
-      className="relative mt-8 scroll-mt-24 border border-line/12 bg-void/25 p-5 md:p-6"
+      className="relative mt-8 scroll-mt-24 rounded-2xl border border-line/10 bg-void/25 p-5 md:p-6"
     >
       <CornerMarks />
       <div className="flex items-baseline gap-3 text-xs tracking-[0.22em]">
@@ -583,7 +583,7 @@ function TextField({
   inputMode?: "numeric";
 }) {
   const messageId = `${id}-message`;
-  const className = cn(INPUT, error ? "border-red-300/50" : "border-line/12", multiline && "resize-none");
+  const className = cn(INPUT, error ? "border-red-300/50" : "border-line/10", multiline && "resize-none");
   const shared = {
     id,
     value,

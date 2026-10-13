@@ -342,7 +342,7 @@ test("the owner can take over, steer the assistant, hand back and end the chat",
   // The live page for the conversation renders.
   const page = await admin.request.get(`/admin/briefs/${id}`);
   expect(page.ok()).toBe(true);
-  expect(await page.text()).toContain("REPLY AS ME");
+  expect(await page.text()).toContain("Reply as you");
 
   // Ending the chat closes it for the customer and starts their cooldown.
   expect((await post("control", { action: "end" })).ok()).toBe(true);
@@ -380,6 +380,32 @@ test("a model that rejects JSON mode still works, and a failing model is reporte
   const after = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
   const list = (await after.json()) as { briefs: { lastError?: unknown; messages: { content: string }[] }[] };
   expect(list.briefs.find((brief) => brief.messages.some((m) => m.content === "hello again"))?.lastError).toBeUndefined();
+  await a.context.close();
+});
+
+test("the owner's inbox shows a conversation, takes it over and replies", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("A shop menu for my game");
+
+  const page = await admin.newPage();
+  await page.goto("/admin/briefs");
+  await page.getByRole("button", { name: /What style are you after/ }).first().click();
+  await expect(page).toHaveURL(/\/admin\/briefs\/.+/);
+  await expect(page.getByText("Noted. What style are you after?").first()).toBeVisible();
+
+  // Replying as the owner takes the chat over; the customer sees it.
+  await page.getByLabel("Reply to the customer").fill("Hi, Virguê here.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText("Hi, Virguê here.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "You", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const seen = await a.call("/api/chat");
+  expect(seen.body?.thread?.takeover).toBe(true);
+
+  // Handing it back.
+  await page.getByRole("button", { name: "AI", exact: true }).click();
+  await expect(page.getByRole("button", { name: "AI", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.close();
   await a.context.close();
 });
 

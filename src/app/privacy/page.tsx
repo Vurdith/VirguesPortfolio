@@ -42,7 +42,7 @@ const SECTIONS = [
   {
     title: "Discord updates",
     body: [
-      "If you subscribe to new work on Discord, you authorise an app that sees your Discord username and id, adds you to my server and sends you a direct message when I publish a work. Only that id and name are stored. Every message has an unsubscribe button, which deletes them.",
+      "If you subscribe to new work on Discord, you authorise an app that sees your Discord username and id, adds you to my server and sends you a direct message when I publish a work. I store that id and name, and the token Discord issues when you authorise, which is kept only so the authorisation can be ended for you. Every message has an unsubscribe button, which deletes all three and removes the app's access to your account.",
     ],
   },
   {

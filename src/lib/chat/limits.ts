@@ -15,6 +15,8 @@ export const CHAT_LIMITS = {
   quietMs: 30 * 60 * 1000,
   /** After a conversation is resolved, the same visitor waits this long for another. */
   cooldownMs: 60 * 60 * 1000,
+  /** Conversations that ended before this moment no longer hold anyone on cooldown: a one-off reset. */
+  cooldownResetAt: "2026-10-13T08:53:00Z",
   /** Model replies are capped, which also caps cost per turn. */
   maxOutputTokens: 4000,
   /** The assistant may only ask "is that everything?" from this customer message on, so it digs first. */

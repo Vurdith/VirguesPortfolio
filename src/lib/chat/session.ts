@@ -60,7 +60,7 @@ export async function readSession(req: Request): Promise<Session> {
         };
   }
 
-  if (latest?.resolvedAt) {
+  if (latest?.resolvedAt && Date.parse(latest.resolvedAt) > Date.parse(CHAT_LIMITS.cooldownResetAt)) {
     const remaining = CHAT_LIMITS.cooldownMs - (now - Date.parse(latest.resolvedAt));
     if (remaining > 0) {
       return { ownerHash, token, state: "cooldown", thread: mine ? latest : null, retryAfterMs: remaining };

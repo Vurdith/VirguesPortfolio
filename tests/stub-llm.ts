@@ -32,7 +32,7 @@ const BRIEF = {
   styleReplication: false,
   screens: ["Inventory"],
   style: "dark",
-  references: "",
+  references: "none",
   deadline: "Flexible",
   budget: "",
   extras: "",
@@ -61,6 +61,7 @@ function answer(messages: Msg[], raw: Raw) {
       styleReplication: replicating,
       ...(/nodeadline/.test(text) ? { deadline: "" } : {}),
       ...(/bare-contact/.test(text) ? { contact: "Discord" } : {}),
+      ...(/norefs/.test(text) ? { references: "" } : {}),
       ...(/discord-contact/.test(text) ? { contact: "Discord: e2e_handle", budget: "£35-40, firm" } : {}),
     },
     offer,
@@ -90,6 +91,7 @@ function answer(messages: Msg[], raw: Raw) {
     const marked = userMessages.filter((m) => m !== last && Array.isArray(m.content) && m.content.some((part) => part.cache_control)).length;
     return { ...base, reply: `Prompt ${fixed}, state ${state}, ${marked} earlier messages marked.` };
   }
+  if (/robux-check/.test(text)) return { ...base, reply: "Two frames at £60 each comes to £120. Which would you like?" };
   if (/who-check/.test(text)) return { ...base, reply: "What is your Discord username?", suggest: ["Nolan", "My handle"] };
   if (/about-check/.test(text)) {
     const corrected = /already asked/.test(textOf(messages[messages.length - 1].content));

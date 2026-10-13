@@ -741,3 +741,16 @@ test("a question about who they are offers nothing to tap but Not sure, and a sh
   expect(a.lastReply((await a.say("about-check")).body)).toBe("When do you need it by?");
   await a.context.close();
 });
+
+test("the first price on a Roblox job mentions Robux once, and a chat cannot close before references were asked about", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  expect(a.lastReply((await a.say("norefs robux-check")).body)).toBe(
+    "Two frames at £60 each comes to £120. Robux is accepted too, at R$500 per £1. Which would you like?",
+  );
+  expect(a.lastReply((await a.say("norefs robux-check again")).body)).not.toContain("Robux");
+  for (const text of ["three", "four"]) await a.say(`norefs ${text}`);
+  expect(a.lastReply((await a.say("norefs ready to wrap up")).body)).toContain("anything about the screens");
+  expect(a.lastReply((await a.say("ready to wrap up")).body)).toContain("Is that everything");
+  await a.context.close();
+});

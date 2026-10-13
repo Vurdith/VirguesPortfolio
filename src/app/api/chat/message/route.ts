@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     return fail("The assistant could not reply. Please try again in a moment.", 502);
   }
 
-  const reply: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: result.reply, at: new Date().toISOString() };
+  const reply: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: result.reply, json: result.json, at: new Date().toISOString() };
   thread.messages.push(userMessage, reply);
   thread.userTurns = turn;
   thread.brief = result.brief;

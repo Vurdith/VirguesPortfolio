@@ -18,14 +18,21 @@ export type ModelPart =
   | { type: "image_url"; image_url: { url: string } };
 export type ModelMessage = { role: "system" | "user" | "assistant"; content: string | ModelPart[] };
 
-/** Token counts for one or more calls, kept so the owner can see what a conversation costs. */
-export type Usage = { input: number; output: number; cached: number; reasoning: number };
+/**
+ * Token counts for one or more calls, kept so the owner can see what a conversation costs. `written`
+ * (tokens stored in the cache) and `calls` are missing on conversations from before they were counted.
+ */
+export type Usage = { input: number; output: number; cached: number; reasoning: number; written?: number; calls?: number };
 
 export const addUsage = (total: Usage | undefined, more: Usage): Usage => ({
   input: (total?.input ?? 0) + more.input,
   output: (total?.output ?? 0) + more.output,
   cached: (total?.cached ?? 0) + more.cached,
   reasoning: (total?.reasoning ?? 0) + more.reasoning,
+  // A total that began before these were counted stays without them, rather than showing a part as the whole.
+  ...(total && total.calls === undefined
+    ? {}
+    : { written: (total?.written ?? 0) + (more.written ?? 0), calls: (total?.calls ?? 0) + (more.calls ?? 0) }),
 });
 
 export type Completion = { text: string; costUsd: number; usage: Usage };
@@ -54,15 +61,21 @@ export class ModelError extends Error {
 let reasoningRefused = false;
 
 const isAnthropic = (model: string) => model.startsWith("anthropic/");
+const isImage = (part: ModelPart) => part.type === "image_url";
+
+const IMAGES_UNSEEN =
+  "[The customer attached reference images, but you cannot see them right now. Acknowledge them, and ask what to take from each one.]";
 
 /** Cache markers only mean something to Anthropic models; every other model gets plain text. */
 function shapeFor(model: string, messages: ModelMessage[]): ModelMessage[] {
   if (isAnthropic(model)) return messages;
-  return messages.map((message) =>
-    message.role === "system" && Array.isArray(message.content)
-      ? { ...message, content: message.content.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("\n\n") }
-      : message,
-  );
+  return messages.map((message) => {
+    if (!Array.isArray(message.content)) return message;
+    if (message.content.some(isImage)) {
+      return { ...message, content: message.content.map((part): ModelPart => (part.type === "text" ? { type: "text", text: part.text } : part)) };
+    }
+    return { ...message, content: message.content.flatMap((part) => (part.type === "text" ? [part.text.trim()] : [])).join("\n\n") };
+  });
 }
 
 type Step = { model: string; json: boolean; think: boolean };
@@ -104,7 +117,7 @@ async function request(messages: ModelMessage[], step: Step, options: CompleteOp
       cost?: number;
       prompt_tokens?: number;
       completion_tokens?: number;
-      prompt_tokens_details?: { cached_tokens?: number };
+      prompt_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
       completion_tokens_details?: { reasoning_tokens?: number };
     };
   };
@@ -117,6 +130,8 @@ async function request(messages: ModelMessage[], step: Step, options: CompleteOp
       output: Number(usage?.completion_tokens) || 0,
       cached: Number(usage?.prompt_tokens_details?.cached_tokens) || 0,
       reasoning: Number(usage?.completion_tokens_details?.reasoning_tokens) || 0,
+      written: Number(usage?.prompt_tokens_details?.cache_write_tokens) || 0,
+      calls: 1,
     },
   };
 }
@@ -138,15 +153,14 @@ export async function complete(messages: ModelMessage[], deadline: number, optio
   if (fallback !== primary) steps.push({ model: fallback, json, think: false });
 
   // Last resort when images are the problem: answer from the text alone, so the chat keeps working.
-  const hasImages = messages.some((message) => Array.isArray(message.content) && message.content.some((part) => part.type === "image_url"));
-  const textOnly: ModelMessage[] = messages.map((message) =>
-    message.role === "user" && Array.isArray(message.content)
-      ? {
-          ...message,
-          content: `${message.content.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("\n")}\n[The customer attached reference images, but you cannot see them right now. Acknowledge them, and ask what to take from each one.]`,
-        }
-      : message,
-  );
+  const hasImages = messages.some((message) => Array.isArray(message.content) && message.content.some(isImage));
+  const textOnly: ModelMessage[] = messages.map((message) => {
+    if (!Array.isArray(message.content) || !message.content.some(isImage)) return message;
+    // The note stands where the images were, so whatever follows them still comes last.
+    const at = message.content.findIndex(isImage);
+    const rest = message.content.slice(at).filter((part) => !isImage(part));
+    return { ...message, content: [...message.content.slice(0, at), { type: "text", text: IMAGES_UNSEEN }, ...rest] };
+  });
 
   const started = Date.now();
   let last: unknown;

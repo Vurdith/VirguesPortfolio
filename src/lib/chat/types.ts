@@ -8,6 +8,8 @@ export type ChatMessage = {
   /** Set when the owner wrote it personally, rather than the assistant. */
   by?: "owner";
   content: string;
+  /** The assistant's own turn as JSON, which is how the model is shown it afterwards. Never sent to the browser. */
+  json?: string;
   /** Ids of uploaded reference images. */
   images?: string[];
   at: string;

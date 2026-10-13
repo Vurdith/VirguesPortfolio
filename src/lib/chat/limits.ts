@@ -30,8 +30,11 @@ export const CHAT_PRICE = {
   list: 60,
   floor: 30,
   ladder: [60, 54, 48, 42, 36, 30],
-  /** Customer messages that must pass between two concessions, so the agent stays firm. */
+  /**
+   * Customer messages that must pass between the first two concessions. Each step after that needs
+   * one more than the last, so the lower the price, the harder the next step is to get.
+   */
   turnsBetweenConcessions: 2,
   /** Matching an existing look (a game’s UI, a reference) is priced per task, separately from original design. */
-  style: { list: 150, floor: 120, ladder: [150, 142, 135, 128, 120] },
+  style: { list: 150, floor: 100, ladder: [150, 142, 135, 128, 120, 113, 106, 100] },
 } as const;

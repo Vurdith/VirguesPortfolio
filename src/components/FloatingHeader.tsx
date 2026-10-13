@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, useSpring, useTransform } from "framer-motion";
 
 import { CornerMarks } from "@/components/CornerMarks";
+import { MobileNav, type MobileNavItem } from "@/components/MobileNav";
 import { cn } from "@/lib/cn";
 import { usePageScroll } from "@/hooks/usePageScroll";
 import { SITE } from "@/lib/site";
@@ -30,6 +31,15 @@ const LEFT_NAV: readonly NavItemData[] = [
 const RIGHT_NAV: readonly NavItemData[] = [
   { label: "REVIEWS", short: "REVIEWS", href: "/#reviews", sections: ["reviews"] },
   { label: "GET A QUOTE", short: "QUOTE", href: "/#quote", sections: ["contact"], cta: true },
+];
+// On a phone the links live in a side menu, where there is room for every section.
+const MOBILE_NAV: readonly MobileNavItem[] = [
+  { label: "Work", hint: "Selected interfaces", href: "/#work", sections: ["work"] },
+  { label: "Services", hint: "What I do and what it costs", href: "/#offerings", sections: ["offerings"] },
+  { label: "Process", hint: "How a project runs", href: "/#process", sections: ["process"] },
+  { label: "Payment", hint: "Ways to pay", href: "/#payment", sections: ["payment"] },
+  { label: "Reviews", hint: "What clients said", href: "/#reviews", sections: ["reviews"] },
+  { label: "Contact", hint: "Email, Discord, X", href: "/#contact", sections: ["contact"] },
 ];
 const TRACKED_SECTIONS = [...LEFT_NAV, ...RIGHT_NAV].flatMap((item) => item.sections);
 
@@ -56,19 +66,29 @@ export function FloatingHeader({ className }: { className?: string }) {
   const opacity = useTransform(settle, [0, 1], [1, 0.96]);
 
   return (
+    <>
+      <PhoneHeader current={current} />
+      <DesktopHeader className={className} current={current} style={{ y, scale, opacity }} />
+    </>
+  );
+}
+
+function DesktopHeader({ className, current, style }: { className?: string; current: string | null; style: React.ComponentProps<typeof motion.header>["style"] }) {
+  return (
     <motion.header
       className={cn(
-        "fixed inset-x-0 top-6 z-50 flex justify-center px-3",
+        "max-md:hidden",
+        "fixed inset-x-0 top-3 z-50 flex justify-center px-3 md:top-6",
         "transform-gpu will-change-transform",
         className,
       )}
-      style={{ y, scale, opacity }}
+      style={style}
       initial={{ y: -24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.85, ease: [0.2, 0.85, 0.2, 1] }}
     >
       <nav
-        className="tc-nav pointer-events-auto relative grid w-fit max-w-[calc(100vw-1.25rem)] grid-cols-[280px_76px_280px] items-center justify-center gap-3 overflow-visible border border-white/10 bg-black/75 px-3 py-2"
+        className="tc-nav pointer-events-auto relative hidden w-fit max-w-[calc(100vw-1.25rem)] grid-cols-[280px_76px_280px] items-center justify-center gap-3 overflow-visible border border-white/10 bg-black/75 px-3 py-2 md:grid"
         aria-label="Primary"
       >
         <CornerMarks className="opacity-80" />
@@ -91,6 +111,15 @@ export function FloatingHeader({ className }: { className?: string }) {
         </div>
       </nav>
     </motion.header>
+  );
+}
+
+/** The phone header sits outside the animated wrapper: a transformed parent would trap its full-screen menu. */
+function PhoneHeader({ current }: { current: string | null }) {
+  return (
+    <header className="pointer-events-none fixed inset-x-0 top-3 z-50 px-3 md:hidden">
+      <MobileNav items={MOBILE_NAV} current={current} quoteHref="/#quote" />
+    </header>
   );
 }
 

@@ -62,3 +62,20 @@ test("password can be changed and the old one stops working", async ({ page, bro
   expect(newLogin.status()).toBe(200);
   await other.close();
 });
+
+test("on a phone the admin sections, the site link and log out are in a side menu", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  for (const password of ["second-e2e-password", "first-e2e-password", "reviews-e2e-password"]) {
+    if ((await context.request.post("/api/auth/login", { data: { password } })).ok()) break;
+  }
+  const page = await context.newPage();
+  await page.goto("/admin/works");
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const menu = page.getByRole("dialog", { name: "Menu" });
+  await expect(menu.getByRole("link", { name: "View site" })).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Log out" })).toBeVisible();
+  await menu.getByRole("link", { name: /Reviews/ }).click();
+  await expect(page).toHaveURL(/\/admin\/reviews$/);
+  await expect(menu).toHaveCount(0);
+  await context.close();
+});

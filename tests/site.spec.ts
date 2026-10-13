@@ -90,3 +90,20 @@ test("each page has its own link preview, and the home page's is the animated on
     expect(res.headers()["content-type"]).toContain("image/png");
   }
 });
+
+test("on a phone the header is a menu button that opens a side menu", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
+  await page.goto("/");
+  await page.getByRole("button", { name: "ENTER SITE" }).click();
+
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const menu = page.getByRole("dialog", { name: "Menu" });
+  await expect(menu.getByRole("link")).toHaveCount(7);
+  await menu.getByRole("link", { name: /Reviews/ }).click();
+  await expect(menu).toHaveCount(0);
+  await expect(page).toHaveURL(/#reviews$/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await context.close();
+});

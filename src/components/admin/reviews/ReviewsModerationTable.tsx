@@ -146,7 +146,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
       <div
         role="tablist"
         aria-label="Filter reviews"
-        className="flex flex-wrap gap-1.5 pb-4"
+        className="-mx-5 flex gap-1.5 overflow-x-auto px-5 pb-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {TABS.map((tab, index) => {
           const active = filter === tab.id;
@@ -165,7 +165,7 @@ export function ReviewsModerationTable({ initialReviews }: { initialReviews: Rev
               onClick={() => setFilter(tab.id)}
               onKeyDown={(event) => onTabKeyDown(event, index)}
               className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-sm transition-[border-color,color,background-color] duration-200",
+                "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-4 text-sm transition-[border-color,color,background-color] duration-200",
                 active
                   ? "border-line/15 bg-white/[0.08] text-ink"
                   : "border-transparent text-fog/65 hover:text-ink",

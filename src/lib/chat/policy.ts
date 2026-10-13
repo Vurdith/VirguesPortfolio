@@ -73,9 +73,13 @@ export function closingBlockedReason(brief: ChatBrief, turn: number): string | n
     return "You have not asked enough questions yet. Keep digging into the screens, style, references, platform, deliverables and timeline.";
   }
   if (!brief.contact.trim()) return "You still need the customer's name and a way to reach them.";
-  if (brief.summary.trim().length < CHAT_LIMITS.minSummaryChars) {
-    return "The brief is not detailed enough yet. Ask about each screen, the style and the references until the summary could stand alone.";
-  }
+  const missing = [
+    !brief.project.trim() && "what the project is",
+    !brief.platform.trim() && "the platform",
+    !brief.screens.length && "the screens",
+    !(brief.style.trim() || brief.references.trim()) && "the style direction or references",
+  ].filter(Boolean);
+  if (missing.length) return `The brief is still missing ${missing.join(", ")}. Ask about those until it could stand alone.`;
   return null;
 }
 
@@ -94,7 +98,8 @@ export function applyTurn(thread: ChatThread, output: AgentOutput, turn: number)
   const lowest = lowestAllowedOffer(thread, turn);
   let offer = thread.offer;
   let lastConcessionTurn = thread.lastConcessionTurn;
-  if (output.concede && output.offer < thread.offer && lowest < thread.offer) {
+  // A concession with no number means "down to the lowest allowed"; the server decides how far it goes.
+  if (output.concede && !(output.offer >= thread.offer) && lowest < thread.offer) {
     offer = lowest;
     lastConcessionTurn = turn;
   }
@@ -102,7 +107,7 @@ export function applyTurn(thread: ChatThread, output: AgentOutput, turn: number)
   const lowestStyle = lowestAllowedStyleOffer(thread, turn);
   let styleOffer = thread.styleOffer;
   let lastStyleConcessionTurn = thread.lastStyleConcessionTurn;
-  if (output.concedeStyle && output.styleOffer < thread.styleOffer && lowestStyle < thread.styleOffer) {
+  if (output.concedeStyle && !(output.styleOffer >= thread.styleOffer) && lowestStyle < thread.styleOffer) {
     styleOffer = lowestStyle;
     lastStyleConcessionTurn = turn;
   }
@@ -152,9 +157,9 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
   const b = (data.brief && typeof data.brief === "object" ? data.brief : {}) as Record<string, unknown>;
   const frames =
     typeof b.frames === "number" && Number.isFinite(b.frames) ? Math.max(0, Math.min(500, Math.round(b.frames))) : null;
-  const screens = Array.isArray(b.screens)
-    ? b.screens.map((screen) => clip(screen, 60)).filter(Boolean).slice(0, 60)
-    : previous.screens;
+  // Only changes are sent, so an empty or missing list means "unchanged".
+  const listed = Array.isArray(b.screens) ? b.screens.map((screen) => clip(screen, 60)).filter(Boolean).slice(0, 60) : [];
+  const screens = listed.length ? listed : previous.screens;
 
   const brief: ChatBrief = {
     ...EMPTY_BRIEF,
@@ -169,7 +174,8 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
     references: clip(b.references, 2000) || previous.references,
     deadline: clip(b.deadline, 160) || previous.deadline,
     extras: clip(b.extras, 1000) || previous.extras,
-    summary: clip(b.summary, 6000) || previous.summary,
+    // The handover summary is written separately when the conversation ends, not by the chat model.
+    summary: previous.summary,
   };
 
   const number = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : Number.NaN);
@@ -197,9 +203,9 @@ export function holdPriceReply(thread: Pick<ChatThread, "offer" | "styleOffer" |
 }
 
 /**
- * A long answer can be cut off before its closing brace (the brief's summary is last and the
- * longest). The reply comes first, so if that arrived whole the customer still gets it; what the
- * brief learned this turn is lost, and nothing about the price or closing changes.
+ * A long answer can be cut off before its closing brace. The reply comes first, so if that arrived
+ * whole the customer still gets it; what the brief learned this turn is lost, and nothing about the
+ * price or closing changes.
  */
 function salvageReply(raw: string, previous: ChatBrief): AgentOutput | null {
   const match = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(raw);

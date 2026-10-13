@@ -1,5 +1,7 @@
 import type { QuoteStatus } from "@/types/portfolio";
 
+import type { Usage } from "./model";
+
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
@@ -11,7 +13,7 @@ export type ChatMessage = {
   at: string;
 };
 
-/** What the assistant has learned so far. It rewrites this every turn, so it is always complete. */
+/** What the assistant has learned so far. Each turn adds what changed; `summary` is written when the chat ends. */
 export type ChatBrief = {
   name: string;
   contact: string;
@@ -87,7 +89,7 @@ export type ChatThread = {
   lockedUntil?: string;
   /** The last time the assistant could not reply, and why. For the owner; cleared on the next success. */
   lastError?: { at: string; message: string };
-  /** Customer message number at which the brief summary was last rewritten. */
+  /** Customer message count when the handover summary was last written, so it is only redone when stale. */
   summaryTurn?: number;
   /** The owner has been emailed that the customer left contact details. */
   contactNotified?: boolean;
@@ -95,4 +97,6 @@ export type ChatThread = {
   idleNotified?: boolean;
   /** Model spend, when the provider reports it. */
   costUsd: number;
+  /** Tokens used, so the owner can see what the spend went on. */
+  usage?: Usage;
 };

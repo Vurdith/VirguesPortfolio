@@ -1,11 +1,13 @@
 import crypto from "node:crypto";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { chatEnabled, runAgentTurn } from "@/lib/chat/agent";
 import { emailOwner } from "@/lib/chat/email";
+import { finishChat } from "@/lib/chat/finish";
 import { CHAT_LIMITS } from "@/lib/chat/limits";
 import { mergeConcurrent } from "@/lib/chat/merge";
+import { addUsage } from "@/lib/chat/model";
 import { NO_STORE, readSession, sessionView } from "@/lib/chat/session";
 import { countTurnToday, getThread, saveThread } from "@/lib/chat/store";
 import type { ChatMessage } from "@/lib/chat/types";
@@ -52,7 +54,9 @@ export async function POST(req: Request) {
 
   const images = [...new Set(body.data.images)];
   if (!images.every((id) => thread.uploads.includes(id))) return fail("Unknown image.", 400);
-  if (thread.userTurns >= CHAT_LIMITS.userMessages) return fail("This conversation has reached its limit.", 409);
+  if (thread.userTurns >= CHAT_LIMITS.userMessages || thread.costUsd >= CHAT_LIMITS.maxCostUsd) {
+    return fail("This conversation has reached its limit.", 409);
+  }
 
   // The owner has taken over: keep the customer's message for them and leave the reply to the owner.
   if (thread.takeover) {
@@ -112,7 +116,6 @@ export async function POST(req: Request) {
   const reply: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: result.reply, at: new Date().toISOString() };
   thread.messages.push(userMessage, reply);
   thread.userTurns = turn;
-  const previousSummary = thread.brief.summary;
   thread.brief = result.brief;
   thread.offer = result.offer;
   thread.lastConcessionTurn = result.lastConcessionTurn;
@@ -120,6 +123,7 @@ export async function POST(req: Request) {
   thread.lastStyleConcessionTurn = result.lastStyleConcessionTurn;
   thread.awaitingConfirm = result.awaitingConfirm;
   thread.costUsd = Number((thread.costUsd + result.costUsd).toFixed(6));
+  thread.usage = addUsage(thread.usage, result.usage);
   thread.updatedAt = reply.at;
   thread.lockedUntil = undefined;
   thread.lastError = undefined;
@@ -128,15 +132,14 @@ export async function POST(req: Request) {
   if (result.resolved) {
     thread.status = "resolved";
     ended = "confirmed";
-  } else if (turn >= CHAT_LIMITS.userMessages) {
+  } else if (turn >= CHAT_LIMITS.userMessages || thread.costUsd >= CHAT_LIMITS.maxCostUsd) {
     thread.messages.push({ id: crypto.randomUUID(), role: "assistant", content: LIMIT_NOTE, at: reply.at });
     thread.status = thread.brief.contact ? "resolved" : "abandoned";
-    thread.endReason = "Message limit reached";
+    thread.endReason = turn >= CHAT_LIMITS.userMessages ? "Message limit reached" : "Cost limit reached";
     ended = "limit";
   }
   if (ended) thread.resolvedAt = reply.at;
 
-  if (thread.brief.summary !== previousSummary) thread.summaryTurn = turn;
   // Tell the owner as soon as a lead leaves contact details, not only when the chat ends.
   const newLead = Boolean(thread.brief.contact) && !thread.contactNotified;
   if (newLead) thread.contactNotified = true;
@@ -145,8 +148,14 @@ export async function POST(req: Request) {
   mergeConcurrent(thread, await getThread(thread.id));
   await saveThread(thread);
 
-  if (ended) await emailOwner(thread, ended);
-  else if (newLead) await emailOwner(thread, "contact");
+  // Both happen after the customer has their reply, so neither adds to their wait.
+  const id = thread.id;
+  if (ended) {
+    const reason = ended;
+    after(() => finishChat(id, reason));
+  } else if (newLead) {
+    after(() => emailOwner(thread, "contact"));
+  }
 
   const fresh = await readSession(req);
   return NextResponse.json(sessionView({ ...fresh, thread }), { headers: NO_STORE });

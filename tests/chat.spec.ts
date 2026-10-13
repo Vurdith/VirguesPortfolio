@@ -117,13 +117,14 @@ test("the price only comes down one step at a time and never below the floor", a
   // Message 4: the next step.
   expect(a.lastReply((await a.say("too expensive")).body)).toContain("£48 per frame");
 
-  // Keep pushing: one step every other message, ending at the floor and staying there.
+  // Each step after that takes one more message than the last: the next comes at message 7, not 6.
+  for (const text of ["expensive", "expensive five"]) expect(a.lastReply((await a.say(text)).body)).toContain("£48 per frame");
+  expect(a.lastReply((await a.say("expensive")).body)).toContain("£42 per frame");
+  // And the one after at message 11.
   let reply = "";
-  for (let i = 5; i <= 10; i++) reply = a.lastReply((await a.say("expensive")).body);
-  expect(reply).toContain("£30 per frame");
-  reply = a.lastReply((await a.say("expensive")).body);
-  expect(reply).toContain("£30 per frame");
-  expect(reply).not.toMatch(/£(?:[0-9]|1[0-9]|2[0-9]) per frame/);
+  for (let i = 8; i <= 10; i++) reply = a.lastReply((await a.say(`expensive ${i}`)).body);
+  expect(reply).toContain("£42 per frame");
+  expect(a.lastReply((await a.say("expensive")).body)).toContain("£36 per frame");
   await a.context.close();
 });
 
@@ -147,11 +148,9 @@ test("style replication is priced per task and only comes down slightly", async 
   expect(a.lastReply((await a.say("replicate it, still expensive")).body)).toContain("£142 per task");
   expect(a.lastReply((await a.say("replicate it, too expensive")).body)).toContain("£135 per task");
 
-  let reply = "";
-  for (let i = 5; i <= 8; i++) reply = a.lastReply((await a.say("replicate it, expensive")).body);
-  expect(reply).toContain("£120 per task");
-  reply = a.lastReply((await a.say("replicate it, expensive")).body);
-  expect(reply).toContain("£120 per task");
+  // The next step takes one message longer.
+  for (const n of [5, 6]) expect(a.lastReply((await a.say(`replicate it, expensive ${n}`)).body)).toContain("£135 per task");
+  expect(a.lastReply((await a.say("replicate it, expensive")).body)).toContain("£128 per task");
   await a.context.close();
 });
 
@@ -649,4 +648,14 @@ test("the details panel shows who they are and what they want, and the owner can
 test("the daily chat sweep only runs with the cron secret", async ({ request }) => {
   expect((await request.get("/api/cron/chats")).status()).toBe(401);
   expect((await request.get("/api/cron/chats", { headers: { authorization: "Bearer nope" } })).status()).toBe(401);
+});
+
+test("a chat has no message limit, but a burst of messages earns a short wait", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  for (let i = 1; i <= 12; i++) expect((await a.say(`calls-check ${i}`)).res.status()).toBe(200);
+  const fast = await a.say("calls-check 13");
+  expect(fast.res.status()).toBe(429);
+  expect(fast.res.headers()["retry-after"]).toBeTruthy();
+  await a.context.close();
 });

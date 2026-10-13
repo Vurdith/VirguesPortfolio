@@ -60,7 +60,7 @@ export async function readSession(req: Request): Promise<Session> {
         };
   }
 
-  if (latest?.resolvedAt) {
+  if (latest?.resolvedAt && Date.parse(latest.resolvedAt) > Date.parse(CHAT_LIMITS.cooldownResetAt)) {
     const remaining = CHAT_LIMITS.cooldownMs - (now - Date.parse(latest.resolvedAt));
     if (remaining > 0) {
       return { ownerHash, token, state: "cooldown", thread: mine ? latest : null, retryAfterMs: remaining };
@@ -116,7 +116,6 @@ export function threadView(thread: ChatThread) {
       images: (message.images ?? []).map((id) => ({ id, url: chatImageUrl(id) })),
       at: message.at,
     })),
-    messagesLeft: Math.max(0, CHAT_LIMITS.userMessages - thread.userTurns),
     imagesLeft: Math.max(0, CHAT_LIMITS.images - thread.uploads.length),
     ended: thread.status !== "open",
     /** The owner is replying personally, so the assistant is paused. */

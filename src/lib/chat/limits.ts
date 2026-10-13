@@ -2,8 +2,9 @@
 export const CHAT_LIMITS = {
   /** Longest single message. */
   messageChars: 1200,
-  /** Customer messages per conversation. Reaching it ends the conversation and sends what exists. */
-  userMessages: 40,
+  /** A conversation has no message limit, but this many customer messages inside the window means a short wait. */
+  burstMessages: 12,
+  burstWindowMs: 60 * 1000,
   /** Reference images per conversation. */
   images: 20,
   /** Images that can ride on one message. */
@@ -14,6 +15,8 @@ export const CHAT_LIMITS = {
   quietMs: 30 * 60 * 1000,
   /** After a conversation is resolved, the same visitor waits this long for another. */
   cooldownMs: 60 * 60 * 1000,
+  /** Conversations that ended before this moment no longer hold anyone on cooldown: a one-off reset. */
+  cooldownResetAt: "2026-10-13T08:53:00Z",
   /** Model replies are capped, which also caps cost per turn. */
   maxOutputTokens: 4000,
   /** The assistant may only ask "is that everything?" from this customer message on, so it digs first. */
@@ -27,8 +30,11 @@ export const CHAT_PRICE = {
   list: 60,
   floor: 30,
   ladder: [60, 54, 48, 42, 36, 30],
-  /** Customer messages that must pass between two concessions, so the agent stays firm. */
+  /**
+   * Customer messages that must pass between the first two concessions. Each step after that needs
+   * one more than the last, so the lower the price, the harder the next step is to get.
+   */
   turnsBetweenConcessions: 2,
   /** Matching an existing look (a game’s UI, a reference) is priced per task, separately from original design. */
-  style: { list: 150, floor: 120, ladder: [150, 142, 135, 128, 120] },
+  style: { list: 150, floor: 100, ladder: [150, 142, 135, 128, 120, 113, 106, 100] },
 } as const;

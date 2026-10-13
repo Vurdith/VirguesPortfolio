@@ -31,9 +31,12 @@ function nextRung(track: Track, offer: number): number {
 }
 
 function lowestOn(track: Track, offer: number, lastConcessionTurn: number, turn: number): number {
-  // Nothing moves on the first message, and a concession needs a gap since the last one.
+  // Nothing moves on the first message, and a concession needs a gap since the last one. The gap
+  // grows by one message with every step already given, so each step down is harder than the last.
   if (turn < 2) return offer;
-  if (lastConcessionTurn && turn - lastConcessionTurn < CHAT_PRICE.turnsBetweenConcessions) return offer;
+  const given = track.ladder.filter((rung) => rung > offer).length;
+  const gap = CHAT_PRICE.turnsBetweenConcessions + Math.max(0, given - 1);
+  if (lastConcessionTurn && turn - lastConcessionTurn < gap) return offer;
   return Math.max(track.floor, nextRung(track, offer));
 }
 

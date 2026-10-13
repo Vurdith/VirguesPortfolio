@@ -10,6 +10,8 @@ export const CHAT_LIMITS = {
   imagesPerMessage: 3,
   /** An open conversation with no activity for this long is treated as abandoned. */
   idleMs: 3 * 60 * 60 * 1000,
+  /** An open conversation silent for this long counts as gone quiet, and the owner is told once. */
+  quietMs: 30 * 60 * 1000,
   /** After a conversation is resolved, the same visitor waits this long for another. */
   cooldownMs: 60 * 60 * 1000,
   /** Model replies are capped, which also caps cost per turn. */

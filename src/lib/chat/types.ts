@@ -87,6 +87,12 @@ export type ChatThread = {
   lockedUntil?: string;
   /** The last time the assistant could not reply, and why. For the owner; cleared on the next success. */
   lastError?: { at: string; message: string };
+  /** Customer message number at which the brief summary was last rewritten. */
+  summaryTurn?: number;
+  /** The owner has been emailed that the customer left contact details. */
+  contactNotified?: boolean;
+  /** The owner has been emailed about this conversation going quiet. */
+  idleNotified?: boolean;
   /** Model spend, when the provider reports it. */
   costUsd: number;
 };

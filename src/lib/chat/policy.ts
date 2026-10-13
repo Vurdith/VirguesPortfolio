@@ -122,7 +122,15 @@ export function applyTurn(thread: ChatThread, output: AgentOutput, turn: number)
   };
 }
 
-const clip = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
+/** Trims to `max` characters, ending on a whole word rather than mid-sentence. */
+const clip = (value: unknown, max: number) => {
+  if (typeof value !== "string") return "";
+  const text = value.trim();
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.-]+$/, "")}…`;
+};
 
 /** Reads the model's JSON. Tolerates fences and surrounding prose; returns null if it is unusable. */
 export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput | null {
@@ -145,22 +153,22 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
   const frames =
     typeof b.frames === "number" && Number.isFinite(b.frames) ? Math.max(0, Math.min(500, Math.round(b.frames))) : null;
   const screens = Array.isArray(b.screens)
-    ? b.screens.map((screen) => clip(screen, 80)).filter(Boolean).slice(0, 60)
+    ? b.screens.map((screen) => clip(screen, 60)).filter(Boolean).slice(0, 60)
     : previous.screens;
 
   const brief: ChatBrief = {
     ...EMPTY_BRIEF,
     name: clip(b.name, 80) || previous.name,
     contact: clip(b.contact, 160) || previous.contact,
-    project: clip(b.project, 600) || previous.project,
+    project: clip(b.project, 900) || previous.project,
     platform: clip(b.platform, 120) || previous.platform,
     frames: frames ?? previous.frames,
     styleReplication: typeof b.styleReplication === "boolean" ? b.styleReplication : previous.styleReplication,
     screens,
-    style: clip(b.style, 800) || previous.style,
-    references: clip(b.references, 1500) || previous.references,
+    style: clip(b.style, 1000) || previous.style,
+    references: clip(b.references, 2000) || previous.references,
     deadline: clip(b.deadline, 160) || previous.deadline,
-    extras: clip(b.extras, 800) || previous.extras,
+    extras: clip(b.extras, 1000) || previous.extras,
     summary: clip(b.summary, 6000) || previous.summary,
   };
 

@@ -452,3 +452,33 @@ test("the admin can poll for conversations changed since a time, and only the ad
   expect((await admin.request.get("/api/admin/briefs?since=garbage")).status()).toBe(400);
   await a.context.close();
 });
+
+test("brief fields that run long are trimmed on a whole word, not mid-word", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("longfields please");
+  const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
+  const { briefs } = (await res.json()) as { briefs: { brief: { project: string; screens: string[] }; messages: { content: string }[] }[] };
+  const mine = briefs.find((brief) => brief.messages.some((message) => message.content === "longfields please"))!;
+  expect(mine.brief.project.endsWith("…")).toBe(true);
+  expect(mine.brief.project.length).toBeLessThanOrEqual(901);
+  expect(mine.brief.project).toMatch(/word\d+…$/);
+  expect(mine.brief.screens[0].length).toBeLessThanOrEqual(61);
+  await a.context.close();
+});
+
+test("the summary is refreshed when the customer says something that changes the deal", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("summary-check hello");
+  const quiet = await a.say("summary-check nothing special");
+  expect(a.lastReply(quiet.body)).toBe("Summary not due.");
+  const budget = await a.say("summary-check my budget is tight");
+  expect(a.lastReply(budget.body)).toBe("Summary due.");
+  await a.context.close();
+});
+
+test("the daily chat sweep only runs with the cron secret", async ({ request }) => {
+  expect((await request.get("/api/cron/chats")).status()).toBe(401);
+  expect((await request.get("/api/cron/chats", { headers: { authorization: "Bearer nope" } })).status()).toBe(401);
+});

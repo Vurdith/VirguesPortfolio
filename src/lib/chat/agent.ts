@@ -162,6 +162,12 @@ class ModelError extends Error {
   }
 }
 
+/** Reasoning helps with price arithmetic and tactics but costs time, so it is kept light by default. */
+function reasoning() {
+  const level = (process.env.OPENROUTER_REASONING || "low").toLowerCase();
+  return level === "off" ? { enabled: false } : { effort: ["low", "medium", "high"].includes(level) ? level : "low" };
+}
+
 async function request(messages: ModelMessage[], model: string, jsonMode: boolean, deadline: number): Promise<Completion> {
   const left = deadline - Date.now();
   if (left < 3000) throw new Error("The model took too long to answer.");
@@ -180,8 +186,7 @@ async function request(messages: ModelMessage[], model: string, jsonMode: boolea
       messages,
       max_tokens: CHAT_LIMITS.maxOutputTokens,
       temperature: 0.6,
-      // Thinking models can spend most of the time limit reasoning; replies here need none.
-      reasoning: { enabled: false },
+      reasoning: reasoning(),
       ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
       usage: { include: true },
     }),

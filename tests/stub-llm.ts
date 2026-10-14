@@ -106,6 +106,11 @@ function answer(messages: Msg[], raw: Raw) {
     return { ...base, reply: corrected ? "Which screens do you need?" : "What is the name of your game, and what genre is it?" };
   }
   if (/note-check/.test(text)) return { ...base, reply: `Customer said: ${text}` };
+  // What the site said about a reward code, so the tests can see it arrive.
+  if (/reward-check/.test(text)) {
+    const told = note.split("\n").filter((line) => /reward code|Reward applied/i.test(line));
+    return { ...base, reply: told.length ? told.join(" ") : "No reward." };
+  }
   if (/envelope-check/.test(text)) {
     const turns = messages.filter((m) => m.role === "assistant").map((m) => JSON.parse(textOf(m.content)) as { reply?: string; brief?: unknown });
     const bare = turns.filter((turn) => turn.reply && !turn.brief).length;

@@ -37,8 +37,15 @@ export type FollowUpCall = {
   work: { title: string; url: string; image?: string };
 };
 
+/** Reward codes the stand-in knows: one good, one spent on another brief. */
+export const GOOD_CODE = "VG-GOOD-2345";
+export const TAKEN_CODE = "VG-USED-2345";
+
 export function startDiscordStub() {
   const followUps: FollowUpCall[] = [];
+  const codeCalls: { code: string; brief: string; claim?: boolean }[] = [];
+  const paidCalls: { key: string; discord: string }[] = [];
+  const paidKeys = new Set<string>();
   const server = http.createServer((req, res) => {
     const json = (status: number, data: unknown) => res.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(data));
     let body = "";
@@ -47,12 +54,30 @@ export function startDiscordStub() {
       if (req.method === "GET" && req.url === "/api/stats") return json(200, STATS);
       // For the tests only: every follow-up the site asked for.
       if (req.method === "GET" && req.url === "/follow-ups") return json(200, followUps);
+      if (req.method === "GET" && req.url === "/codes") return json(200, codeCalls);
+      if (req.method === "GET" && req.url === "/paid") return json(200, paidCalls);
       if (req.method !== "POST" || req.headers.authorization !== `Bearer ${DISCORD_STUB_SECRET}`) return json(401, { error: "Unauthorized" });
       if (req.url === "/api/announce") return json(200, { sent: 0 });
       if (req.url === "/api/followup") {
         const call = JSON.parse(body) as FollowUpCall;
         followUps.push(call);
         return json(200, call.discord === SUBSCRIBED_HANDLE ? { sent: true } : { sent: false, reason: "not subscribed" });
+      }
+      if (req.url === "/api/voucher") {
+        const call = JSON.parse(body) as { code: string; brief: string; claim?: boolean };
+        codeCalls.push(call);
+        const code = call.code.toUpperCase();
+        if (code === TAKEN_CODE) return json(200, { valid: false, reason: "taken" });
+        if (code !== GOOD_CODE) return json(200, { valid: false, reason: "unknown" });
+        return json(200, { valid: true, code, title: "15% voucher", kind: "voucher", detail: "15% off one commission, up to £75 off.", percent: 15, cap: 75, claimed: Boolean(call.claim) });
+      }
+      if (req.url === "/api/paid") {
+        const call = JSON.parse(body) as { key: string; discord: string };
+        paidCalls.push(call);
+        if (call.discord !== SUBSCRIBED_HANDLE) return json(200, { given: false, reason: "unknown" });
+        if (paidKeys.has(call.key)) return json(200, { given: false, reason: "already given" });
+        paidKeys.add(call.key);
+        return json(200, { given: true, points: 2, have: 2, told: true });
       }
       json(404, { error: "Not found" });
     });

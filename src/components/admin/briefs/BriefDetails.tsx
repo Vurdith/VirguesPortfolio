@@ -4,6 +4,7 @@ import * as React from "react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 
 import type { AdminBrief } from "@/lib/chat/admin";
+import { rewardSaving, rewardTerms } from "@/lib/chat/rewardTerms";
 import { cn } from "@/lib/cn";
 import type { QuoteStatus } from "@/types/portfolio";
 import { contactHandle, contactLink, copyText, money, total, unitPrice } from "./shared";
@@ -27,6 +28,7 @@ export function BriefDetails({
   onUnsteer,
   onDelete,
   onSummary,
+  onPaid,
 }: {
   brief: AdminBrief;
   busy: boolean;
@@ -35,6 +37,7 @@ export function BriefDetails({
   onUnsteer: (noteId: string) => void;
   onDelete: () => void;
   onSummary: () => Promise<boolean>;
+  onPaid: () => void;
 }) {
   const info = brief.brief;
   const replica = info.styleReplication;
@@ -44,7 +47,7 @@ export function BriefDetails({
   const open = brief.status === "open";
   const finished = brief.status === "resolved";
   const [menu, setMenu] = React.useState(false);
-  const [confirm, setConfirm] = React.useState<"end" | "delete" | null>(null);
+  const [confirm, setConfirm] = React.useState<"end" | "delete" | "paid" | null>(null);
   const [copied, setCopied] = React.useState(false);
   const [writing, setWriting] = React.useState(false);
 
@@ -68,6 +71,8 @@ export function BriefDetails({
   };
 
   const hasMore = Boolean(info.style || info.references || info.extras);
+  const reward = brief.reward;
+  const saving = rewardSaving(reward, sum);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -92,12 +97,24 @@ export function BriefDetails({
               {money(unitPrice(brief))} per {replica ? "task" : "frame"}
               {info.frames ? ` × ${info.frames}` : ""}
             </p>
+            {reward ? (
+              <div className={cn("mt-4 rounded-xl border px-3 py-2.5 text-[13px]", reward.claimed === false ? "border-red-300/25 bg-red-300/[0.06]" : "border-line/10 bg-white/[0.04]")}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-fog/90">{reward.title}</span>
+                  <span className="shrink-0 tabular-nums text-fog/85">{saving && sum ? `−${money(saving)} · ${money(sum - saving)}` : null}</span>
+                </div>
+                <p className="mt-0.5 text-xs text-fog/50">
+                  <span className="font-mono">{reward.code}</span> · {reward.claimed === false ? "already used on another brief" : rewardTerms(reward)}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <dl className="mt-5 space-y-2.5 border-t border-line/10 pt-5 text-sm">
             <Detail label="Platform" value={info.platform} />
             <Detail label="Deadline" value={info.deadline} />
             <Detail label="Budget" value={info.budget} />
+            {brief.paid ? <Detail label="Paid" value={brief.paid.note} /> : null}
           </dl>
         </div>
 
@@ -267,6 +284,14 @@ export function BriefDetails({
                     <a href={`/api/admin/briefs/${brief.id}/transcript?format=json`} className={menuLink}>
                       Download as JSON
                     </a>
+                    {finished && brief.canPay && !brief.paid?.given ? (
+                      <MenuItem
+                        busy={busy}
+                        label="Paid: give 2 points"
+                        confirm={confirm === "paid"}
+                        onClick={() => (confirm === "paid" ? (setMenu(false), setConfirm(null), onPaid()) : setConfirm("paid"))}
+                      />
+                    ) : null}
                     {open ? (
                       <MenuItem
                         busy={busy}

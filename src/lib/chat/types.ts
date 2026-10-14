@@ -62,6 +62,21 @@ export type ChatStatus = "open" | "resolved" | "abandoned";
 
 export type ChatSteer = { id: string; note: string; at: string };
 
+/** A reward code from the Discord bot, checked and put on this conversation's quote. */
+export type ChatReward = {
+  code: string;
+  title: string;
+  kind: "voucher" | "service";
+  /** A voucher's share off the total, and the most it takes off, in pounds. */
+  percent?: number;
+  cap?: number;
+  /** What a service is worth, in pounds. */
+  worth?: number;
+  at: string;
+  /** Whether the bot spent it on this brief once the brief was sent on: false when it had gone on another meanwhile. */
+  claimed?: boolean;
+};
+
 export type ChatThread = {
   id: string;
   /** Salted hash of the visitor's IP. Never sent out. */
@@ -106,6 +121,12 @@ export type ChatThread = {
   idleNotified?: boolean;
   /** When the one Discord follow-up was attempted, sent or not. It is never tried twice. */
   followupAt?: string;
+  /** The reward code the customer gave, once the bot has said it is good. One per conversation. */
+  reward?: ChatReward;
+  /** Reward codes checked in this conversation, good or not. */
+  codeTries?: number;
+  /** The owner marked the commission paid: whether the client got their points, and what happened. */
+  paid?: { at: string; given: boolean; note: string };
   /** Model spend, when the provider reports it. */
   costUsd: number;
   /** Tokens used, so the owner can see what the spend went on. */

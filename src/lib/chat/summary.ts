@@ -1,6 +1,7 @@
 import { SITE } from "@/lib/site";
 
 import { addUsage, complete, type ModelMessage, type Usage } from "./model";
+import { rewardTerms } from "./rewardTerms";
 import { getThread, saveThread } from "./store";
 import type { ChatThread } from "./types";
 
@@ -32,6 +33,7 @@ function fields(thread: ChatThread): string {
     `Type: ${brief.styleReplication ? "style replication, per task" : "original design, per frame"} | Price on the table: £${unit}${brief.frames ? ` x ${brief.frames}` : ""} | Deadline: ${brief.deadline || "-"} | Budget: ${brief.budget || "-"}`,
     `Screens: ${brief.screens.join(", ") || "-"}`,
     `Style: ${brief.style || "-"} | References: ${brief.references || "-"} | Extras: ${brief.extras || "-"}`,
+    ...(thread.reward ? [`Reward code applied: ${thread.reward.title} (${thread.reward.code}), ${rewardTerms(thread.reward)}`] : []),
   ].join("\n");
 }
 

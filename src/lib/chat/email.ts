@@ -2,6 +2,7 @@ import { notifyOwner } from "@/lib/notify";
 import { SITE } from "@/lib/site";
 
 import { chatImageLink } from "./images";
+import { rewardSaving, rewardTerms } from "./rewardTerms";
 import type { ChatThread } from "./types";
 
 export type OwnerEmailReason = "confirmed" | "limit" | "contact" | "idle";
@@ -24,7 +25,11 @@ export function emailFor(thread: ChatThread, reason: OwnerEmailReason): string {
   const { brief } = thread;
   const replica = brief.styleReplication;
   const unit = replica ? thread.styleOffer : thread.offer;
-  const total = brief.frames ? `£${(brief.frames * unit).toLocaleString("en-GB")}` : "—";
+  const sum = brief.frames ? brief.frames * unit : null;
+  const total = sum ? `£${sum.toLocaleString("en-GB")}` : "—";
+  const reward = thread.reward;
+  const saving = rewardSaving(reward, sum);
+  const spent = reward?.claimed === false ? "NOT spent: it had already gone on another brief" : reward?.claimed ? "spent on this brief" : "not spent yet";
   const transcript = thread.messages
     .map((message) => `${message.role === "user" ? "CUSTOMER" : "ASSISTANT"}: ${message.content}${message.images?.length ? ` [${message.images.length} image(s)]` : ""}`)
     .join("\n\n")
@@ -40,6 +45,9 @@ export function emailFor(thread: ChatThread, reason: OwnerEmailReason): string {
     `${replica ? "Tasks" : "Frames"}: ${brief.frames ?? "—"}  ·  Price discussed: £${unit} per ${replica ? "task" : "frame"}  ·  Total: ${total}`,
     `Deadline: ${brief.deadline || "—"}`,
     `Budget: ${brief.budget || "—"}`,
+    ...(reward
+      ? [`Reward: ${reward.title} (${reward.code}) · ${rewardTerms(reward)}${sum && saving ? ` · Total after it: £${(sum - saving).toLocaleString("en-GB")}` : ""} · ${spent}`]
+      : []),
     "",
     "SUMMARY",
     brief.summary || "—",

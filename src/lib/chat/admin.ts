@@ -1,6 +1,9 @@
+import { canFollowUp } from "@/lib/discordNotify";
+import { discordHandleIn } from "@/lib/quoteLimits";
+
 import { chatImageUrl } from "./images";
 import type { Usage } from "./model";
-import type { ChatBrief, ChatStatus, ChatSteer, ChatThread } from "./types";
+import type { ChatBrief, ChatReward, ChatStatus, ChatSteer, ChatThread } from "./types";
 import type { QuoteStatus } from "@/types/portfolio";
 
 /** A conversation as the admin pages see it: no hashes, images resolved to addresses. */
@@ -26,6 +29,12 @@ export type AdminBrief = {
   working: boolean;
   /** Why the assistant last failed to reply, if it did. */
   lastError?: { at: string; message: string };
+  /** The reward code on the quote, if the customer gave a good one. */
+  reward?: ChatReward;
+  /** Whether the client got points for paying, once the owner has said they paid. */
+  paid?: ChatThread["paid"];
+  /** The contact names a Discord account the bot can give points to. */
+  canPay: boolean;
   images: { id: string; url: string }[];
   messages: {
     id: string;
@@ -56,6 +65,9 @@ export function adminBrief(thread: ChatThread): AdminBrief {
     steer: thread.steer ?? [],
     working: Boolean(thread.lockedUntil && Date.parse(thread.lockedUntil) > Date.now()),
     ...(thread.lastError ? { lastError: thread.lastError } : {}),
+    ...(thread.reward ? { reward: thread.reward } : {}),
+    ...(thread.paid ? { paid: thread.paid } : {}),
+    canPay: canFollowUp() && Boolean(discordHandleIn(thread.brief.contact)),
     images: thread.uploads.map((id) => ({ id, url: chatImageUrl(id) })),
     messages: thread.messages.map((message) => ({
       id: message.id,

@@ -8,7 +8,9 @@ import { usePageScroll } from "@/hooks/usePageScroll";
 import { useCurrentSection } from "@/hooks/useCurrentSection";
 import { useUiSounds } from "@/hooks/useUiSounds";
 
-const SECTIONS = [
+type Section = { id: string; label: string; /** Only on the page some of the time, so only listed when it is there. */ optional?: boolean };
+
+const SECTIONS: readonly Section[] = [
   { id: "top", label: "INTRO" },
   { id: "work", label: "WORK" },
   { id: "contributions", label: "CONTRIBUTIONS" },
@@ -16,23 +18,36 @@ const SECTIONS = [
   { id: "process", label: "PROCESS" },
   { id: "payment", label: "PAYMENT" },
   { id: "reviews", label: "REVIEWS" },
+  // Rendered only while the Discord service answers.
+  { id: "rewards", label: "REWARDS", optional: true },
   { id: "contact", label: "CONTACT" },
-] as const;
+];
+const ALWAYS = SECTIONS.filter((section) => !section.optional);
 
-const SECTION_IDS = SECTIONS.map(({ id }) => id);
+/** The sections on the page: the fixed ones at first, then whichever optional ones turned out to be there. */
+function useSections() {
+  const [sections, setSections] = React.useState(ALWAYS);
+  React.useEffect(() => {
+    const present = SECTIONS.filter((section) => !section.optional || document.getElementById(section.id));
+    if (present.length !== ALWAYS.length) setSections(present);
+  }, []);
+  return sections;
+}
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Index of the section currently being read (the intro until something else takes over). */
-function useActiveSection() {
-  const current = useCurrentSection(SECTION_IDS);
-  const index = SECTIONS.findIndex(({ id }) => id === current);
+function useActiveSection(sections: readonly Section[]) {
+  const ids = React.useMemo(() => sections.map(({ id }) => id), [sections]);
+  const current = useCurrentSection(ids);
+  const index = sections.findIndex(({ id }) => id === current);
   return index === -1 ? 0 : index;
 }
 
 /** Fixed rail on the right edge: section counter, progress line, and jump links. */
 export function ScrollProgress() {
-  const active = useActiveSection();
+  const sections = useSections();
+  const active = useActiveSection(sections);
   const { playSwell } = useUiSounds();
   const { scrollYProgress } = usePageScroll();
   const lineScale = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.6 });
@@ -60,7 +75,7 @@ export function ScrollProgress() {
     >
       <div className="text-[11px] tabular-nums tracking-[0.28em] text-fog/70">
         <span className="text-ink">{pad(active + 1)}</span>
-        <span className="text-fog/40"> / {pad(SECTIONS.length)}</span>
+        <span className="text-fog/40"> / {pad(sections.length)}</span>
       </div>
 
       <div className="relative flex flex-col items-end gap-3">
@@ -71,7 +86,7 @@ export function ScrollProgress() {
           style={{ scaleY: lineScale }}
         />
 
-        {SECTIONS.map((section, index) => {
+        {sections.map((section, index) => {
           const isActive = index === active;
           return (
             <a

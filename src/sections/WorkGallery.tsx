@@ -139,7 +139,7 @@ export function WorkGallery({
               <a
                 href={subscribeUrl}
                 rel="noopener"
-                className="group mt-4 inline-flex items-center gap-3 border border-line/18 bg-void/30 px-4 py-2.5 text-[11px] tracking-[0.22em] text-fog/85 backdrop-blur-md transition-colors hover:border-line/40 hover:text-ink"
+                className="group mt-4 inline-flex items-center gap-4 border border-line/30 bg-ink px-4 py-3 text-xs tracking-[0.22em] text-void transition-colors hover:bg-ink/90"
               >
                 <span>GET NEW WORK ON DISCORD</span>
                 <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>

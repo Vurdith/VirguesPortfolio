@@ -95,7 +95,6 @@ export function RewardsSection({
                 <span>SUBSCRIBE ON DISCORD</span>
                 <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>
               </a>
-              <p className="mt-3 text-[11px] leading-relaxed text-fog/60">Free. Every message has an unsubscribe button.</p>
             </div>
           </div>
 

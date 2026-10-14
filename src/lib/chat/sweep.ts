@@ -1,4 +1,5 @@
 import { emailOwner } from "./email";
+import { sendFollowUps } from "./followup";
 import { CHAT_LIMITS } from "./limits";
 import { listThreads, saveThread } from "./store";
 import { refreshSummary } from "./summary";
@@ -9,13 +10,15 @@ const SUMMARIES_PER_SWEEP = 5;
 /**
  * Finds conversations that went quiet and tells the owner about each one once. A customer who left
  * contact details or got as far as a few messages is worth a follow-up even if they never confirmed.
+ * Last, older leads who gave a Discord handle are shown the newest work, once each.
  */
-export async function sweepQuietChats(now = Date.now()): Promise<{ emailed: number; abandoned: number }> {
+export async function sweepQuietChats(now = Date.now()): Promise<{ emailed: number; abandoned: number; followedUp: number }> {
   let emailed = 0;
   let abandoned = 0;
   let summaries = 0;
 
-  for (const thread of await listThreads()) {
+  const threads = await listThreads();
+  for (const thread of threads) {
     if (thread.status !== "open" || thread.takeover) continue;
     const quiet = now - Date.parse(thread.updatedAt);
     if (quiet < CHAT_LIMITS.quietMs) continue;
@@ -53,5 +56,5 @@ export async function sweepQuietChats(now = Date.now()): Promise<{ emailed: numb
     }
   }
 
-  return { emailed, abandoned };
+  return { emailed, abandoned, followedUp: await sendFollowUps(threads, now) };
 }

@@ -104,6 +104,8 @@ export type ChatThread = {
   contactNotified?: boolean;
   /** The owner has been emailed about this conversation going quiet. */
   idleNotified?: boolean;
+  /** When the one Discord follow-up was attempted, sent or not. It is never tried twice. */
+  followupAt?: string;
   /** Model spend, when the provider reports it. */
   costUsd: number;
   /** Tokens used, so the owner can see what the spend went on. */

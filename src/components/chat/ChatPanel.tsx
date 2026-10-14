@@ -7,6 +7,7 @@ import { ThinkingOrb, type OrbState } from "thinking-orbs";
 
 import { AgentIcon, OwnerIcon, TypingDots, YouIcon, type AgentMode } from "@/components/chat/Avatars";
 import { openerMessage } from "@/components/chat/openers";
+import { SubscribePrompt } from "@/components/chat/SubscribePrompt";
 import { TurnstileWidget, turnstileConfigured } from "@/components/TurnstileWidget";
 import { prepareImage, uploadImage } from "@/components/reviews/reviewClient";
 import { cn } from "@/lib/cn";
@@ -40,7 +41,7 @@ const signature = (view: ChatView) =>
  * The whole chat: start screen, conversation, composer, and the states around it (cooldown, locked,
  * offline). It fills whatever box it is placed in, so the same component serves every screen size.
  */
-export function ChatPanel() {
+export function ChatPanel({ subscribeUrl }: { subscribeUrl?: string | null }) {
   const reduceMotion = useReducedMotion();
   const listRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
@@ -428,6 +429,7 @@ export function ChatPanel() {
             Your brief is with {SITE.name}. You can start another chat in about {minutes(view.retryAfterMinutes)}.
           </Banner>
         ) : null}
+        {subscribeUrl && thread?.ended ? <SubscribePrompt href={subscribeUrl} /> : null}
       </div>
 
       {open ? (

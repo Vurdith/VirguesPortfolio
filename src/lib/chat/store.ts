@@ -84,6 +84,21 @@ export async function addUpload(id: string, imageId: string): Promise<void> {
   });
 }
 
+/** Records that the Discord follow-up was attempted, without rewriting the rest of the conversation. */
+export async function markFollowedUp(id: string, at: string): Promise<void> {
+  if (hasFirebaseAdminConfig()) {
+    await chats().doc(id).update({ followupAt: at });
+    return;
+  }
+  await runExclusive(async () => {
+    const data = await readFile();
+    const thread = data.threads.find((existing) => existing.id === id);
+    if (!thread) throw new Error("Conversation not found.");
+    thread.followupAt = at;
+    await writeFile(data);
+  });
+}
+
 /** The visitor's most recent conversation, whatever its state. */
 export async function latestThreadFor(ownerHash: string): Promise<ChatThread | null> {
   if (hasFirebaseAdminConfig()) {

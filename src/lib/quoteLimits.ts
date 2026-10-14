@@ -57,3 +57,20 @@ export function isValidContact(method: QuoteContact, value: string): boolean {
 
 /** Stored form of a handle: no leading @. */
 export const cleanHandle = (value: string) => value.trim().replace(/^@/, "");
+
+const CONTACT_FILLER = /^(?:discord|username|user|handle|tag|name|id|is|its|my|me|on|via|at|dm|dms|add)$/i;
+
+/**
+ * The Discord username or id in a contact written in the customer's own words, such as
+ * "Discord: handle" or "me@studio.com, handle on Discord". Null unless exactly one handle sits
+ * next to the word Discord: a guess would message the wrong person.
+ */
+export function discordHandleIn(contact: string): string | null {
+  for (const part of contact.split(/[,;|\n]|\s\/\s|\s+(?:and|or)\s+/i)) {
+    const words = part.split(/[\s:=()"'’>–—-]+/).filter(Boolean);
+    if (!words.some((word) => /^discord$/i.test(word))) continue;
+    const rest = words.filter((word) => !CONTACT_FILLER.test(word));
+    if (rest.length === 1 && isValidContact("discord", rest[0])) return cleanHandle(rest[0]);
+  }
+  return null;
+}

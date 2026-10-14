@@ -16,16 +16,19 @@ export const discordSubscribeUrl = () => {
   return base ? `${base}/api/subscribe` : null;
 };
 
+const announceSecret = () => (process.env.DISCORD_ANNOUNCE_SECRET ?? "").trim();
+const absolute = (src: string) => (src.startsWith("http") ? src : `${SITE.url}${src}`);
+const coverOf = (pieces: Media[]) => pieces.find((piece) => piece.kind === "image" && piece.src)?.src;
+
 type Announcement = { key: string; title: string; description?: string; pieces: Media[] };
 
 /** Sends one announcement about a work. Never throws: a failed announcement must not fail a save. */
 async function announce(work: Work, { key, title, description, pieces }: Announcement): Promise<void> {
   const base = discordNotifyUrl();
-  const secret = (process.env.DISCORD_ANNOUNCE_SECRET ?? "").trim();
+  const secret = announceSecret();
   if (!base || !secret || !work.published) return;
 
-  const absolute = (src: string) => (src.startsWith("http") ? src : `${SITE.url}${src}`);
-  const cover = pieces.find((piece) => piece.kind === "image" && piece.src)?.src;
+  const cover = coverOf(pieces);
   const x = xPosts(pieces).slice(0, 3);
   try {
     const res = await fetch(`${base}/api/announce`, {
@@ -65,4 +68,57 @@ export function announcePieces(work: Work, added: Media[]): Promise<void> {
     description: added.length === 1 ? "One new piece was added." : `${added.length} new pieces were added.`,
     pieces: added,
   });
+}
+
+/** True when the service can be asked to message someone. */
+export const canFollowUp = () => Boolean(discordNotifyUrl() && announceSecret());
+
+export type FollowUp = {
+  /** Unique per brief or quote. The service sends each key once. */
+  key: string;
+  /** The Discord username or id the customer gave. */
+  discord: string;
+  name?: string;
+  /** One short line on what they asked for. */
+  about?: string;
+  work: Work;
+};
+
+/**
+ * Asks the service to show one past lead the newest work. It only messages people who are
+ * subscribed, so "not sent" is the usual answer and not a failure. Never throws.
+ */
+export async function sendFollowUp({ key, discord, name, about, work }: FollowUp): Promise<boolean> {
+  const base = discordNotifyUrl();
+  const secret = announceSecret();
+  if (!base || !secret) return false;
+
+  const cover = coverOf(workPieces(work));
+  const image = cover ? absolute(cover) : "";
+  try {
+    const res = await fetch(`${base}/api/followup`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        key,
+        discord,
+        name: name || undefined,
+        about: about ? about.slice(0, 200) : undefined,
+        work: {
+          title: work.title,
+          url: `${SITE.url}/work/${work.slug}`,
+          image: image.startsWith("https://") ? image : undefined,
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      console.error(`Discord follow-up ${key} failed: ${res.status}`);
+      return false;
+    }
+    return ((await res.json().catch(() => null)) as { sent?: boolean } | null)?.sent === true;
+  } catch (error) {
+    console.error(`Discord follow-up ${key} failed:`, error);
+    return false;
+  }
 }

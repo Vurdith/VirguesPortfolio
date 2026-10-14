@@ -142,7 +142,13 @@ function answer(messages: Msg[], raw: Raw) {
       ? { ...base, reply: `I can do £${lowest} per frame.`, concede: true, offer: lowest }
       : { ...base, reply: `The standard is £${offer} per frame.` };
   }
-  if (/ready/.test(text)) return { ...base, reply: "Is that everything, or is there anything else you want to add?", awaitingConfirm: true };
+  if (/no-recap/.test(text)) return { ...base, reply: "Is that everything, or is there anything else you want to add?", awaitingConfirm: true };
+  if (/ready/.test(text)) return { ...base, reply: "Ten inventory frames at £60, £600 in total, due whenever suits. Is that everything, or is there anything else you want to add?", awaitingConfirm: true };
+  if (/budget-check/.test(text)) {
+    return lowest < offer ? { ...base, reply: `I can do £${lowest} per frame.`, concede: true, offer: lowest } : { ...base, reply: `The standard is £${offer} per frame.` };
+  }
+  if (/addon-check/.test(text)) return { ...base, reply: "Importing is £12.50 per frame on top, so 10 frames come to £725. Shall I add it?" };
+  if (/echo-check/.test(text)) return { ...base, reply: "Web browser it is. What is the site for?", brief: { ...base.brief, screens: "Home, Work and About" } };
   if (/close-question/.test(text)) return { ...base, reply: "Two frames at £60 each. Shall I send the brief now?", resolved: true };
   if (/that is everything/.test(text)) return { ...base, reply: "Thanks, I've sent it to Virguê.", resolved: true };
   if (images) return { ...base, reply: `Saw ${images} image${images === 1 ? "" : "s"}.` };

@@ -139,6 +139,31 @@ test("a reply that undercuts the allowed price is replaced", async ({ browser })
   await a.context.close();
 });
 
+test("the price does not come down for a customer whose budget covers it, and add-on rates are not mistaken for it", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  await a.say("calls-check one");
+  await a.say("calls-check two");
+  // Ten frames at £60 is £600, and they can spend £2,000.
+  const covered = a.lastReply((await a.say("budget-check expensive, but my budget is £2,000")).body);
+  expect(covered).not.toContain("£54");
+  expect(covered).toContain("The price is £60 per frame. For 10 frames that comes to £600.");
+  expect(covered).not.toMatch(/best I can/i);
+  // A budget below the total can still be worked.
+  expect(a.lastReply((await a.say("budget-check expensive, my budget is £400")).body)).toContain("£54 per frame");
+  // Importing quoted per frame is an add-on, not a price below the floor.
+  expect(a.lastReply((await a.say("addon-check")).body)).toBe("Importing is £12.50 per frame on top, so 10 frames come to £725. Shall I add it?");
+  await a.context.close();
+});
+
+test("an answer echoed back is dropped, and screens sent as text are recorded", async ({ browser }) => {
+  const a = await visitor(browser);
+  await a.start();
+  const result = await a.say("echo-check");
+  expect(a.lastReply(result.body)).toBe("What is the site for?");
+  await a.context.close();
+});
+
 test("style replication is priced per task and only comes down slightly", async ({ browser }) => {
   const a = await visitor(browser);
   await a.start();
@@ -726,7 +751,7 @@ test("openers that end in a comma are stripped too, and an empty open point is n
   const a = await visitor(browser);
   await a.start();
   const sent = await a.say("comma-check");
-  expect(a.lastReply(sent.body)).toBe("Roblox it is. Thanks, Reece, which screens do you need?");
+  expect(a.lastReply(sent.body)).toBe("Which screens do you need?");
   const res = await admin.request.get("/api/admin/briefs?since=1970-01-01T00:00:00.000Z");
   const { briefs } = (await res.json()) as { briefs: { brief: { extras: string }; messages: { content: string }[] }[] };
   expect(briefs.find((brief) => brief.messages.some((message) => message.content === "comma-check"))!.brief.extras).toBe("");

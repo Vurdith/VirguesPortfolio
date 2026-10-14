@@ -4,7 +4,11 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { adminBrief } from "@/lib/chat/admin";
+import { briefKey, claimReward } from "@/lib/chat/rewards";
 import { getThread, saveThread } from "@/lib/chat/store";
+import type { ChatThread } from "@/lib/chat/types";
+import { canFollowUp, givePaidPoints } from "@/lib/discordNotify";
+import { discordHandleIn } from "@/lib/quoteLimits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,11 +22,13 @@ const Body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("end") }),
   z.object({ action: z.literal("steer"), note: z.string().trim().min(2).max(600) }),
   z.object({ action: z.literal("unsteer"), noteId: z.string().max(80) }),
+  z.object({ action: z.literal("paid") }),
 ]);
 
 /**
  * Owner controls on a conversation. takeover/release pause and resume the assistant, steer adds private
  * guidance the assistant follows from its next reply, end closes the chat and starts the visitor's cooldown.
+ * paid gives the client their points for the commission through the Discord bot, once.
  */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await requireAdmin(req);
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   const thread = await getThread(id);
   if (!thread) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (body.data.action === "paid") return paid(thread);
   if (thread.status !== "open") return NextResponse.json({ error: "This chat has ended." }, { status: 409 });
 
   const at = new Date().toISOString();
@@ -59,9 +66,30 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       content: "Virguê has closed this chat. If you shared a way to reach you, they will reply there.",
       at,
     });
+    await claimReward(thread);
   }
   thread.updatedAt = at;
   await saveThread(thread);
 
+  return NextResponse.json({ brief: adminBrief(thread) }, { headers: NO_STORE });
+}
+
+/** The commission is paid: the client gets their points on Discord, and any reward code is spent for good. */
+async function paid(thread: ChatThread) {
+  const discord = discordHandleIn(thread.brief.contact);
+  if (!discord || !canFollowUp()) return NextResponse.json({ error: "This brief has no Discord name to give points to." }, { status: 409 });
+  if (thread.paid?.given) return NextResponse.json({ error: "Points were already given for this brief." }, { status: 409 });
+
+  const result = await givePaidPoints(briefKey(thread), discord);
+  if (!result) return NextResponse.json({ error: "The Discord bot did not answer. Try again." }, { status: 502 });
+  const at = new Date().toISOString();
+  thread.paid = result.given
+    ? { at, given: true, note: `${result.points} points given${result.told ? ", and they were thanked on Discord" : ""}` }
+    : result.reason === "already given"
+      ? { at, given: true, note: "Points were already given" }
+      : { at, given: false, note: `The bot does not know @${discord} yet. They get points once they have subscribed on Discord.` };
+  await claimReward(thread);
+  thread.updatedAt = at;
+  await saveThread(thread);
   return NextResponse.json({ brief: adminBrief(thread) }, { headers: NO_STORE });
 }

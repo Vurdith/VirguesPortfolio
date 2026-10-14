@@ -122,3 +122,53 @@ export async function sendFollowUp({ key, discord, name, about, work }: FollowUp
     return false;
   }
 }
+
+/** One call to the service with the shared secret. Null when it is not connected or did not answer. */
+async function ask<T>(path: string, body: unknown, what: string): Promise<T | null> {
+  const base = discordNotifyUrl();
+  const secret = announceSecret();
+  if (!base || !secret) return null;
+  try {
+    const res = await fetch(`${base}${path}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) {
+      console.error(`${what} failed: ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as T;
+  } catch (error) {
+    console.error(`${what} failed:`, error);
+    return null;
+  }
+}
+
+export type RewardCheck =
+  | {
+      valid: true;
+      code: string;
+      title: string;
+      kind: "voucher" | "service";
+      detail: string;
+      percent?: number;
+      cap?: number;
+      worth?: number;
+      /** Already spent on this brief. */
+      claimed: boolean;
+    }
+  | { valid: false; reason: "unknown" | "taken" };
+
+/**
+ * Asks the service what a reward code is, for one brief. With `claim` the code is spent on that
+ * brief for good and Virguê is told on Discord. Null when the service could not be asked. Never throws.
+ */
+export const checkReward = (code: string, brief: string, claim = false) =>
+  ask<RewardCheck>("/api/voucher", { code, brief, ...(claim ? { claim: true } : {}) }, `Reward code check for ${brief}`);
+
+export type PaidPoints = { given: true; points: number; have: number; told: boolean } | { given: false; reason: string };
+
+/** Gives a client the points for a paid commission, once per key. Null when the service could not be asked. Never throws. */
+export const givePaidPoints = (key: string, discord: string) => ask<PaidPoints>("/api/paid", { key, discord }, `Paid points for ${key}`);

@@ -360,6 +360,7 @@ function Details({
       onUnsteer={(noteId) => void call(brief.id, "control", { action: "unsteer", noteId })}
       onDelete={() => void remove(brief)}
       onSummary={() => call(brief.id, "summary", {})}
+      onPaid={() => void call(brief.id, "control", { action: "paid" })}
     />
   );
 }

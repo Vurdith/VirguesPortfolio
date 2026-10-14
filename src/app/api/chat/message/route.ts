@@ -8,6 +8,7 @@ import { emailOwner } from "@/lib/chat/email";
 import { finishChat } from "@/lib/chat/finish";
 import { CHAT_LIMITS } from "@/lib/chat/limits";
 import { mergeConcurrent } from "@/lib/chat/merge";
+import { readRewardCode } from "@/lib/chat/rewards";
 import { addUsage } from "@/lib/chat/model";
 import { NO_STORE, readSession, sessionView } from "@/lib/chat/session";
 import { countTurnToday, getThread, saveThread } from "@/lib/chat/store";
@@ -75,6 +76,8 @@ export async function POST(req: Request) {
     };
     thread.messages.push(sent);
     thread.userTurns += 1;
+    // A code is still checked, so the owner sees it on the brief.
+    await readRewardCode(thread, content);
     thread.updatedAt = sent.at;
     mergeConcurrent(thread, await getThread(thread.id));
     await saveThread(thread);
@@ -104,10 +107,11 @@ export async function POST(req: Request) {
     at: now,
   };
   const turn = thread.userTurns + 1;
+  const rewardNews = await readRewardCode(thread, content);
 
   let result;
   try {
-    result = await runAgentTurn(thread, userMessage, turn);
+    result = await runAgentTurn(thread, userMessage, turn, rewardNews ? [rewardNews] : []);
   } catch (err) {
     console.error("Chat turn failed:", err);
     // Nothing was added to the conversation, so the customer can simply send it again. The owner

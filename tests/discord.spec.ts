@@ -4,7 +4,7 @@ import { expect, test, type APIRequestContext, type BrowserContext } from "@play
 import { MIN_SUBSCRIBERS_SHOWN, readStats } from "@/lib/discordRewards";
 import { discordHandleIn } from "@/lib/quoteLimits";
 
-import { DISCORD_STUB_URL, STATS, SUBSCRIBED_HANDLE, type FollowUpCall } from "./stub-discord";
+import { DISCORD_STUB_URL, GOOD_CODE, STATS, SUBSCRIBED_HANDLE, TAKEN_CODE, type FollowUpCall } from "./stub-discord";
 
 const PASSWORDS = ["second-e2e-password", "first-e2e-password", "reviews-e2e-password"];
 const CRON = { authorization: "Bearer e2e-cron-secret" };
@@ -31,7 +31,15 @@ async function signIn(request: APIRequestContext) {
   expect(setup.ok()).toBeTruthy();
 }
 
-type StoredThread = { id: string; status: string; updatedAt: string; resolvedAt?: string; followupAt?: string; brief: { contact: string; summary: string } };
+type StoredThread = {
+  id: string;
+  status: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  followupAt?: string;
+  reward?: { code: string; claimed?: boolean };
+  brief: { contact: string; summary: string };
+};
 type StoredQuote = { id: string; followupAt?: string };
 
 const readChats = async () => JSON.parse(await fs.readFile(CHATS_FILE, "utf8")) as { threads: StoredThread[] };
@@ -234,4 +242,53 @@ test("a finished brief offers Discord updates, and a week later gets one follow-
   const after = JSON.parse(await fs.readFile(DB_FILE, "utf8")) as { quotes: StoredQuote[] };
   after.quotes = after.quotes.filter((stored) => !["q_due", "q_old", "q_email"].includes(stored.id));
   await fs.writeFile(DB_FILE, JSON.stringify(after, null, 2), "utf8");
+});
+
+test("a reward code in the chat is checked with the bot, priced into the quote, and spent when the brief is sent", async ({ browser, request }) => {
+  const ip = "10.77.0.2";
+  const context = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": ip } });
+  const post = (path: string, data: unknown) => context.request.post(path, { data, headers: { "x-forwarded-for": ip } });
+  type View = { thread: { ended: boolean; messages: { content: string }[] } | null };
+  const say = async (message: string) => {
+    const view = (await (await post("/api/chat/message", { message, images: [] })).json()) as View;
+    return { ended: Boolean(view.thread?.ended), reply: view.thread?.messages.at(-1)?.content ?? "" };
+  };
+  const codes = async () => (await (await request.get(`${DISCORD_STUB_URL}/codes`)).json()) as { code: string; brief: string; claim?: boolean }[];
+  const before = (await codes()).length;
+
+  await post("/api/chat/start", {});
+  expect((await say("reward-check is VG-NOPE-2345 any good")).reply).toContain("VG-NOPE-2345 is not a valid reward code");
+  expect((await say(`reward-check ${TAKEN_CODE}`)).reply).toContain("already been used on another brief");
+  const applied = (await say(`reward-check my code is ${GOOD_CODE.toLowerCase()}`)).reply;
+  expect(applied).toContain(`reward code ${GOOD_CODE} is valid and is now applied: 15% voucher`);
+  expect(applied).toContain(`Reward applied: 15% voucher (${GOOD_CODE}), 15% off the total, at most £75 off`);
+  // From then on every turn knows, and a second code is turned away without asking the bot.
+  expect((await say("reward-check anything else")).reply).toContain("Reward applied: 15% voucher");
+  expect((await say("reward-check and VG-ABCD-2345 too")).reply).toContain("is already applied, so tell them this one was not");
+  // Checked, never spent, while the chat is open.
+  expect((await codes()).slice(before).map((call) => `${call.code} ${call.claim ? "claim" : "check"}`)).toEqual([
+    "VG-NOPE-2345 check",
+    `${TAKEN_CODE} check`,
+    `${GOOD_CODE} check`,
+  ]);
+
+  await say("discord-contact ready to wrap up");
+  expect((await say("discord-contact that is everything")).ended).toBe(true);
+  await context.close();
+
+  const mine = (threads: StoredThread[]) => threads.find((thread) => thread.reward?.code === GOOD_CODE)!;
+  await expect.poll(async () => mine((await readChats()).threads)?.reward?.claimed, { timeout: 15_000 }).toBe(true);
+  const thread = mine((await readChats()).threads);
+  expect((await codes()).slice(before).at(-1)).toEqual({ code: GOOD_CODE, brief: `chat:${thread.id}`, claim: true });
+
+  // The owner sees it on the brief, and marking the commission paid gives the client points once.
+  const shown = (await (await admin.request.get(`/api/admin/briefs/${thread.id}`)).json()) as { brief: { reward?: { title: string }; canPay: boolean } };
+  expect(shown.brief.reward?.title).toBe("15% voucher");
+  expect(shown.brief.canPay).toBe(true);
+  expect((await request.post(`/api/admin/briefs/${thread.id}/control`, { data: { action: "paid" } })).status()).toBe(401);
+  const paid = await admin.request.post(`/api/admin/briefs/${thread.id}/control`, { data: { action: "paid" } });
+  expect(paid.status(), await paid.text()).toBe(200);
+  expect(((await paid.json()) as { brief: { paid?: { given: boolean; note: string } } }).brief.paid).toMatchObject({ given: true, note: "2 points given, and they were thanked on Discord" });
+  expect((await admin.request.post(`/api/admin/briefs/${thread.id}/control`, { data: { action: "paid" } })).status()).toBe(409);
+  expect(await (await request.get(`${DISCORD_STUB_URL}/paid`)).json()).toEqual([{ key: `chat:${thread.id}`, discord: SUBSCRIBED_HANDLE }]);
 });

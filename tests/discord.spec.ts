@@ -95,7 +95,7 @@ test("stats from the service are cleaned before they are shown", () => {
   expect(stats.wall[0]).toEqual({ name: "Kept", avatar: "https://cdn.discordapp.com/avatars/1/a.png", invites: 2, rank: "Gold" });
   expect(stats.wall[1]).toEqual({ name: "Elsewhere", avatar: "", invites: 0, rank: "" });
   expect(stats.drops).toEqual([{ title: "Icon pack", at: "2026-10-01T10:00:00.000Z" }]);
-  expect(stats.rewards).toEqual([{ title: "5% voucher", cost: 3, detail: "Off your next order." }]);
+  expect(stats.rewards).toEqual([{ title: "5% voucher", cost: 3, detail: "Off your next order.", kind: "voucher" }]);
 });
 
 test("the home page shows the subscriber count, the rewards, the wall and the drops", async ({ page }) => {
@@ -114,11 +114,15 @@ test("the home page shows the subscriber count, the rewards, the wall and the dr
   await expect(section.getByText("128 developers get Virguê’s work in their Discord.")).toBeVisible();
   await expect(section.getByRole("link", { name: /SUBSCRIBE ON DISCORD/ })).toHaveAttribute("href", `${DISCORD_STUB_URL}/api/subscribe`);
 
-  // The rewards come from the service, cheapest first, in place of the built-in ones.
+  // The rewards come from the service, in its order, in place of the built-in ones.
   const rewards = section.locator("li", { hasText: /POINT/ });
   await expect(rewards).toHaveCount(3);
   await expect(rewards.nth(1)).toContainText("4 POINTS");
   await expect(rewards.nth(1)).toContainText("Icon recolour");
+  await expect(rewards.nth(1)).toContainText("SERVICE");
+  // A voucher leads with its number.
+  await expect(rewards.nth(2)).toContainText("VOUCHER");
+  await expect(rewards.nth(2)).toContainText("25% voucher");
   await expect(section.getByText("15% voucher")).toHaveCount(0);
 
   // An entry without a name is left out; an avatar that is not Discord's becomes an initial.

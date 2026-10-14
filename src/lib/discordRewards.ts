@@ -8,7 +8,8 @@ const AVATAR_HOST = "https://cdn.discordapp.com/";
 const WALL_SIZE = 24;
 const DROPS_SHOWN = 6;
 
-export type DiscordReward = { title: string; cost: number; detail: string };
+/** A voucher takes a share off a commission; a service is a piece of work. */
+export type DiscordReward = { title: string; cost: number; detail: string; kind: "voucher" | "service" };
 export type DiscordInviter = { name: string; avatar: string; invites: number; rank: string };
 export type DiscordDrop = { title: string; at: string };
 
@@ -19,15 +20,15 @@ export type DiscordStats = {
   wall: DiscordInviter[];
   /** What subscribers were given for free, newest first. */
   drops: DiscordDrop[];
-  /** What points buy, cheapest first. */
+  /** What points buy, in the order the service lists them. */
   rewards: DiscordReward[];
 };
 
 /** Shown until the service lists its own rewards. One point per invite. */
 export const FALLBACK_REWARDS: DiscordReward[] = [
-  { title: "5% voucher", cost: 3, detail: "" },
-  { title: "15% voucher", cost: 6, detail: "" },
-  { title: "25% voucher", cost: 10, detail: "" },
+  { title: "5% voucher", cost: 3, detail: "", kind: "voucher" },
+  { title: "15% voucher", cost: 6, detail: "", kind: "voucher" },
+  { title: "25% voucher", cost: 10, detail: "", kind: "voucher" },
 ];
 
 const text = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
@@ -62,7 +63,12 @@ export function readStats(json: unknown): DiscordStats | null {
       .filter((drop) => drop.title)
       .slice(0, DROPS_SHOWN),
     rewards: records(data.rewards)
-      .map((reward) => ({ title: text(reward.title, 60), cost: count(reward.cost), detail: text(reward.detail, 160) }))
+      .map((reward): DiscordReward => {
+        const title = text(reward.title, 60);
+        // Older answers name no kind, so a title that opens with a percentage is taken for a voucher.
+        const voucher = reward.kind === "voucher" || (reward.kind !== "service" && /^\d{1,3}%/.test(title));
+        return { title, cost: count(reward.cost), detail: text(reward.detail, 160), kind: voucher ? "voucher" : "service" };
+      })
       .filter((reward) => reward.title && reward.cost),
   };
 }

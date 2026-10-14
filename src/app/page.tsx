@@ -27,7 +27,7 @@ export default async function Home() {
   return (
     <main id="main" tabIndex={-1} className="film-grain vignette outline-none">
       <Hero />
-      <WorkGallery works={works} subscribeUrl={subscribeUrl} />
+      <WorkGallery works={works} />
       <ContributionsSection items={contributions} />
       <OfferingsSection />
       <ProcessBlueprint />

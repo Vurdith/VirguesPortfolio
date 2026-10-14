@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 // Writing summaries calls the model.
 export const maxDuration = 60;
 
-/** Daily sweep (Vercel Cron): emails the owner about chats that went quiet. */
+/** Daily sweep (Vercel Cron): emails the owner about chats that went quiet, then sends any Discord follow-ups that are due. */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {

@@ -32,6 +32,10 @@ export default defineConfig({
       // The assistant talks to a local stand-in, never to OpenRouter.
       OPENROUTER_API_KEY: "e2e-key",
       OPENROUTER_BASE_URL: `http://127.0.0.1:${STUB_PORT}/v1`,
+      // The Discord subscription service is a local stand-in too (tests/stub-discord.ts).
+      DISCORD_NOTIFY_URL: `http://127.0.0.1:${STUB_PORT + 1}`,
+      DISCORD_ANNOUNCE_SECRET: "e2e-announce-secret",
+      CRON_SECRET: "e2e-cron-secret",
     },
   },
 });

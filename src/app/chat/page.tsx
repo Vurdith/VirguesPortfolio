@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ChatPanel } from "@/components/chat/ChatPanel";
+import { discordSubscribeUrl } from "@/lib/discordNotify";
 import { SITE } from "@/lib/site";
 
 const TITLE = `Brief your project — ${SITE.name}`;
@@ -29,7 +30,7 @@ export default function ChatPage() {
     <main id="main" tabIndex={-1} className="film-grain vignette flex h-dvh flex-col outline-none">
       <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col md:py-6">
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden border-line/20 bg-[#0c0c0d] md:rounded-3xl md:border">
-          <ChatPanel />
+          <ChatPanel subscribeUrl={discordSubscribeUrl()} />
         </div>
       </div>
     </main>

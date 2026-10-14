@@ -3,6 +3,7 @@ import type * as React from "react";
 import { cn } from "@/lib/cn";
 
 type IconName =
+  | "bell"
   | "card"
   | "frame"
   | "mail"
@@ -13,6 +14,12 @@ type IconName =
   | "work";
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  bell: (
+    <>
+      <path d="M7 17v-6a5 5 0 0 1 10 0v6" />
+      <path d="M5 17h14M10.5 20h3M12 4v2" />
+    </>
+  ),
   card: (
     <>
       <rect x="4" y="7" width="16" height="10" />

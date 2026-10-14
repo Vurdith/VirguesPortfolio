@@ -93,6 +93,8 @@ export type QuoteRequest = {
   details: string;
   status: QuoteStatus;
   createdAt: string;
+  /** When the one Discord follow-up was attempted, sent or not. It is never tried twice. */
+  followupAt?: string;
   /** Salted hash of the sender's IP, kept briefly for rate limiting and then dropped. */
   ipHash?: string;
 };

@@ -42,7 +42,9 @@ const SECTIONS = [
   {
     title: "Discord updates",
     body: [
-      "If you subscribe to new work on Discord, you authorise an app that sees your Discord username and id, adds you to my server and sends you a direct message when I publish a work. Only that id and name are stored. Every message has an unsubscribe button, which deletes them.",
+      "If you subscribe to new work on Discord, you authorise an app that sees your Discord username, id and avatar, adds you to my server and sends you a direct message when I publish a work. Your id, name and username are stored. Every message has an unsubscribe button.",
+      "If you invite people who subscribe, your invite count, your points and anything you buy with them are kept with your id, so they stay yours. You appear on the public wall of top inviters only if you switch that on inside Discord. Ask and I will delete all of it.",
+      "Subscribers may get a free drop now and then. If you asked for a quote and gave your Discord handle, you may also get one follow-up message there, and only one.",
     ],
   },
   {

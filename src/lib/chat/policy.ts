@@ -54,10 +54,34 @@ export const lowestAllowedStyleOffer = (
   turn: number,
 ) => lowestOn(STYLE, thread.styleOffer, thread.lastStyleConcessionTurn, turn);
 
+/** Words just before a rate that make it an add-on's price (importing at £12.50 per frame), not the design price. */
+const ADD_ON = /\b(?:import\w*|studio|polish\w*|add-?ons?|extra|plus|on top)\b[^.!?£]{0,30}$/i;
+
 /** Amounts a reply states against a unit, such as "£48 per frame", "£48/frame" or "£48 a screen". */
 function statedRates(reply: string, unit: string): number[] {
   const pattern = new RegExp(`£\\s?(\\d+(?:\\.\\d{1,2})?)\\s*(?:\\/|per|a|each|for each|for one)?\\s*(?:${unit})`, "gi");
-  return [...reply.matchAll(pattern)].map((match) => Number(match[1]));
+  return [...reply.matchAll(pattern)]
+    .filter((match) => !ADD_ON.test(reply.slice(Math.max(0, match.index - 60), match.index)))
+    .map((match) => Number(match[1]));
+}
+
+/**
+ * The money a customer says they have: every amount in the budget they gave, and amounts in their
+ * newest message that carry a currency or sit next to a word about paying. Robux is left out.
+ */
+export function budgetAmounts(budget: string, said: string): number[] {
+  const amounts = (text: string) =>
+    [...text.replace(/R\$\s?[\d,.]+k?|[\d,.]+k?\s*(?:robux|R\$)/gi, " ").matchAll(/(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(\s?k\b)?/gi)].map(
+      (match) => Number(match[1].replace(/,/g, "")) * (match[2] ? 1000 : 1),
+    );
+  const money = /£|\$|€|\b(?:budget|pay|spend|afford|pounds?|quid|dollars?|usd|euros?|gbp)\b/i;
+  return [...amounts(budget), ...(money.test(said) ? amounts(said) : [])].filter((amount) => Number.isFinite(amount) && amount > 0);
+}
+
+/** True when what the customer says they can spend already covers the total at the price on the table. */
+export function budgetCovers(budget: string, said: string, total: number | null): boolean {
+  if (!total) return false;
+  return budgetAmounts(budget, said).some((amount) => amount >= total);
 }
 
 export const statedFrameRates = (reply: string) => statedRates(reply, "frame|screen");
@@ -163,6 +187,8 @@ const clip = (value: unknown, max: number) => {
 /** Opening acknowledgements such as "Got it." or "Thanks Reece.", which the prompt bans and models still add. */
 const FILLER_OPENER =
   /^(?:happy to help|glad to help|got it|noted|understood|thanks|thank you|great|perfect|awesome|brilliant|excellent|sounds good|sounds great|no problem)(?:,?\s+[A-Z][\w'’-]*)?\s*[.!,]\s+/i;
+/** An opening sentence that only repeats the customer's answer back: "Web browser it is.", "Shop and HUD, noted." */
+const ECHO_OPENER = /^[^.!?]{1,70}?(?:,\s*(?:noted|got it)|\s+(?:it is|is noted|are noted|noted))\s*[.!]\s+(?=\S)/i;
 const COMPLIMENT =
   /\b(?:sounds like (?:a |an )?(?:great|good|strong|solid|fun|cool|fantastic|wonderful)|great (?:pick|choice|idea|project|game|start)|love (?:that|this|the idea)|what a (?:great|cool|fun)|nice (?:one|choice|pick))\b/i;
 
@@ -173,7 +199,7 @@ const COMPLIMENT =
  */
 export function tidyReply(reply: string, earlier: string[]): string {
   let text = reply.trim();
-  for (let i = 0; i < 3 && FILLER_OPENER.test(text); i++) text = text.replace(FILLER_OPENER, "");
+  for (let i = 0; i < 4 && (FILLER_OPENER.test(text) || ECHO_OPENER.test(text)); i++) text = text.replace(FILLER_OPENER, "").replace(ECHO_OPENER, "");
 
   const first = /^([^.!?]*[.!])\s+/.exec(text);
   if (first && COMPLIMENT.test(first[1])) text = text.slice(first[0].length);
@@ -243,10 +269,13 @@ export function parseAgentOutput(raw: string, previous: ChatBrief): AgentOutput 
   if (!reply) return null;
 
   const b = (data.brief && typeof data.brief === "object" ? data.brief : {}) as Record<string, unknown>;
+  const count = typeof b.frames === "string" && /^\s*\d+\s*$/.test(b.frames) ? Number(b.frames) : b.frames;
   const frames =
-    typeof b.frames === "number" && Number.isFinite(b.frames) ? Math.max(0, Math.min(500, Math.round(b.frames))) : null;
-  // Only changes are sent, so an empty or missing list means "unchanged".
-  const listed = Array.isArray(b.screens) ? b.screens.map((screen) => clip(screen, 60)).filter(Boolean).slice(0, 60) : [];
+    typeof count === "number" && Number.isFinite(count) ? Math.max(0, Math.min(500, Math.round(count))) : null;
+  // Only changes are sent, so an empty or missing list means "unchanged". Models sometimes send the
+  // list as one line of text, which used to be dropped and left the assistant asking for it again.
+  const names = Array.isArray(b.screens) ? b.screens : typeof b.screens === "string" ? b.screens.split(/\s*(?:,|;|\/|\n|\band\b)\s*/i) : [];
+  const listed = names.map((screen) => clip(screen, 60)).filter(Boolean).slice(0, 60);
   const screens = listed.length ? listed : previous.screens;
 
   const brief: ChatBrief = {
@@ -314,7 +343,7 @@ export function holdPriceReply(thread: Pick<ChatThread, "offer" | "styleOffer" |
   const total = brief.frames
     ? ` For ${brief.frames} ${noun}${brief.frames === 1 ? "" : "s"} that comes to £${(brief.frames * unit).toLocaleString("en-GB")}.`
     : "";
-  return `I can do £${unit} per ${noun}.${total} That's the best I can offer right now, and it covers custom design work with a clean handoff. What would you like to adjust, or is there anything else I should know about the project?`;
+  return `The price is £${unit} per ${noun}.${total} It covers custom design work built around your game, with a clean handoff. What would you like to adjust?`;
 }
 
 /**

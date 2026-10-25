@@ -294,7 +294,7 @@ test("a pasted image attaches, and leaves the composer once sent", async ({ brow
 
 test("the floating bubble opens a full chat page that works", async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": freshIp() });
-  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
+  await page.route("**/intro-snap-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 

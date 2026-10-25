@@ -1,16 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { CornerMarks } from "@/components/CornerMarks";
+import { CONSTELLATION_FORM_S, IntroConstellation } from "@/components/IntroConstellation";
 import { useUiSounds } from "@/hooks/useUiSounds";
 import { setIntroPhase } from "@/lib/introPhase";
 
-// Phones get a smaller file of the same film; everything else gets the full 1080p original.
-const INTRO_VIDEO = "/intro-loader-hq.mp4";
-const INTRO_VIDEO_SMALL = "/intro-loader-720.mp4";
-const INTRO_POSTER = "/intro-poster.webp";
+// Just the snap: phones get a smaller file of the same film, everything else the full 1080p cut.
+const INTRO_VIDEO = "/intro-snap-hq.mp4";
+const INTRO_VIDEO_SMALL = "/intro-snap-720.mp4";
+const INTRO_POSTER = "/intro-snap-poster.webp";
+// The rest of the film's soundtrack after the snap, re-timed to the constellation: the snap rings
+// out at its own speed, the quiet stretch is squeezed, and the swell breaks at CONSTELLATION_FORM_S.
+const INTRO_TAIL = "/intro-snap-tail.m4a";
+/** The tail opens with the film's last 50ms (a fade-in under the film's fade-out), so start it early. */
+const TAIL_LEAD = 0.05;
+/** Roughly how long play() takes to be heard. */
+const TAIL_LATENCY = 0.03;
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIDEO_VOLUME = 0.8;
 
@@ -40,17 +48,19 @@ function prefersSmallVideo() {
 // How long the film gets to start, and to stall mid-play, before the intro moves on without it.
 const START_TIMEOUT_MS = 8000;
 const STALL_TIMEOUT_MS = 4000;
-const MAX_INTRO_MS = 25000;
+const MAX_INTRO_MS = 12000;
 
 export function LoadingScene() {
   const [visible, setVisible] = React.useState(true);
   const [videoDone, setVideoDone] = React.useState(false);
-  const [showLoader, setShowLoader] = React.useState(false);
-  const [percent, setPercent] = React.useState(0);
+  const [canEnter, setCanEnter] = React.useState(false);
   const videoFinishedRef = React.useRef(false);
   const playbackStartedRef = React.useRef(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
-  const canEnter = percent >= 100;
+  const tailRef = React.useRef<HTMLAudioElement | null>(null);
+  const tailStartedRef = React.useRef(false);
+  const [tailPlaying, setTailPlaying] = React.useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
   const { enableByDefault, setMusicDucked } = useUiSounds();
 
   const finishVideo = React.useCallback(() => {
@@ -60,16 +70,58 @@ export function LoadingScene() {
     videoRef.current?.pause();
     setVideoDone(true);
     setIntroPhase("loader");
-    setMusicDucked(false);
     enableByDefault();
-  }, [enableByDefault, setMusicDucked]);
+  }, [enableByDefault]);
 
-  // The intro has its own soundtrack, so keep the ambient bed out of its way.
+  // A film playing with sound carries straight on into its tail. One that was cut short (error,
+  // stall, timeout) or ran muted just stops.
+  const startTail = React.useCallback((from: number) => {
+    const video = videoRef.current;
+    const tail = tailRef.current;
+    if (tailStartedRef.current || videoFinishedRef.current || !video || !tail || video.muted) return;
+    tailStartedRef.current = true;
+    tail.volume = VIDEO_VOLUME;
+    tail.currentTime = from;
+    setTailPlaying(true);
+    tail.play().catch(() => setTailPlaying(false));
+  }, []);
+
+  // Watch the film's last moments frame by frame so the tail starts under its fade-out, not after.
   React.useEffect(() => {
-    if (!visible || videoDone) return;
+    if (videoDone) return;
+    let frame = 0;
+    const watch = () => {
+      const video = videoRef.current;
+      if (video && !video.paused && Number.isFinite(video.duration) && video.duration - video.currentTime <= TAIL_LEAD + TAIL_LATENCY) {
+        startTail(0);
+        return;
+      }
+      frame = window.requestAnimationFrame(watch);
+    };
+    frame = window.requestAnimationFrame(watch);
+    return () => window.cancelAnimationFrame(frame);
+  }, [videoDone, startTail]);
+
+  const endVideo = React.useCallback(() => {
+    // Missed the early start (a hidden tab throttles frames): skip the overlap and go now.
+    startTail(TAIL_LEAD);
+    finishVideo();
+  }, [startTail, finishVideo]);
+
+  /** The constellation keeps time by the tail while it plays, so the swell and the picture agree. */
+  const tailClock = React.useCallback(() => {
+    const tail = tailRef.current;
+    if (!tail || tail.paused || tail.ended) return null;
+    return tail.currentTime - TAIL_LEAD;
+  }, []);
+
+  // The intro has its own soundtrack, so keep the ambient bed out of its way until it is over.
+  const duckMusic = visible && (!videoDone || tailPlaying);
+  React.useEffect(() => {
+    if (!duckMusic) return;
     setMusicDucked(true);
     return () => setMusicDucked(false);
-  }, [visible, videoDone, setMusicDucked]);
+  }, [duckMusic, setMusicDucked]);
 
   // Coming back to the home page within the same visit goes straight to the site. Otherwise the
   // page behind the intro stays quiet until the film is over.
@@ -192,25 +244,12 @@ export function LoadingScene() {
     return () => window.removeEventListener("keydown", onKey);
   }, [canEnter, visible, enterSite]);
 
-  // The loader fills on the clock, not by counting ticks, so a busy page can't stretch it out.
+  // The name forms after the snap; the way in appears as soon as it is whole.
   React.useEffect(() => {
     if (!videoDone) return;
-
-    setPercent(0);
-    const startedAt = performance.now();
-    const loaderDelay = window.setTimeout(() => setShowLoader(true), 520);
-    const timer = window.setInterval(() => {
-      const elapsed = performance.now() - startedAt - 900;
-      const next = elapsed <= 0 ? 0 : Math.min(100, Math.floor(elapsed / 50) * 4);
-      setPercent(next);
-      if (next >= 100) window.clearInterval(timer);
-    }, 50);
-
-    return () => {
-      window.clearTimeout(loaderDelay);
-      window.clearInterval(timer);
-    };
-  }, [videoDone]);
+    const timer = window.setTimeout(() => setCanEnter(true), reduceMotion ? 0 : CONSTELLATION_FORM_S * 1000);
+    return () => window.clearTimeout(timer);
+  }, [videoDone, reduceMotion]);
 
   return (
     <AnimatePresence>
@@ -235,7 +274,7 @@ export function LoadingScene() {
                 autoPlay
                 playsInline
                 preload="auto"
-                onEnded={finishVideo}
+                onEnded={endVideo}
                 onError={finishVideo}
                 onCanPlay={startPlayback}
                 onPlay={(event) => {
@@ -244,7 +283,7 @@ export function LoadingScene() {
                 }}
                 exit={{
                   opacity: 0,
-                  transition: { duration: 0.55, ease: EASE },
+                  transition: { duration: 0.18, ease: EASE },
                 }}
               >
                 {/* A failing <source> reports on itself, not on the <video>, so listen here too. */}
@@ -254,116 +293,41 @@ export function LoadingScene() {
             ) : null}
           </AnimatePresence>
 
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute -inset-[35%] opacity-75"
-            style={{
-              background:
-                "radial-gradient(ellipse at center, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.03) 28%, transparent 62%)",
-              willChange: "transform",
-            }}
-            animate={{ x: ["-8%", "8%"], y: ["4%", "-4%"] }}
-            transition={{ duration: 20, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+          <audio
+            ref={tailRef}
+            src={INTRO_TAIL}
+            preload="auto"
+            onEnded={() => setTailPlaying(false)}
+            onError={() => setTailPlaying(false)}
           />
 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] [background-size:52px_52px]"
-          />
-
-          {showLoader ? (
-            <div
-              className="absolute inset-0 grid place-items-center"
-            >
-              <motion.div
-                className="relative w-64 overflow-visible"
-                initial={{ y: 22, scale: 0.92, filter: "blur(10px)" }}
-                animate={{
-                  y: 0,
-                  scale: [0.92, 1.025, 1],
-                  filter: ["blur(10px)", "blur(2px)", "blur(0px)"],
-                }}
-                transition={{ duration: 1.15, ease: EASE, times: [0, 0.78, 1] }}
-                style={{
-                  transformOrigin: "center center",
-                  willChange: "transform, filter",
-                }}
-              >
-                <div className="mb-3 flex items-baseline justify-between px-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold tracking-[0.4em] text-fog/45">
-                      {canEnter ? "READY" : "INITIALIZING"}
-                    </span>
-                    {!canEnter ? (
-                      <span className="text-[10px] tabular-nums tracking-[0.2em] text-ink/45">
-                        {percent}%
-                      </span>
-                    ) : null}
-                  </div>
-                  <span className="font-serif text-sm italic text-ink/65">Virguê.</span>
-                </div>
-
-                <div className="relative h-px w-full bg-white/8">
-                  <div className="absolute inset-0 overflow-hidden">
-                    <motion.div
-                      className="h-full origin-left bg-ink/55"
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: percent / 100 }}
-                      transition={{ duration: 0.12, ease: "linear" }}
-                    />
-                  </div>
-
-                  {percent > 0 ? (
-                    <motion.span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/18 blur-xl"
-                      style={{ left: `${percent}%` }}
-                      animate={{ opacity: [0.34, 0.82, 0.34], scale: [0.86, 1.12, 0.86] }}
-                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                    />
+          {videoDone ? (
+            <>
+              <IntroConstellation reduceMotion={reduceMotion} clock={tailClock} />
+              <p className="sr-only">Virguê</p>
+              <div className="absolute inset-x-0 top-[67%] flex justify-center">
+                <AnimatePresence>
+                  {canEnter ? (
+                    <motion.button
+                      key="enter"
+                      type="button"
+                      initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      transition={{ duration: 0.5, ease: EASE }}
+                      onClick={enterSite}
+                      className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[11px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
+                    >
+                      ENTER SITE
+                      <CornerMarks
+                        size={2}
+                        tone="border-line/40"
+                        className="opacity-0 transition-opacity group-hover:opacity-100"
+                      />
+                    </motion.button>
                   ) : null}
-                </div>
-
-                <div className="mt-8 flex justify-center">
-                  <AnimatePresence mode="wait">
-                    {canEnter ? (
-                      <motion.button
-                        key="enter"
-                        type="button"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.42, ease: EASE }}
-                        onClick={enterSite}
-                        className="group relative border border-line/20 bg-void/55 px-8 py-3 text-[11px] tracking-[0.3em] text-ink transition-colors hover:border-line/40 hover:bg-void"
-                      >
-                        ENTER SITE
-                        <CornerMarks
-                          size={2}
-                          tone="border-line/40"
-                          className="opacity-0 transition-opacity group-hover:opacity-100"
-                        />
-                      </motion.button>
-                    ) : (
-                      <motion.div
-                        key="dots"
-                        className="flex gap-1"
-                        exit={{ opacity: 0 }}
-                      >
-                        {[0, 1, 2].map((i) => (
-                          <motion.span
-                            key={i}
-                            className="h-1 w-1 rounded-full bg-ink/30"
-                            animate={{ opacity: [0.2, 1, 0.2] }}
-                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                          />
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            </div>
+                </AnimatePresence>
+              </div>
+            </>
           ) : null}
         </motion.div>
       ) : null}

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 /** The intro can't be skipped, so let it fail to load the film and press ENTER SITE. */
 async function openHome(page: Page) {
-  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
+  await page.route("**/intro-snap-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 }
@@ -97,7 +97,7 @@ test("each page has its own link preview, and the home page's is the animated on
 test("on a phone the header is a menu button that opens a side menu", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
-  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
+  await page.route("**/intro-snap-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 

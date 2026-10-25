@@ -113,7 +113,7 @@ test("the home page shows the subscriber count, the rewards, the wall and the dr
   await expect
     .poll(async () => (await (await page.request.get("/")).text()).includes('id="rewards"'), { timeout: 100_000, intervals: [1000] })
     .toBe(true);
-  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
+  await page.route("**/intro-snap-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 

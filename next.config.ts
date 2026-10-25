@@ -69,9 +69,10 @@ const nextConfig: NextConfig = {
       { source: "/uploads/:path*", headers: staticAssetHeaders },
       { source: "/music/:path*", headers: staticAssetHeaders },
       { source: "/noise.svg", headers: staticAssetHeaders },
-      { source: "/intro-loader-hq.mp4", headers: staticAssetHeaders },
-      { source: "/intro-loader-720.mp4", headers: staticAssetHeaders },
-      { source: "/intro-poster.webp", headers: staticAssetHeaders },
+      { source: "/intro-snap-hq.mp4", headers: staticAssetHeaders },
+      { source: "/intro-snap-720.mp4", headers: staticAssetHeaders },
+      { source: "/intro-snap-poster.webp", headers: staticAssetHeaders },
+      { source: "/intro-snap-tail.m4a", headers: staticAssetHeaders },
       { source: "/og.jpg", headers: staticAssetHeaders },
       { source: "/ayanakoji-profile-320.webp", headers: staticAssetHeaders },
     ];

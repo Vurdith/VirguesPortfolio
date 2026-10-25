@@ -56,7 +56,7 @@ async function enterSite(expectText?: string) {
       })
       .toBe(true);
   }
-  await page.route("**/intro-loader-*.mp4", (route) => route.abort());
+  await page.route("**/intro-snap-*.mp4", (route) => route.abort());
   await page.goto("/");
   await page.getByRole("button", { name: "ENTER SITE" }).click();
 }

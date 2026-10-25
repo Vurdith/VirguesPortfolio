@@ -493,6 +493,19 @@ html[data-intro] .vc-cursor * {
   100% { transform: scale(1.5); opacity: 0; }
 }
 
+/* Reduced motion: the cursor keeps its forms but stops looping. */
+@media (prefers-reduced-motion: reduce) {
+  .vc-cursor *,
+  html[data-intro] .vc-cursor * {
+    animation: none !important;
+  }
+}
+
+html[data-motion="reduced"] .vc-cursor *,
+html[data-motion="reduced"][data-intro] .vc-cursor * {
+  animation: none !important;
+}
+
 .quote-cta {
   position: relative;
   overflow: hidden;
